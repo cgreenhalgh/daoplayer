@@ -1,0 +1,8 @@
+<resources>
+
+    <string name="app_name">DAO Player</string>
+    <string name="pref_runservice_title">Run audio service</string>
+    <string name="notification_title">DAO Player</string>
+    <string name="notification_description">Audio service is running</string>
+    
+</resources>
