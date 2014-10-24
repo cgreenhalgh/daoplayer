@@ -143,15 +143,17 @@ public class AFile implements IAudio.IFile {
                     noOutputCounter = 0;
                 }
                 int outputBufIndex = res;
-                ByteBuffer buf = codecOutputBuffers[outputBufIndex];
-                //if (decodedIdx + (info.size / 2) >= decoded.length) {
-                //    decoded = Arrays.copyOf(decoded, decodedIdx + (info.size / 2));
-                //}
-                short decoded[] = new short[info.size / 2];
-                int decodedIdx = 0;
-                mBuffers.add(decoded);
-                for (int i = 0; i < info.size; i += 2) {
-                    decoded[decodedIdx++] = buf.getShort(i);
+                if (info.size > 0) {
+	                ByteBuffer buf = codecOutputBuffers[outputBufIndex];
+	                //if (decodedIdx + (info.size / 2) >= decoded.length) {
+	                //    decoded = Arrays.copyOf(decoded, decodedIdx + (info.size / 2));
+	                //}
+	                short decoded[] = new short[info.size / 2];
+	                int decodedIdx = 0;
+	                mBuffers.add(decoded);
+	                for (int i = 0; i < info.size; i += 2) {
+	                    decoded[decodedIdx++] = buf.getShort(i);
+	                }
                 }
                 codec.releaseOutputBuffer(outputBufIndex, false /* render */);
                 if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
@@ -175,7 +177,43 @@ public class AFile implements IAudio.IFile {
         
 		extractor.release();
 
+		// optional?!
+		tidyEnds();
+		
 		return false;
+	}
+	private void tidyEnds() {
+		// squash up to first zero-crossing
+		short lval = 0;
+		doneStart:
+			for (int bix = 0; bix < mBuffers.size(); bix++) {
+				short [] buf = mBuffers.get(bix);
+				for (int i=0; i<buf.length; i+=2) {
+					short val = (short)((buf[i]+buf[i+1])/2);
+					if (val==0)
+						break doneStart;
+					if (lval==0)
+						lval = val;
+					else if ((lval>0 && val<0) || (lval<0 && val>0))
+						break doneStart;
+					buf[i] = buf[i+1] = 0;
+				}
+			}
+		lval = 0;
+		doneEnd:
+			for (int bix = mBuffers.size()-1; bix>=0; bix--) {
+				short [] buf = mBuffers.get(bix);
+				for (int i=buf.length-2; i>=0; i-=2) {
+					short val = (short)((buf[i]+buf[i+1])/2);
+					if (val==0)
+						break doneEnd;
+					if (lval==0)
+						lval = val;
+					else if ((lval>0 && val<0) || (lval<0 && val>0))
+						break doneEnd;
+					buf[i] = buf[i+1] = 0;
+				}
+			}
 	}
 	public int getLength() {
 		int len = 0;

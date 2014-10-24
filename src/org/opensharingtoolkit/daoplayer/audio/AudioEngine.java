@@ -108,21 +108,30 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			// mono sounds ok
 			int bsize = AudioTrack.getMinBufferSize(nrate, AUDIO_CHANNELS, AudioFormat.ENCODING_PCM_16BIT);
 			// with 3x sounds quite good, whether track bsize is x1 or x8
-			short buf[] = new short[bsize/4];
+			short sbuf[] = new short[bsize/4];
+			int ibuf[] = new int[bsize/4];
 			int pos = 0;
 			while (track!=null) {
 				try {
-					fillBuffer(buf);
+					fillBuffer(ibuf);
+					// 12-bit shift
+					for (int i=0; i<ibuf.length; i++)
+						if (ibuf[i] > 0x7ffffff)
+							sbuf[i] = 0x7fff;
+						else if (ibuf[i] < -0x7ffffff)
+							sbuf[i] = -0x7fff;
+						else 
+							sbuf[i] = (short)(ibuf[i] >> 12);
 					//for (int i=0; i<buf.length; i+=2)
 					//	buf[i] = buf[i+1] = (short)(0x3fff*Math.sin(Math.PI*2*(pos+(i/2))*400/nrate));
 					//for (int i=0; i<buf.length/2; i++)
 					//	buf[i] = buf[i+buf.length/2] = (short)(0x3fff*Math.sin(Math.PI*2*(pos+(i))*400/nrate));
 					//for (int i=0; i<buf.length; i++)
 					//	buf[i] = (short)(0x7fff*Math.sin(Math.PI*2*(pos+(i))*400/nrate)*0.5*(1+Math.sin(Math.PI*2*(pos+(i))*0.5/nrate)));
-					int res = track.write(buf, 0, buf.length);
+					int res = track.write(sbuf, 0, sbuf.length);
 					if (pos==0)
 						track.play();
-					pos += buf.length;
+					pos += sbuf.length;
 					if (res==AudioTrack.ERROR_INVALID_OPERATION) {
 						Log.w(TAG,"Error doing track write");
 						break;
@@ -134,7 +143,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			}
 			Log.d(TAG,"PlayThread exit");
 		}
-		private void fillBuffer(short[] buf) {
+		private void fillBuffer(int[] buf) {
 			for (int i=0; i<buf.length; i++)
 				buf[i] = 0;
 			AState current = getCurrentState();
@@ -143,7 +152,9 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 				if (tr.isPaused()) 
 					continue;
 				int tpos = track.getPosition();
-				if (tr.getVolume()<=0) {
+				// 12 bit shift
+				int vol = (int)(tr.getVolume() * 0x1000);
+				if (vol<=0) {
 					// TODO stereo/mono
 					track.setPosition(tpos+buf.length);
 					continue;
@@ -171,7 +182,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 						if (fpos < bpos) {
 							bix = bpos = 0;
 						}
-						while (bpos < fpos && bix < file.mBuffers.size() && bpos+file.mBuffers.get(bix).length <= fpos) {
+						while (bpos <= fpos && bix < file.mBuffers.size() && bpos+file.mBuffers.get(bix).length <= fpos) {
 							bpos += file.mBuffers.get(bix).length;
 							bix++;
 						}
@@ -195,7 +206,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 						int boffset = spos-tpos;
 						//Log.d(TAG,"Mix file buffer="+bix+" offset="+offset+" len="+len+" into "+boffset);
 						for (int i=0; i<len; i++)
-							buf[boffset+i] += b[offset+i];
+							buf[boffset+i] += vol*b[offset+i];
 						spos += len;
 					}
 				}
