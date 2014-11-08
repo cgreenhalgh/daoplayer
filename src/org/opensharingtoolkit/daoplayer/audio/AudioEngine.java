@@ -97,7 +97,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		thread = new PlayThread();
 		thread.start();
 
-		test();
+		//test();
 
 	}
 	

@@ -3,7 +3,12 @@
  */
 package org.opensharingtoolkit.daoplayer;
 
+import java.io.File;
+import java.io.IOException;
+
+import org.json.JSONException;
 import org.opensharingtoolkit.daoplayer.audio.AudioEngine;
+import org.opensharingtoolkit.daoplayer.audio.Composition;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -19,6 +24,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.widget.Toast;
 
 /**
  * @author pszcmg
@@ -28,6 +34,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 
 	private static final String TAG = "daoplayer-service";
 	private static final int SERVICE_NOTIFICATION_ID = 1;
+	public static final String ACTION_RELOAD = "org.opensharingtoolkit.daoplayer.RELOAD";
+	private static final String DEFAULT_COMPOSITION = "composition.json";
 	private AudioEngine mAudioEngine;
 	private boolean started = false;
 
@@ -84,8 +92,10 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 
 		startForeground(SERVICE_NOTIFICATION_ID, notification);
 
-		if (mAudioEngine==null)
+		if (mAudioEngine==null) {
 			mAudioEngine = new AudioEngine();
+			loadComposition();
+		}
 		mAudioEngine.start(this);
 	}
 
@@ -115,10 +125,37 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	// starting service...
 	private void handleCommand(Intent intent) {
 		Log.d(TAG,"handleCommand "+(intent!=null ? intent.getAction() : "null"));
+		if (intent!=null && ACTION_RELOAD.equals(intent.getAction())) {
+			if (mAudioEngine!=null) {
+				mAudioEngine.reset();
+				loadComposition();
+			}
+		}
 		checkService();
 	}
 
 
+	private void loadComposition() {
+		Log.d(TAG,"loadComposition...");
+		File filesDir = Compat.getExternalFilesDir(this);
+		Composition comp = new Composition(mAudioEngine);
+		try {
+			comp.read(new File(filesDir, DEFAULT_COMPOSITION));
+		} catch (Exception e) {
+			Log.w(TAG,"Error reading "+DEFAULT_COMPOSITION+": "+e, e);
+			Toast.makeText(this, "Error reading composition: "+e.getMessage(), Toast.LENGTH_SHORT).show();
+			return;
+		}
+		String defaultScene = comp.getDefaultScene();
+		if (defaultScene!=null) {
+			comp.setScene(defaultScene);
+			Log.i(TAG,"Read "+DEFAULT_COMPOSITION+"; playing scene "+defaultScene);
+			Toast.makeText(this, "Read; playing scene "+defaultScene, Toast.LENGTH_SHORT).show();
+		} else {
+			Log.i(TAG,"Read "+DEFAULT_COMPOSITION+"; no default scene");
+			Toast.makeText(this, "Read but no default scene", Toast.LENGTH_SHORT).show();			
+		}
+	}
 	// This is the old onStart method that will be called on the pre-2.0
 	// platform.  On 2.0 or later we override onStartCommand() so this
 	// method will not be called.

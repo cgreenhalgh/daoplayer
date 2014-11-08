@@ -4,5 +4,10 @@
     <string name="pref_runservice_title">Run audio service</string>
     <string name="notification_title">DAO Player</string>
     <string name="notification_description">Audio service is running</string>
+    <string name="zip_handler_name">Unzip to DAOPlayer</string>
+    <string name="zip_prompt">Update DAOPlayer file cache and composition with contents of zip file?</string>
+    <string name="zip_button_replace">Replace</string>
+    <string name="zip_button_reload">Reload composition</string>
+    <string name="zip_log_title">Diagnostic output</string>
     
 </resources>
