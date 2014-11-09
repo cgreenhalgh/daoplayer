@@ -12,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Vector;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -48,6 +49,7 @@ public class Composition {
 	private String mDefaultScene;
 	private Map<String,ITrack> mTracks = new HashMap<String,ITrack>();
 	private Map<String,IScene> mScenes = new HashMap<String, IScene>();
+	private Vector<String> mScenesInOrder = new Vector<String>();
 
 	public Composition(AudioEngine engine) {		
 		mEngine = engine;
@@ -104,11 +106,13 @@ public class Composition {
 			}
 		}
 		mScenes = new HashMap<String, IScene>();
+		mScenesInOrder = new Vector<String>();
 		if (jcomp.has(SCENES)) {
 			JSONArray jscenes = jcomp.getJSONArray(SCENES);
 			for (int si=0; si<jscenes.length(); si++) {
 				JSONObject jscene = jscenes.getJSONObject(si);
 				String name = jscene.has(NAME) ? jscene.getString(NAME) : null;
+				mScenesInOrder.add(name);
 				boolean partial = jscene.has(PARTIAL) && jscene.getBoolean(PARTIAL);
 				IScene ascene = mEngine.newScene(partial);
 				if (name!=null)
@@ -148,5 +152,35 @@ public class Composition {
 		}
 		mEngine.setScene(scene);
 		return true;
+	}
+	public String getNextScene(String name) {
+		int ix = mScenesInOrder.indexOf(name);
+		if (ix<0) {
+			Log.w(TAG,"Could not find scene "+name);
+			if (mScenesInOrder.size()>0)
+				return mScenesInOrder.get(0);
+			return null;
+		}
+		else {
+			ix = ix + 1;
+			if (ix >= mScenesInOrder.size())
+				ix = 0;
+			return mScenesInOrder.get(ix);
+		}			
+	}
+	public String getPrevScene(String name) {
+		int ix = mScenesInOrder.indexOf(name);
+		if (ix<0) {
+			Log.w(TAG,"Could not find scene "+name);
+			if (mScenesInOrder.size()>0)
+				return mScenesInOrder.get(0);
+			return null;
+		}
+		else {
+			ix = ix - 1;
+			if (ix <0)
+				ix = mScenesInOrder.size() - 1;
+			return mScenesInOrder.get(ix);
+		}			
 	}
 }

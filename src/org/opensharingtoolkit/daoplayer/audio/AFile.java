@@ -18,7 +18,9 @@ import android.content.res.AssetManager;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
+import android.os.AsyncTask;
 import android.util.Log;
+import android.widget.Toast;
 
 /**
  * @author pszcmg
@@ -28,7 +30,9 @@ public class AFile implements IAudio.IFile {
 	public static String TAG = "daoplayer-file";
 	private String mPath;
 	private boolean mExtractFailed = false;
+	private boolean mExtracted= false;
 	private boolean mDecoded = false;
+	private boolean mCancelled = false;
 	private int mChannels;
 	private int mRate;
 	Vector<short[]> mBuffers = new Vector<short[]>();
@@ -40,13 +44,18 @@ public class AFile implements IAudio.IFile {
 	public String getPath() {
 		return mPath;
 	}
+	public synchronized void cancel() {
+		mCancelled = true;
+	}
 	static String FILE_ASSET = "file:///android_asset/";
-	boolean decode(Context context) {
-		if (mExtractFailed)
-			return false;
-		if (mDecoded)
-			return true;
-		mDecoded = true;
+	private boolean decode(Context context) {
+		synchronized (this) {
+			if (mExtractFailed)
+				return false;
+			if (mDecoded)
+				return true;
+			mDecoded = true;
+		}
 		Log.d(TAG,"decode "+mPath);
 		MediaExtractor extractor = new MediaExtractor();
 		// asset?
@@ -59,7 +68,9 @@ public class AFile implements IAudio.IFile {
 			}
 			catch (Exception e) {
 				Log.d(TAG,"Error opening asset "+mPath+": "+e);
-				mExtractFailed = true;
+				synchronized (this) {
+					mExtractFailed = true;
+				}
 				extractor.release();
 				return false;
 			}
@@ -68,14 +79,18 @@ public class AFile implements IAudio.IFile {
 				extractor.setDataSource(mPath);
 			} catch (IOException e) {
 				Log.e(TAG,"Error creating MediaExtractor for "+mPath+": "+e);
-				mExtractFailed = true;
+				synchronized (this) {
+					mExtractFailed = true;
+				}
 				extractor.release();
 				return false;
 			}
 		}
 		if (extractor.getTrackCount()<1) {
 			Log.e(TAG,"Found no tracks in "+mPath);
-			mExtractFailed = true;
+			synchronized (this) {
+				mExtractFailed = true;
+			}
 			extractor.release();
 			return false;
 		}
@@ -89,7 +104,9 @@ public class AFile implements IAudio.IFile {
 		// E.g. 0: mime=audio/mpeg channels=2 fmask=-1 rate=44100
 		if (!mime.startsWith("audio/")) {
 			Log.d(TAG,"Did not find audio track 0 in "+mPath);
-			mExtractFailed = true;
+			synchronized (this) {
+				mExtractFailed = true;
+			}
 			extractor.release();
 			return false;
 		}
@@ -110,6 +127,16 @@ public class AFile implements IAudio.IFile {
         boolean sawOutputEOS = false;
         int noOutputCounter = 0;
         while (!sawOutputEOS && noOutputCounter < 50) {
+        	synchronized (this) {
+        		if (mCancelled) {
+        			Log.d(TAG,"decode cancelled");
+        			mExtractFailed = true;
+        			codec.stop();
+        			codec.release();
+        			extractor.release();
+        			return false;
+        		}
+        	}
             noOutputCounter++;
             if (!sawInputEOS) {
                 int inputBufIndex = codec.dequeueInputBuffer(kTimeOutUs);
@@ -180,6 +207,9 @@ public class AFile implements IAudio.IFile {
 		// optional?!
 		tidyEnds();
 		
+		synchronized (this) {
+			mExtracted = true;
+		}
 		return false;
 	}
 	private void tidyEnds() {
@@ -220,5 +250,30 @@ public class AFile implements IAudio.IFile {
 		for (int i=0; i<mBuffers.size();i++)
 			len += mBuffers.get(i).length;
 		return len;
+	}
+	public synchronized boolean isExtracted() {
+		return mExtracted;
+	}
+	private class DecodeTask extends AsyncTask<Context,Integer,Boolean> {
+
+		@Override
+		protected Boolean doInBackground(Context... params) {
+			Context context = params[0];
+			return AFile.this.decode(context);
+		}
+
+		/* (non-Javadoc)
+		 * @see android.os.AsyncTask#onPostExecute(java.lang.Object)
+		 */
+		@Override
+		protected void onPostExecute(Boolean result) {
+			//Toast.makeText(context, "Decoded "+mPath, Toast.LENGTH_SHORT).show();
+			super.onPostExecute(result);
+		}
+		
+	}
+	public void queueDecode(Context context) {
+		DecodeTask t = new DecodeTask();
+		t.execute(context);
 	}
 }

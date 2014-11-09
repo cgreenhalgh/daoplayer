@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 
@@ -23,6 +24,23 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
 		addPreferencesFromResource(R.xml.preferences);
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		checkService();
+		setServiceAction("pref_reload", Service.ACTION_RELOAD);
+		setServiceAction("pref_defaultscene", Service.ACTION_DEFAULT_SCENE);
+		setServiceAction("pref_nextscene", Service.ACTION_NEXT_SCENE);
+		setServiceAction("pref_prevscene", Service.ACTION_PREV_SCENE);
+	}
+	private void setServiceAction(String key, final String action) {
+		Preference button = (Preference)findPreference(key);
+		button.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+			@Override
+			public boolean onPreferenceClick(Preference arg0) {
+				Intent i = new Intent();
+				i.setAction(action);
+				i.setClass(getApplicationContext(), Service.class);
+				startService(i);
+				return true;
+			}
+        });	
 	}
 	@Override
 	protected void onPause() {

@@ -166,19 +166,23 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 					if (fr.mTrackPos > spos)
 						spos = fr.mTrackPos;
 					int repetition = 0;
-					if (fr.mLength!=IAudio.ITrack.LENGTH_ALL)
-						repetition = (spos - fr.mTrackPos)/fr.mLength;
+					AFile file = (AFile)fr.mFile;
+					if (!file.isExtracted()) 
+						continue;
+					int length = fr.mLength;
+					if (length==IAudio.ITrack.LENGTH_ALL)
+						length = file.getLength();
+					repetition = (spos - fr.mTrackPos)/length;
 					if (fr.mRepeats!=IAudio.ITrack.REPEATS_FOREVER) {
 						if (repetition >= fr.mRepeats)
 							continue;
-						if (fr.mLength!=IAudio.ITrack.LENGTH_ALL && fr.mTrackPos+fr.mLength*fr.mRepeats<epos)
-							epos = fr.mTrackPos+fr.mLength*fr.mRepeats;
+						if (fr.mTrackPos+length*fr.mRepeats<epos)
+							epos = fr.mTrackPos+length*fr.mRepeats;
 					}
 					// within file?
-					AFile file = (AFile)fr.mFile;
 					int bix = 0, bpos = 0;
 					while (spos <= epos) {
-						int fpos = fr.mFilePos+(spos-fr.mTrackPos-repetition*fr.mLength);
+						int fpos = fr.mFilePos+(spos-fr.mTrackPos-repetition*length);
 						if (fpos < bpos) {
 							bix = bpos = 0;
 						}
@@ -191,7 +195,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 							repetition++;
 							if (fr.mRepeats!=IAudio.ITrack.REPEATS_FOREVER && repetition >= fr.mRepeats)
 								break;
-							spos = fr.mTrackPos+repetition*fr.mLength;
+							spos = fr.mTrackPos+repetition*length;
 							continue;
 						}
 						short b[] = file.mBuffers.get(bix);
@@ -227,6 +231,10 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	@Override
 	public void reset() {
 		// TODO Auto-generated method stub
+		for (AFile afile : mFiles.values())
+			afile.cancel();
+		mFiles = new HashMap<String,AFile>();
+		mTracks = new HashMap<Integer,ATrack>();
 	}
 
 	private Map<String,AFile> mFiles = new HashMap<String,AFile>();
@@ -236,6 +244,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		if (file==null) {
 			file = new AFile(path);
 			mFiles.put(path, file);
+			file.queueDecode(mContext);
 		}
 		return file;
 	}
@@ -243,7 +252,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	public void test() {
 		Log.d(TAG,"testing...");
 		IFile f1 = this.addFile("file:///android_asset/audio/test/meeting by the river snippet.mp3");
-		((AFile)f1).decode(mContext);
+		//((AFile)f1).decode(mContext);
 		ITrack t1 = this.addTrack(true);
 		t1.addFileRef(0, f1, 0, f1.getLength(), ITrack.REPEATS_FOREVER);
 		IScene s1 = this.newScene(false);

@@ -2,6 +2,10 @@
 
     <string name="app_name">DAO Player</string>
     <string name="pref_runservice_title">Run audio service</string>
+    <string name="pref_reload_title">Reload composition</string>
+    <string name="pref_defaultscene_title">Load Default Scene</string>
+    <string name="pref_nextscene_title">Load Next Scene</string>
+    <string name="pref_prevscene_title">Load Previous Scene</string>
     <string name="notification_title">DAO Player</string>
     <string name="notification_description">Audio service is running</string>
     <string name="zip_handler_name">Unzip to DAOPlayer</string>

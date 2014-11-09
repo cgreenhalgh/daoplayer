@@ -63,6 +63,7 @@ public class ZipHandlerActivity extends Activity {
 				i.setAction(Service.ACTION_RELOAD);
 				i.setClass(getApplicationContext(), Service.class);
 				startService(i);
+				startActivity(new Intent(getApplicationContext(), Preferences.class));
 			}
 		});
 	}

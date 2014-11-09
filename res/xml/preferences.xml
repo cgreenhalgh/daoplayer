@@ -6,4 +6,21 @@
         android:enabled="true"
         android:key="pref_runservice"
         android:title="@string/pref_runservice_title" />
+    
+    <Preference 
+        android:title="@string/pref_reload_title" 
+        android:key="pref_reload" />
+
+    <Preference 
+        android:title="@string/pref_defaultscene_title" 
+        android:key="pref_defaultscene" />
+    
+    <Preference 
+        android:title="@string/pref_nextscene_title" 
+        android:key="pref_nextscene" />
+    
+    <Preference 
+        android:title="@string/pref_prevscene_title" 
+        android:key="pref_prevscene" />
+    
 </PreferenceScreen>

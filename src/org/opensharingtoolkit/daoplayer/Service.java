@@ -36,9 +36,14 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private static final int SERVICE_NOTIFICATION_ID = 1;
 	public static final String ACTION_RELOAD = "org.opensharingtoolkit.daoplayer.RELOAD";
 	private static final String DEFAULT_COMPOSITION = "composition.json";
+	public static final String ACTION_DEFAULT_SCENE = "org.opensharingtoolkit.daoplayer.DEFAULT_SCENE";
+	public static final String ACTION_NEXT_SCENE = "org.opensharingtoolkit.daoplayer.NEXT_SCENE";
+	public static final String ACTION_PREV_SCENE = "org.opensharingtoolkit.daoplayer.PREV_SCENE";
 	private AudioEngine mAudioEngine;
 	private boolean started = false;
-
+	private Composition mComposition = null;
+	private String mScene = null;
+	
 	/** Binder subclass (inner class) with methods for local interaction with service */
 	public class LocalBinder extends android.os.Binder {
 		// local methods... direct access to service
@@ -124,11 +129,46 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	
 	// starting service...
 	private void handleCommand(Intent intent) {
-		Log.d(TAG,"handleCommand "+(intent!=null ? intent.getAction() : "null"));
-		if (intent!=null && ACTION_RELOAD.equals(intent.getAction())) {
+		Log.d(TAG,"handleCommand "+intent.getAction());
+		if (ACTION_RELOAD.equals(intent.getAction())) {
 			if (mAudioEngine!=null) {
 				mAudioEngine.reset();
 				loadComposition();
+			}
+		}
+		else if (ACTION_DEFAULT_SCENE.equals(intent.getAction())) {
+			if (mComposition!=null) {
+				mScene = mComposition.getDefaultScene();
+				if (mScene!=null) {
+					mComposition.setScene(mScene);
+					Toast.makeText(this, "Load default scene "+mScene, Toast.LENGTH_SHORT).show();
+				}				
+				else 
+					Log.w(TAG,"No default scene");
+			}
+		}
+		else if (ACTION_NEXT_SCENE.equals(intent.getAction())) {
+			if (mComposition!=null) {
+				String oldScene = mScene;
+				mScene = mComposition.getNextScene(mScene);
+				if (mScene!=null) {
+					mComposition.setScene(mScene);
+					Toast.makeText(this, "Load next scene "+mScene, Toast.LENGTH_SHORT).show();
+				}				
+				else 
+					Log.w(TAG,"No next scene after "+oldScene);
+			}
+		}
+		else if (ACTION_PREV_SCENE.equals(intent.getAction())) {
+			if (mComposition!=null) {
+				String oldScene = mScene;
+				mScene = mComposition.getPrevScene(mScene);
+				if (mScene!=null) {
+					mComposition.setScene(mScene);
+					Toast.makeText(this, "Load prev scene "+mScene, Toast.LENGTH_SHORT).show();
+				}				
+				else 
+					Log.w(TAG,"No prev scene before "+oldScene);
 			}
 		}
 		checkService();
@@ -138,7 +178,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private void loadComposition() {
 		Log.d(TAG,"loadComposition...");
 		File filesDir = Compat.getExternalFilesDir(this);
-		Composition comp = new Composition(mAudioEngine);
+		Composition comp = mComposition = new Composition(mAudioEngine);
 		try {
 			comp.read(new File(filesDir, DEFAULT_COMPOSITION));
 		} catch (Exception e) {
@@ -146,7 +186,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			Toast.makeText(this, "Error reading composition: "+e.getMessage(), Toast.LENGTH_SHORT).show();
 			return;
 		}
-		String defaultScene = comp.getDefaultScene();
+		String defaultScene = mScene = comp.getDefaultScene();
 		if (defaultScene!=null) {
 			comp.setScene(defaultScene);
 			Log.i(TAG,"Read "+DEFAULT_COMPOSITION+"; playing scene "+defaultScene);
@@ -161,12 +201,14 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	// method will not be called.
 	@Override
 	public void onStart(Intent intent, int startId) {
-	    handleCommand(intent);
+	    if (intent!=null)
+	    	handleCommand(intent);
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-	    handleCommand(intent);
+	    if (intent!=null)
+	    	handleCommand(intent);
 	    // We want this service to continue running until it is explicitly
 	    // stopped, so return sticky.
 	    return START_STICKY;

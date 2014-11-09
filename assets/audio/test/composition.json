@@ -29,6 +29,36 @@
           "pos": 0
         }
       ]
+    },
+    {
+      "name": "full",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "track1",
+          "volume": 0.8
+        }
+      ]
+    },
+    {
+      "name": "part",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "track1",
+          "volume": 0.4
+        }
+      ]
+    },
+    {
+      "name": "zero",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "track1",
+          "volume": 0.0
+        }
+      ]
     }
   ]
 }
