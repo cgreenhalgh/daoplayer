@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1
+  },
+  "defaultScene": "scene1",
+  "tracks": [
+    {
+      "name": "1L1",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "1L1short.mp3", 
+          "trackPos": 0,
+          "filePos": 0,
+          "repeats": -1
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "scene1",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "1L1",
+          "volume": 1.0,
+          "pos": 0
+        }
+      ]
+    }
+  ]
+}

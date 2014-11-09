@@ -3,12 +3,20 @@
  */
 package org.opensharingtoolkit.daoplayer.audio;
 
+import java.io.BufferedInputStream;
 import java.io.FileDescriptor;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Vector;
+
+import javazoom.jl.decoder.Bitstream;
+import javazoom.jl.decoder.Decoder;
+import javazoom.jl.decoder.Header;
+import javazoom.jl.decoder.JavaLayerException;
+import javazoom.jl.decoder.Obuffer;
 
 import org.opensharingtoolkit.daoplayer.IAudio;
 
@@ -110,6 +118,12 @@ public class AFile implements IAudio.IFile {
 			extractor.release();
 			return false;
 		}
+		if (extractor.getTrackCount()==1 && mime.equals("audio/mpeg")) {
+			// faster??? - not at the moment
+			//return decodeWithJLayer(context);
+		}
+			
+		
 		extractor.selectTrack(0);
 		// see https://android.googlesource.com/platform/cts/+/jb-mr2-release/tests/tests/media/src/android/media/cts/DecoderTest.java
 		MediaCodec codec = MediaCodec.createDecoderByType(mime);
@@ -211,6 +225,156 @@ public class AFile implements IAudio.IFile {
 			mExtracted = true;
 		}
 		return false;
+	}
+	private boolean decodeWithJLayer(Context context) {
+		// TODO incomplete handling of output buffer data
+		Log.d(TAG,"decode with JLayer "+mPath);
+		// asset?
+		FileInputStream fis = null;
+		if (mPath.startsWith(FILE_ASSET)) {
+			AssetManager assets = context.getAssets();
+			try {
+				AssetFileDescriptor afd = assets.openFd(mPath.substring(FILE_ASSET.length()));
+				fis = afd.createInputStream();
+			}
+			catch (Exception e) {
+				Log.d(TAG,"Error opening asset "+mPath+": "+e);
+				synchronized (this) {
+					mExtractFailed = true;
+				}
+				return false;
+			}
+		} else {
+			try {
+				fis = new FileInputStream(mPath); 
+			} catch (IOException e) {
+				Log.e(TAG,"Error creating MediaExtractor for "+mPath+": "+e);
+				synchronized (this) {
+					mExtractFailed = true;
+				}
+				return false;
+			}
+		}
+		BufferedInputStream bufIn = new BufferedInputStream(fis);
+		int frameCount = -1;
+		Obuffer output = null;
+		Decoder decoder = new Decoder(null);
+		Bitstream stream = new Bitstream(bufIn);
+
+		if (frameCount==-1)
+			frameCount = Integer.MAX_VALUE;
+
+		int frame = 0;
+		long startTime = System.currentTimeMillis();
+
+		try
+		{
+			for (; frame<frameCount; frame++)
+			{
+        		if (mCancelled) {
+        			Log.d(TAG,"decode cancelled");
+        			mExtractFailed = true;
+        			return false;
+        		}
+				try
+				{
+					Header header = stream.readFrame();
+					if (header==null)
+						break;
+
+					//progressListener.readFrame(frame, header);
+
+					if (output==null)
+					{
+						// REVIEW: Incorrect functionality.
+						// the decoder should provide decoded
+						// frequency and channels output as it may differ from
+						// the source (e.g. when downmixing stereo to mono.)
+						int channels = (header.mode()==Header.SINGLE_CHANNEL) ? 1 : 2;
+						int freq = header.frequency();
+						output = new JLOutput(channels, freq);
+						decoder.setOutputBuffer(output);
+					}
+
+					Obuffer decoderOutput = decoder.decodeFrame(header, stream);
+
+					// REVIEW: the way the output buffer is set
+					// on the decoder is a bit dodgy. Even though
+					// this exception should never happen, we test to be sure.
+					if (decoderOutput!=output)
+						throw new InternalError("Output buffers are different.");
+
+
+					//progressListener.decodedFrame(frame, header, output);
+
+					stream.closeFrame();
+
+				}
+				catch (Exception ex)
+				{
+					Log.w(TAG,"error decoding with jlayer: "+ex, ex);
+					synchronized (this) {
+						mExtractFailed = true;
+					}
+					return false;
+				}
+			}
+
+		}
+		finally
+		{
+
+			if (output!=null)
+				output.close();
+		}
+
+		int time = (int)(System.currentTimeMillis()-startTime);
+		//progressListener.converterUpdate(ProgressListener.UPDATE_CONVERT_COMPLETE,
+		//	time, frame);
+		Log.d(TAG,"decoded in "+time+"ms: "+mPath);
+		synchronized (this) {
+			mExtracted = true;
+		}
+		return false;
+	}
+	static class JLOutput extends Obuffer {
+		private short[] 		buffer;
+		private short[] 		bufferp;
+		private int 			channels;
+
+		JLOutput(int number_of_channels, int freq) {
+			buffer = new short[OBUFFERSIZE];
+			bufferp = new short[MAXCHANNELS];
+			channels = number_of_channels;
+			
+			for (int i = 0; i < number_of_channels; ++i) 
+				bufferp[i] = (short)i;
+		}
+		@Override
+		public void append(int channel, short value) {
+		    buffer[bufferp[channel]] = value;
+		    bufferp[channel] += channels;
+		}
+
+		@Override
+		public void clear_buffer() {
+		}
+
+		@Override
+		public void close() {
+		}
+
+		@Override
+		public void set_stop_flag() {
+		}
+
+		@Override
+		public void write_buffer(int val) {
+			// TODO
+			
+		    for (int i = 0; i < channels; ++i) bufferp[i] = (short)i;			
+		}
+		
 	}
 	private void tidyEnds() {
 		// squash up to first zero-crossing
