@@ -8,6 +8,14 @@
         android:title="@string/pref_runservice_title" />
     
     <Preference 
+        android:title="@string/pref_showgui_title">
+        <intent
+            android:targetPackage="org.opensharingtoolkit.daoplayer"
+            android:targetClass="org.opensharingtoolkit.daoplayer.ui.BrowserActivity" />
+    </Preference>
+
+    
+    <Preference 
         android:title="@string/pref_reload_title" 
         android:key="pref_reload" />
 
