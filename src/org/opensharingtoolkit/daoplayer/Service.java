@@ -9,7 +9,9 @@ import java.io.IOException;
 import org.json.JSONException;
 import org.opensharingtoolkit.daoplayer.audio.AudioEngine;
 import org.opensharingtoolkit.daoplayer.audio.Composition;
+import org.opensharingtoolkit.daoplayer.ui.BrowserActivity;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -24,6 +26,11 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.webkit.JavascriptInterface;
+import android.webkit.JsResult;
+import android.webkit.WebChromeClient;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 /**
@@ -43,6 +50,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private boolean started = false;
 	private Composition mComposition = null;
 	private String mScene = null;
+	private WebView mWebView;
 	
 	/** Binder subclass (inner class) with methods for local interaction with service */
 	public class LocalBinder extends android.os.Binder {
@@ -77,6 +85,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		checkService();
 	}
 
+	@SuppressLint("SetJavaScriptEnabled")
 	private void onStart() {
 		if (started)
 			return;
@@ -102,13 +111,58 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			loadComposition();
 		}
 		mAudioEngine.start(this);
+		
+		if (mWebView==null) {
+			mWebView = new WebView(this);
+			mWebView.setWillNotDraw(true);
+			mWebView.getSettings().setJavaScriptEnabled(true);
+			mWebView.addJavascriptInterface(this, "daoplayer");
+			mWebView.setWebChromeClient(new WebChromeClient() {
+				@Override
+				public boolean onJsAlert(WebView view, String url, String message,
+						JsResult result) {
+					Log.w(TAG,"onJsAlert: ("+url+") "+message+" ("+result+")");
+					return super.onJsAlert(view, url, message, result);
+				}
+	        });
+			mWebView.setWebViewClient(new WebViewClient() {
+	        	public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+	        		// this picks up local errors aswell
+	        		Log.d(TAG,"onReceivedError errorCode="+errorCode+", description="+description+", failingUrl="+failingUrl); 
+	        		Toast.makeText(Service.this, "Oh no! " + description, Toast.LENGTH_SHORT).show();
+	        	}
+				@Override
+				public void onPageFinished(WebView view, String url) {
+					Log.d(TAG,"Service webview loaded");
+					super.onPageFinished(view, url);
+					// This is OK...
+					mWebView.loadUrl("javascript:console.log('daoplayer='+daoplayer);");
+				}
+	        });
+			Log.d(TAG,"Test service webview daoplayer...");
+			mWebView.loadDataWithBaseURL("file:///android_asset/service.js",
+					"<html><head><title>Service</title><script type='text/javascript'>daoplayer.log('daoplayer.hello');setInterval(function(){ daoplayer.log('daoplayer.tick'); }, 1000);</script></head><body></body></html>",
+					"text/html", "UTF-8", null);
+			// loads asynchronously!
+			// Cannot do this: mWebView.loadUrl("javascript:console.log('daoplayer='+daoplayer);");
+		} else {
+			mWebView.resumeTimers();
+		}
 	}
 
+	@JavascriptInterface
+	public void log(String msg) {
+		Log.d(TAG,"Javascript: "+msg);
+		// NOT a task main thread - can't do loadUrl
+	}
+	
 	@Override
 	public void onDestroy() {
 		Log.d(TAG,"onDestroy");
 		super.onDestroy();
 		onStop();
+		if (mWebView!=null)
+			mWebView.destroy();
 	}
 	
 	private void onStop() {
@@ -116,6 +170,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			return;
 		Log.d(TAG,"onStop");
 		started = false;
+		
+		mWebView.pauseTimers();
 		
 		// Note: this means we depend on Preferences Activity to (re)start us
 		SharedPreferences spref = PreferenceManager.getDefaultSharedPreferences(this);
