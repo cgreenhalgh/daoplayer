@@ -22,10 +22,12 @@
     {
       "name": "scene1",
       "partial": false,
+      "onany": "var now=new Date().getTime()",
+      "onload": "console.log('onload!');window.loadTime=new Date().getTime()",
       "tracks": [
         {
           "name": "track1",
-          "volume": 1.0,
+          "volume": "1-(now-window.loadTime)/20000",
           "pos": 0
         }
       ]
@@ -33,10 +35,11 @@
     {
       "name": "full",
       "partial": false,
+      "onany": "var ref={lat:52.953685,lng:-1.188429}",
       "tracks": [
         {
           "name": "track1",
-          "volume": 0.8
+          "volume": "window.position ? 1-window.distance(window.position.lat,window.position.lng,ref.lat,ref.lng) /1000: 0.5"
         }
       ]
     },

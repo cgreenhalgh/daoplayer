@@ -40,7 +40,6 @@ public interface IAudio {
 		public void setVolume(ITrack track, float volume);
 		public void setPosition(ITrack track, int pos);
 	}
-	public IScene newScene(boolean partial);
-	
-	public void setScene(IScene scene);
+	//public IScene newScene(boolean partial);
+	//public void setScene(IScene scene);
 }

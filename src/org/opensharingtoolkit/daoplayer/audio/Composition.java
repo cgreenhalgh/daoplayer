@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
 
@@ -45,10 +46,13 @@ public class Composition {
 	private static final String PARTIAL = "partial";
 	private static final String VOLUME = "volume";
 	private static final String POS = "pos";
+	private static final String ONANY = "onany";
+	private static final String ONLOAD = "onload";
+	private static final String ONUPDATE = "onupdate";
 	private AudioEngine mEngine;
 	private String mDefaultScene;
 	private Map<String,ITrack> mTracks = new HashMap<String,ITrack>();
-	private Map<String,IScene> mScenes = new HashMap<String, IScene>();
+	private Map<String,DynScene> mScenes = new HashMap<String, DynScene>();
 	private Vector<String> mScenesInOrder = new Vector<String>();
 
 	public Composition(AudioEngine engine) {		
@@ -105,7 +109,7 @@ public class Composition {
 				}
 			}
 		}
-		mScenes = new HashMap<String, IScene>();
+		mScenes = new HashMap<String, DynScene>();
 		mScenesInOrder = new Vector<String>();
 		if (jcomp.has(SCENES)) {
 			JSONArray jscenes = jcomp.getJSONArray(SCENES);
@@ -114,11 +118,17 @@ public class Composition {
 				String name = jscene.has(NAME) ? jscene.getString(NAME) : null;
 				mScenesInOrder.add(name);
 				boolean partial = jscene.has(PARTIAL) && jscene.getBoolean(PARTIAL);
-				IScene ascene = mEngine.newScene(partial);
+				DynScene ascene = new DynScene(partial);
 				if (name!=null)
 					mScenes.put(name, ascene);
 				else 
 					Log.w(TAG,"Unnamed scene "+si);
+				if (jscene.has(ONANY))
+					ascene.setOnany(jscene.getString(ONANY));
+				if (jscene.has(ONLOAD))
+					ascene.setOnload(jscene.getString(ONLOAD));
+				if (jscene.has(ONUPDATE))
+					ascene.setOnload(jscene.getString(ONUPDATE));
 				if (jscene.has(TRACKS)) {
 					JSONArray jtracks = jscene.getJSONArray(TRACKS);
 					for (int ti=0; ti<jtracks.length(); ti++) {
@@ -129,8 +139,9 @@ public class Composition {
 							Log.w(TAG,"Scene "+name+" refers to unknown track "+trackName);
 						} else {
 							Integer pos = jtrack.has(POS) ? jtrack.getInt(POS) : null;
-							Float volume = jtrack.has(VOLUME) ? (float)jtrack.getDouble(VOLUME) : null;
-							ascene.set(atrack, volume, pos);
+							Float volume = jtrack.has(VOLUME) && jtrack.get(VOLUME) instanceof Number ? (float)jtrack.getDouble(VOLUME) : null;
+							String dynVolume = jtrack.has(VOLUME) && jtrack.get(VOLUME) instanceof String ? jtrack.getString(VOLUME) : null;
+							ascene.set(atrack, volume, dynVolume, pos);
 						}
 					}
 				}
@@ -144,13 +155,93 @@ public class Composition {
 	public String getDefaultScene() {
 		return mDefaultScene;
 	}
-	public boolean setScene(String name) {
-		IScene scene = mScenes.get(name);
+	private static float MIN_VOLUME = 0.0f;
+	private static float MAX_VOLUME = 16.0f;
+	private Map<Integer,Float> getDynVolumes(IScriptEngine scriptEngine, DynScene scene, boolean loadFlag) {
+		StringBuilder sb = new StringBuilder();
+		if (scene.getOnany()!=null) {
+			sb.append(scene.getOnany());
+			sb.append(";");
+		}
+		if (loadFlag && scene.getOnload()!=null) {
+			sb.append(scene.getOnload());
+			sb.append(";");
+		} else if (!loadFlag && scene.getOnupdate()!=null) {
+			sb.append(scene.getOnupdate());
+			sb.append(";");			
+		}
+		sb.append("var vs={};");
+		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
+			String dynVolume = tr.getDynVolume();
+			if (dynVolume!=null) {
+				sb.append("vs['");
+				sb.append(tr.getTrack().getId());
+				sb.append("']=");
+				sb.append(dynVolume);
+				sb.append(";");
+			}			
+		}
+		sb.append("return JSON.stringify(vs);");
+		String res = scriptEngine.runScript(sb.toString());
+		Log.d(TAG,"Load script: "+res+"="+sb.toString());
+		Map<Integer,Float> dynVolumes = new HashMap<Integer,Float>();
+		try {
+			JSONObject vs = new JSONObject(res);
+			Iterator<String> keys = vs.keys();
+			while(keys.hasNext()) {
+				String key = keys.next();
+				int id = Integer.valueOf(key);
+				String val = vs.get(key).toString();
+				try {
+					float fval = Float.valueOf(val);
+					if (fval<MIN_VOLUME)
+						fval = MIN_VOLUME;
+					if (fval>MAX_VOLUME)
+						fval = MAX_VOLUME;
+					dynVolumes.put(id, fval);
+				}
+				catch (NumberFormatException nfe) {
+					Log.w(TAG,"Script returned non-number "+val+" (track "+key+")");
+				}				
+			}
+		}
+		catch (Exception e) {
+			Log.w(TAG,"error parsing load script result "+res+": "+e);
+		}
+		return dynVolumes;
+	}
+	public boolean setScene(String name, IScriptEngine scriptEngine) {
+		DynScene scene = mScenes.get(name);
 		if (scene==null) {
 			Log.w(TAG, "setScene unknown "+name);
 			return false;			
 		}
-		mEngine.setScene(scene);
+		AScene ascene = mEngine.newAScene(scene.isPartial());
+		Map<Integer,Float> dynVolumes = getDynVolumes(scriptEngine, scene, true);
+		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
+			Float volume = dynVolumes.get(tr.getTrack().getId());
+			if (volume==null)
+				volume = tr.getVolume();
+			ascene.set(tr.getTrack(), volume, tr.getPos());
+		}
+		mEngine.setScene(ascene);
+		return true;
+	}
+	public boolean updateScene(String name, IScriptEngine scriptEngine) {
+		DynScene scene = mScenes.get(name);
+		if (scene==null) {
+			Log.w(TAG, "updateScene unknown "+name);
+			return false;			
+		}
+		// partial
+		AScene ascene = mEngine.newAScene(true);
+		Map<Integer,Float> dynVolumes = getDynVolumes(scriptEngine, scene, false);
+		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
+			Float volume = dynVolumes.get(tr.getTrack().getId());
+			if (volume!=null)
+				ascene.set(tr.getTrack(), volume, null);
+		}
+		mEngine.setScene(ascene);
 		return true;
 	}
 	public String getNextScene(String name) {

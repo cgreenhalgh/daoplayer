@@ -28,6 +28,7 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
 		setServiceAction("pref_defaultscene", Service.ACTION_DEFAULT_SCENE);
 		setServiceAction("pref_nextscene", Service.ACTION_NEXT_SCENE);
 		setServiceAction("pref_prevscene", Service.ACTION_PREV_SCENE);
+		setServiceAction("pref_updatescene", Service.ACTION_UPDATE_SCENE);
 	}
 	private void setServiceAction(String key, final String action) {
 		Preference button = (Preference)findPreference(key);

@@ -31,4 +31,8 @@
         android:title="@string/pref_prevscene_title" 
         android:key="pref_prevscene" />
     
+    <Preference 
+        android:title="@string/pref_updatescene_title" 
+        android:key="pref_updatescene" />
+    
 </PreferenceScreen>

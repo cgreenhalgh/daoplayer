@@ -5,10 +5,13 @@ package org.opensharingtoolkit.daoplayer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.json.JSONException;
 import org.opensharingtoolkit.daoplayer.audio.AudioEngine;
 import org.opensharingtoolkit.daoplayer.audio.Composition;
+import org.opensharingtoolkit.daoplayer.audio.IScriptEngine;
 import org.opensharingtoolkit.daoplayer.ui.BrowserActivity;
 
 import android.annotation.SuppressLint;
@@ -31,6 +34,7 @@ import android.webkit.JsResult;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebIconDatabase.IconListener;
 import android.widget.Toast;
 
 /**
@@ -46,6 +50,10 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	public static final String ACTION_DEFAULT_SCENE = "org.opensharingtoolkit.daoplayer.DEFAULT_SCENE";
 	public static final String ACTION_NEXT_SCENE = "org.opensharingtoolkit.daoplayer.NEXT_SCENE";
 	public static final String ACTION_PREV_SCENE = "org.opensharingtoolkit.daoplayer.PREV_SCENE";
+	public static final String ACTION_SET_LATLNG = "org.opensharingtoolkit.daoplayer.SET_LATLNG";
+	public static final String ACTION_UPDATE_SCENE = "org.opensharingtoolkit.daoplayer.UPDATE_SCENE";
+	public static final String EXTRA_LAT = "lat";
+	public static final String EXTRA_LNG = "lng";
 	private AudioEngine mAudioEngine;
 	private boolean started = false;
 	private Composition mComposition = null;
@@ -106,17 +114,11 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 
 		startForeground(SERVICE_NOTIFICATION_ID, notification);
 
-		if (mAudioEngine==null) {
-			mAudioEngine = new AudioEngine();
-			loadComposition();
-		}
-		mAudioEngine.start(this);
-		
 		if (mWebView==null) {
 			mWebView = new WebView(this);
 			mWebView.setWillNotDraw(true);
 			mWebView.getSettings().setJavaScriptEnabled(true);
-			mWebView.addJavascriptInterface(this, "daoplayer");
+			mWebView.addJavascriptInterface(new JavascriptHelper(), "daoplayer");
 			mWebView.setWebChromeClient(new WebChromeClient() {
 				@Override
 				public boolean onJsAlert(WebView view, String url, String message,
@@ -135,27 +137,50 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				public void onPageFinished(WebView view, String url) {
 					Log.d(TAG,"Service webview loaded");
 					super.onPageFinished(view, url);
-					// This is OK...
 					mWebView.loadUrl("javascript:console.log('daoplayer='+daoplayer);");
+					// This is OK...
+					synchronized (Service.this) {
+						mWebViewLoaded = true;
+						if (mSetSceneOnLoad!=null) {
+							setScene(mSetSceneOnLoad);
+							mSetSceneOnLoad = null;
+						}
+					}
 				}
 	        });
 			Log.d(TAG,"Test service webview daoplayer...");
 			mWebView.loadDataWithBaseURL("file:///android_asset/service.js",
-					"<html><head><title>Service</title><script type='text/javascript'>daoplayer.log('daoplayer.hello');setInterval(function(){ daoplayer.log('daoplayer.tick'); }, 1000);</script></head><body></body></html>",
+					"<html><head><title>Service</title><script type='text/javascript'>"+
+					"daoplayer.log('daoplayer.hello');"+
+					//"setInterval(function(){ daoplayer.log('daoplayer.tick'); }, 1000);"+
+					// see http://www.movable-type.co.uk/scripts/latlong.html
+					"window.distance = function (lat1,lon1,lat2,lon2) { "+
+						"var R = 6371000.0;"+ // m
+						"var r1 = lat1*Math.PI/180.0;"+
+						"var r2 = lat2*Math.PI/180.0;"+
+						"var dr = (lat2-lat1)*Math.PI/180.0;"+
+						"var dl = (lon2-lon1)*Math.PI/180.0;"+
+						"var a = Math.sin(dr/2) * Math.sin(dr/2) + Math.cos(r1) * Math.cos(r2) * Math.sin(dl/2) * Math.sin(dl/2);"+
+						"var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));"+
+						"console.log('distance '+lat1+','+lon1+' - '+lat2+','+lon2+', R*c='+R*c);"+
+						"return R * c;"+
+					"}"+
+					"</script></head><body></body></html>",
 					"text/html", "UTF-8", null);
+			mScriptEngine = new ScriptEngine(mWebView);
 			// loads asynchronously!
 			// Cannot do this: mWebView.loadUrl("javascript:console.log('daoplayer='+daoplayer);");
 		} else {
 			mWebView.resumeTimers();
 		}
+
+		if (mAudioEngine==null) {
+			mAudioEngine = new AudioEngine();
+			loadComposition();
+		}
+		mAudioEngine.start(this);	
 	}
 
-	@JavascriptInterface
-	public void log(String msg) {
-		Log.d(TAG,"Javascript: "+msg);
-		// NOT a task main thread - can't do loadUrl
-	}
-	
 	@Override
 	public void onDestroy() {
 		Log.d(TAG,"onDestroy");
@@ -196,7 +221,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			if (mComposition!=null) {
 				mScene = mComposition.getDefaultScene();
 				if (mScene!=null) {
-					mComposition.setScene(mScene);
+					setScene(mScene);
 					Toast.makeText(this, "Load default scene "+mScene, Toast.LENGTH_SHORT).show();
 				}				
 				else 
@@ -208,7 +233,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				String oldScene = mScene;
 				mScene = mComposition.getNextScene(mScene);
 				if (mScene!=null) {
-					mComposition.setScene(mScene);
+					setScene(mScene);
 					Toast.makeText(this, "Load next scene "+mScene, Toast.LENGTH_SHORT).show();
 				}				
 				else 
@@ -220,11 +245,37 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				String oldScene = mScene;
 				mScene = mComposition.getPrevScene(mScene);
 				if (mScene!=null) {
-					mComposition.setScene(mScene);
+					setScene(mScene);
 					Toast.makeText(this, "Load prev scene "+mScene, Toast.LENGTH_SHORT).show();
 				}				
 				else 
 					Log.w(TAG,"No prev scene before "+oldScene);
+			}
+		}
+		else if (ACTION_SET_LATLNG.equals(intent.getAction())) {
+			double lat = intent.getDoubleExtra(EXTRA_LAT, 0.0);
+			double lng = intent.getDoubleExtra(EXTRA_LNG, 0.0);
+			Log.d(TAG,"Service setLatLng "+lat+","+lng);
+			if (mWebViewLoaded) {
+				StringBuilder sb = new StringBuilder();
+				sb.append("window.position={lat:");
+				sb.append(lat);
+				sb.append(",lng:");
+				sb.append(lng);
+				sb.append(",time:"+System.currentTimeMillis());
+				sb.append("}");
+				mScriptEngine.runScript(sb.toString());
+			}
+			if (mComposition!=null) {
+				if (mScene!=null)
+					updateScene(mScene);
+			}
+		}
+		else if (ACTION_UPDATE_SCENE.equals(intent.getAction())) {
+			Log.d(TAG,"update scene");
+			if (mComposition!=null) {
+				if (mScene!=null)
+					updateScene(mScene);
 			}
 		}
 		checkService();
@@ -244,13 +295,127 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		}
 		String defaultScene = mScene = comp.getDefaultScene();
 		if (defaultScene!=null) {
-			comp.setScene(defaultScene);
+			setScene(defaultScene);
 			Log.i(TAG,"Read "+DEFAULT_COMPOSITION+"; playing scene "+defaultScene);
 			Toast.makeText(this, "Read; playing scene "+defaultScene, Toast.LENGTH_SHORT).show();
 		} else {
 			Log.i(TAG,"Read "+DEFAULT_COMPOSITION+"; no default scene");
 			Toast.makeText(this, "Read but no default scene", Toast.LENGTH_SHORT).show();			
 		}
+	}
+	private boolean mWebViewLoaded = false;
+	private String mSetSceneOnLoad = null;
+	static class MBox {
+		private boolean mDone = false;
+		private Object mValue;
+		public synchronized void set(Object value) {
+			mValue = value;
+			mDone = true;
+			notifyAll();
+		}
+		public synchronized Object get(int timeout) {
+			long start = System.currentTimeMillis();
+			while (!mDone) {
+				long now = System.currentTimeMillis();
+				long delay = timeout-(now-start);
+				if (delay<=0)
+					return null;
+				try {
+					wait(delay);
+				}
+				catch (InterruptedException ie) 
+				{
+					Log.d(TAG,"MBox interrupted");
+					return mValue;
+				}
+			}
+			return mValue;
+		}
+	}
+	private class JavascriptHelper {
+		@JavascriptInterface
+		public void log(String msg) {
+			Log.d(TAG,"Javascript: "+msg);
+			// NOT a task main thread - can't do loadUrl
+		}
+		@JavascriptInterface
+		public void returnDouble(int ix, double result) {
+			Log.d(TAG,"returnDouble "+ix+": "+result);
+			postMBox(ix, result);
+		}
+		@JavascriptInterface
+		public void returnString(int ix, String result) {
+			Log.d(TAG,"returnString"+ix+": "+result);
+			postMBox(ix, result);
+		}
+	}
+	private Map<Integer,MBox> mResults = new HashMap<Integer,MBox>();
+	private int mNextResulti = 0;
+	private int addMBox(MBox mbox) {
+		synchronized (mResults) {
+			int ix = mNextResulti++;
+			mResults.put(ix, mbox);
+			return ix;
+		}
+	}
+	private void removeMBox(int ix) {
+		synchronized (mResults) {
+			mResults.remove(ix);
+		}
+	}
+	private void postMBox(int ix, Object value) {
+		MBox mbox = null;
+		synchronized (mResults) {
+			mbox = mResults.get(ix);
+		}
+		if (mbox==null) 
+			Log.w(TAG,"Could not find MBox "+ix+" for value "+value);
+		else
+			mbox.set(value);
+	}
+	class ScriptEngine implements IScriptEngine {
+		private static final int SCRIPT_TIMEOUT = 1000;
+		private WebView mWebView;
+		ScriptEngine(WebView webView) {
+			mWebView = webView;
+		}
+
+		@Override
+		public String runScript(String script) {
+			MBox mbox = new MBox();
+			int ix = addMBox(mbox);
+			StringBuilder sb = new StringBuilder();
+			sb.append("javascript:");
+			sb.append("daoplayer.returnString(");
+			sb.append(ix);
+			sb.append(",function(){");
+			sb.append(script);
+			sb.append("}());");
+			mWebView.loadUrl(sb.toString());
+			Object result = mbox.get(SCRIPT_TIMEOUT);
+			removeMBox(ix);
+			if (result==null) {
+				Log.d(TAG,"Script timeout: "+sb.toString());
+				return null;
+			}
+			if (result instanceof String)
+				return (String)result;
+			else 
+				return result.toString();
+		}
+	}
+	private ScriptEngine mScriptEngine;
+	private synchronized void setScene(String scene) {
+		if (mWebViewLoaded)
+			mComposition.setScene(scene, mScriptEngine);
+		else
+			mSetSceneOnLoad = scene;
+	}
+	private synchronized void updateScene(String scene) {
+		if (mWebViewLoaded)
+			mComposition.updateScene(scene, mScriptEngine);
+		else
+			Log.w(TAG,"dropped updateScene("+scene+") due to web view not loaded");
 	}
 	// This is the old onStart method that will be called on the pre-2.0
 	// platform.  On 2.0 or later we override onStartCommand() so this

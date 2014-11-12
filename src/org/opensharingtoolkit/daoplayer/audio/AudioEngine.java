@@ -255,7 +255,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		//((AFile)f1).decode(mContext);
 		ITrack t1 = this.addTrack(true);
 		t1.addFileRef(0, f1, 0, f1.getLength(), ITrack.REPEATS_FOREVER);
-		IScene s1 = this.newScene(false);
+		AScene s1 = this.newAScene(false);
 		s1.set(t1, 1.0f, 0);
 		this.setScene(s1);
 	}
@@ -269,16 +269,13 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		return track;
 	}
 
-	@Override
-	public IScene newScene(boolean partial) {
+	public AScene newAScene(boolean partial) {
 		return new AScene(partial);
 	}
 
-	@Override
-	public void setScene(IScene scene) {
+	public void setScene(AScene ascene) {
 		AState current = getCurrentState();
 		//Log.d(TAG,"CurrentState="+current);
-		AScene ascene = (AScene)scene;
 		AState target = current.applyScene(ascene);
 		//Log.d(TAG,"TargetState="+target);
 		for (ATrack track : mTracks.values()) {

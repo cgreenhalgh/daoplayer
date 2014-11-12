@@ -120,6 +120,11 @@ public class BrowserActivity extends Activity {
 		@JavascriptInterface
 		public void setLatLng(double lat, double lng) {
 			Log.d(TAG,"setLatLng("+lat+","+lng+")");
+			Intent i = new Intent(Service.ACTION_SET_LATLNG);
+			i.setClass(getApplicationContext(), Service.class);
+			i.putExtra(Service.EXTRA_LAT, lat);
+			i.putExtra(Service.EXTRA_LNG, lng);
+			startService(i);
 		}
 
 	}
