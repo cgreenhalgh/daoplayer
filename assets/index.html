@@ -10,6 +10,7 @@
   <!-- Foundation layout -->
   <!-- <link rel="stylesheet" href="css/foundation.css"> -->
   <!-- <link rel="stylesheet" href="css/app.css"> -->
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" /> 
   <!-- <script src="js/modernizr.js"></script> -->
 
   <!-- Require the main Stitch file -->
@@ -17,5 +18,44 @@
 </head>
 <body ontouchstart="">
 <h1>DaoPlayer</h1>
-<input type="button" value="Next scene" onclick="daoplayer.signalService('org.opensharingtoolkit.daoplayer.NEXT_SCENE');"/>
+  <input type="button" value="Next scene" onclick="daoplayer.signalService('org.opensharingtoolkit.daoplayer.NEXT_SCENE');"/>
+  <br/>
+  <input type="checkbox" name="manual" id="manual"/>Manual position
+  Lat:<input type="number" name="lat" id="lat"/>
+  Lng:<input type="number" name="lng" id="lng"/>
+  <input type="button" id="setpos" value="Set"/>
+  <br/>
+  <div id="map" style="width:240px;height:240px"></div>
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="vendor/jquery/dist/jquery.min.js"></script>
+  <script>
+    var map = L.map('map').setView([52.953685,-1.188429],14);
+    L.tileLayer( 'http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+    }).addTo(map);
+    var marker = L.marker([52.953685,-1.188429], { opacity: 0.0 });
+    marker.addTo(map);
+    function setPos(lat, lng) {
+        lat = Number(lat);
+        lng = Number(lng);
+        var latlng = L.latLng(lat,lng);
+        map.panTo(latlng);
+        marker.setOpacity(1.0);
+        marker.setLatLng(latlng);
+        $('#lat').val(lat);
+        $('#lng').val(lng);
+        daoplayer.setLatLng(lat,lng);
+    }
+    function onMapClick(e) {
+      console.log("Click map "+e.latlng);
+      if ($('#manual').prop('checked')) {
+        setPos(e.latlng.lat, e.latlng.lng);
+      }
+    }
+    map.on('click',onMapClick);
+    $('#setpos').on('click', function() {
+      setPos($('#lat').val(), $('#lng').val());
+    });
+  </script>
 </body></html>

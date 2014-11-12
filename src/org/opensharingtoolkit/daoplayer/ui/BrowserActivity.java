@@ -34,12 +34,15 @@ public class BrowserActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_browser);
         WebView webView = (WebView)findViewById(R.id.webView);
-        webView.addJavascriptInterface(this, "daoplayer");
+        webView.addJavascriptInterface(mJavascriptHelper, "daoplayer");
         webView.getSettings().setJavaScriptEnabled(true);
         // API level 16
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
 			webView.getSettings().setAllowFileAccessFromFileURLs(true);
 		}
+		//webView.getSettings().setAllowUniversalAccessFromFileURLs(true);
+		webView.getSettings().setBlockNetworkLoads(false);
+		webView.getSettings().setBlockNetworkImage(false);
         // API level 5
         //webView.getSettings().setDatabaseEnabled(true);
         //webView.getSettings().setBuiltInZoomControls(false);
@@ -105,13 +108,20 @@ public class BrowserActivity extends Activity {
 			// level 5
 			super.onBackPressed();
 	}    
-	
-	@JavascriptInterface
-	public void signalService(String action) {
-		Log.d(TAG,"signalService("+action+")");
-		Intent i = new Intent();
-		i.setAction(action);
-		i.setClass(getApplicationContext(), Service.class);
-		startService(i);
+	class JavascriptHelper {
+		@JavascriptInterface
+		public void signalService(String action) {
+			Log.d(TAG,"signalService("+action+")");
+			Intent i = new Intent();
+			i.setAction(action);
+			i.setClass(getApplicationContext(), Service.class);
+			startService(i);
+		}
+		@JavascriptInterface
+		public void setLatLng(double lat, double lng) {
+			Log.d(TAG,"setLatLng("+lat+","+lng+")");
+		}
+
 	}
+	private JavascriptHelper mJavascriptHelper = new JavascriptHelper();
 }
