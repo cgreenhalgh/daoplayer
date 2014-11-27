@@ -45,6 +45,10 @@
         		<data android:mimeType="application/zip" />
             </intent-filter>                
         </activity>
+        <activity android:launchMode="singleTop" 
+            android:name=".ui.LogsActivity"
+            android:label="@string/logs_title" >
+        </activity>
         <activity 
             android:name=".ui.BrowserActivity"
             android:launchMode="singleTop" >   

@@ -3,6 +3,7 @@
     <string name="app_name">DAO Player</string>
     <string name="pref_runservice_title">Run audio service</string>
     <string name="pref_showgui_title">Show User Interface</string>
+    <string name="pref_showlogs_title">Show Logs</string>
     <string name="pref_reload_title">Reload composition</string>
     <string name="pref_defaultscene_title">Load Default Scene</string>
     <string name="pref_nextscene_title">Load Next Scene</string>
@@ -16,4 +17,6 @@
     <string name="zip_button_reload">Reload composition</string>
     <string name="zip_log_title">Diagnostic output</string>
     <string name="webui_default_url">file:///android_asset/index.html</string>
+    <string name="logs_title">DAO Composition Logs</string>
+    <string name="pref_clearlogs_title">Clear logs</string>
 </resources>

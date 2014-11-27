@@ -4,6 +4,9 @@
     "version": 1
   },
   "defaultScene": "scene1",
+  "constants": {
+    "d1":"20"
+  },
   "tracks": [
     {
       "name": "track1",
@@ -22,12 +25,12 @@
     {
       "name": "scene1",
       "partial": false,
-      "onany": "var now=new Date().getTime()",
-      "onload": "console.log('onload!');window.loadTime=new Date().getTime()",
+      "onload": "daoplayer.log('onload!')",
+      "updatePeriod":1.0,
       "tracks": [
         {
           "name": "track1",
-          "volume": "1-(now-window.loadTime)/20000",
+          "volume": "pwl(sceneTime,[10,1,d1,0])",
           "pos": 0
         }
       ]
@@ -35,11 +38,14 @@
     {
       "name": "full",
       "partial": false,
-      "onany": "var ref={lat:52.953685,lng:-1.188429}",
+      "constants": {
+        "ref":"{lat:52.953685,lng:-1.188429}"
+      },
+      "updatePeriod":1.0,
       "tracks": [
         {
           "name": "track1",
-          "volume": "window.position ? 1-window.distance(window.position.lat,window.position.lng,ref.lat,ref.lng) /1000: 0.5"
+          "volume": "pwl(distance(position,ref),[10,1,d1,0],0.2)"
         }
       ]
     },

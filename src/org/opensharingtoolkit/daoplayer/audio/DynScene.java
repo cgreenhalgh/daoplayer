@@ -19,7 +19,8 @@ public class DynScene implements IAudio.IScene {
 	private boolean mPartial;
 	private String mOnload;
 	private String mOnupdate;
-	private String mOnany;
+	private DynConstants mConstants;
+	private Double mUpdatePeriod;
 	
 	public DynScene(boolean mPartial) {
 		super();
@@ -91,20 +92,6 @@ public class DynScene implements IAudio.IScene {
 		this.mOnupdate = mOnupdate;
 	}
 
-	/**
-	 * @return the mOnany
-	 */
-	public String getOnany() {
-		return mOnany;
-	}
-
-	/**
-	 * @param mOnany the mOnany to set
-	 */
-	public void setOnany(String mOnany) {
-		this.mOnany = mOnany;
-	}
-
 	@Override
 	public void set(ITrack track, Float volume, Integer pos) {
 		set(track, volume, null, pos);
@@ -132,4 +119,33 @@ public class DynScene implements IAudio.IScene {
 		else 
 			set(track, null, pos);		
 	}
+
+	/**
+	 * @return the mConstants
+	 */
+	public DynConstants getConstants() {
+		return mConstants;
+	}
+
+	/**
+	 * @param mConstants the mConstants to set
+	 */
+	public void setConstants(DynConstants constants) {
+		this.mConstants = constants;
+	}
+
+	/**
+	 * @return the mUpdatePeriod
+	 */
+	public Double getUpdatePeriod() {
+		return mUpdatePeriod;
+	}
+
+	/**
+	 * @param updatePeriod the mUpdatePeriod to set
+	 */
+	public void setUpdatePeriod(Double updatePeriod) {
+		this.mUpdatePeriod = updatePeriod;
+	}
+	
 }

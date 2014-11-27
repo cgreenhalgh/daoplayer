@@ -6,6 +6,7 @@ package org.opensharingtoolkit.daoplayer;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import org.json.JSONException;
@@ -25,6 +26,7 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.AudioTrack;
+import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
@@ -41,7 +43,7 @@ import android.widget.Toast;
  * @author pszcmg
  *
  */
-public class Service extends android.app.Service implements OnSharedPreferenceChangeListener {
+public class Service extends android.app.Service implements OnSharedPreferenceChangeListener, ILog {
 
 	private static final String TAG = "daoplayer-service";
 	private static final int SERVICE_NOTIFICATION_ID = 1;
@@ -51,20 +53,52 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	public static final String ACTION_NEXT_SCENE = "org.opensharingtoolkit.daoplayer.NEXT_SCENE";
 	public static final String ACTION_PREV_SCENE = "org.opensharingtoolkit.daoplayer.PREV_SCENE";
 	public static final String ACTION_SET_LATLNG = "org.opensharingtoolkit.daoplayer.SET_LATLNG";
-	public static final String ACTION_UPDATE_SCENE = "org.opensharingtoolkit.daoplayer.UPDATE_SCENE";
+	public static final String ACTION_SET_SCENE = "org.opensharingtoolkit.daoplayer.SET_SCENE";
+	public static final String ACTION_CLEAR_LOGS = "org.opensharingtoolkit.daoplayer.CLEAR_LOGS";
 	public static final String EXTRA_LAT = "lat";
 	public static final String EXTRA_LNG = "lng";
+	public static final String EXTRA_SCENE = "scene";
+	public static final String EXTRA_TIME = "time";
+	public static final String EXTRA_ACCURACY = "accuracy";
 	private AudioEngine mAudioEngine;
 	private boolean started = false;
 	private Composition mComposition = null;
 	private String mScene = null;
 	private WebView mWebView;
+	private double mLastLat, mLastLng, mLastAccuracy;
+	private long mLastTime;
+	class LogEntry {
+		long time;
+		String message;
+	}
+	private LinkedList<LogEntry> mLog = new LinkedList<LogEntry>();
 	
 	/** Binder subclass (inner class) with methods for local interaction with service */
 	public class LocalBinder extends android.os.Binder {
 		// local methods... direct access to service
 		public IAudio getAudio() {
 			return mAudioEngine;
+		}
+		public String getLogs(long fromTime, long toTime) {
+			StringBuilder sb = new StringBuilder();
+			synchronized (mLog) {
+				for (LogEntry ent : mLog) {
+					if (ent.time>=fromTime && ent.time<toTime) {
+						sb.append(ent.message);
+						sb.append("\n");
+					}
+				}
+			}
+			return sb.toString();
+		}
+	}
+	public void log(String message) {
+		long now = System.currentTimeMillis();
+		synchronized(mLog) {
+			LogEntry ent = new LogEntry();
+			ent.time = now;
+			ent.message = message;
+			mLog.add(ent);
 		}
 	}
 	private IBinder mBinder = new LocalBinder();
@@ -99,6 +133,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			return;
 		Log.d(TAG,"onStart");
 		started = true;
+		log("START AUDIO");
 
 		SharedPreferences spref = PreferenceManager.getDefaultSharedPreferences(this);
 		spref.registerOnSharedPreferenceChangeListener(this);
@@ -150,21 +185,34 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	        });
 			Log.d(TAG,"Test service webview daoplayer...");
 			mWebView.loadDataWithBaseURL("file:///android_asset/service.js",
-					"<html><head><title>Service</title><script type='text/javascript'>"+
-					"daoplayer.log('daoplayer.hello');"+
+					"<html><head><title>Service</title><script type='text/javascript'>\n"+
+					"daoplayer.log('daoplayer.hello');\n"+
 					//"setInterval(function(){ daoplayer.log('daoplayer.tick'); }, 1000);"+
 					// see http://www.movable-type.co.uk/scripts/latlong.html
-					"window.distance = function (lat1,lon1,lat2,lon2) { "+
-						"var R = 6371000.0;"+ // m
-						"var r1 = lat1*Math.PI/180.0;"+
-						"var r2 = lat2*Math.PI/180.0;"+
-						"var dr = (lat2-lat1)*Math.PI/180.0;"+
-						"var dl = (lon2-lon1)*Math.PI/180.0;"+
-						"var a = Math.sin(dr/2) * Math.sin(dr/2) + Math.cos(r1) * Math.cos(r2) * Math.sin(dl/2) * Math.sin(dl/2);"+
-						"var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));"+
-						"console.log('distance '+lat1+','+lon1+' - '+lat2+','+lon2+', R*c='+R*c);"+
-						"return R * c;"+
-					"}"+
+					"window.distance = function (coord1,coord2) { \n"+
+					    "if(!coord1 || !coord2) return null;\n"+
+					    "var lat1=coord1.lat, lon1=coord1.lng, lat2=coord2.lat, lon2=coord2.lng;\n"+
+						"var R = 6371000.0;\n"+ // m
+						"var r1 = lat1*Math.PI/180.0;\n"+
+						"var r2 = lat2*Math.PI/180.0;\n"+
+						"var dr = (lat2-lat1)*Math.PI/180.0;\n"+
+						"var dl = (lon2-lon1)*Math.PI/180.0;\n"+
+						"var a = Math.sin(dr/2) * Math.sin(dr/2) + Math.cos(r1) * Math.cos(r2) * Math.sin(dl/2) * Math.sin(dl/2);\n"+
+						"var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));\n"+
+						"console.log('distance '+lat1+','+lon1+' - '+lat2+','+lon2+', R*c='+R*c);\n"+
+						"return R * c;\n"+
+					"};\n"+
+					"window.pwl = function (inval, map, def) { \n"+
+					    "if (!inval) return def;\n"+
+					    "var lin=inval, lout=map[1], i;\n"+
+					    "for (i=0; i+1<map.length; i=i+2) {\n"+
+					        "if (inval==map[i]) return map[i+1];\n"+
+					        "if (inval<map[i]) return lout+(map[i+1]-lout)*(inval-lin)/(map[i]-lin);\n"+
+					        "lin=map[i]; lout=map[i+1];\n"+
+					    "}\n"+
+					    "if (map.length>=2) return map[map.length-1];\n"+
+					    "return inval;\n"+
+					"}\n"+
 					"</script></head><body></body></html>",
 					"text/html", "UTF-8", null);
 			mScriptEngine = new ScriptEngine(mWebView);
@@ -175,9 +223,12 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		}
 
 		if (mAudioEngine==null) {
-			mAudioEngine = new AudioEngine();
+			mAudioEngine = new AudioEngine(this);
 			loadComposition();
 		}
+		else if (mComposition!=null && mScene!=null)
+			updateScene();
+			
 		mAudioEngine.start(this);	
 	}
 
@@ -195,6 +246,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			return;
 		Log.d(TAG,"onStop");
 		started = false;
+		log("STOP AUDIO");
 		
 		mWebView.pauseTimers();
 		
@@ -252,11 +304,31 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 					Log.w(TAG,"No prev scene before "+oldScene);
 			}
 		}
+		else if (ACTION_SET_SCENE.equals(intent.getAction())) {
+			if (mComposition!=null) {
+				mScene = intent.getExtras().getString(EXTRA_SCENE, null);
+				if (mScene!=null) {
+					setScene(mScene);
+					Toast.makeText(this, "Set scene "+mScene, Toast.LENGTH_SHORT).show();
+				}				
+				else 
+					Log.w(TAG,"No scene specified for set");
+			}
+		}
+		else if (ACTION_CLEAR_LOGS.equals(intent.getAction())) {
+			synchronized (mLog) {
+				Log.d(TAG,"clear logs");
+				mLog.clear();
+			}
+		}
 		else if (ACTION_SET_LATLNG.equals(intent.getAction())) {
-			double lat = intent.getDoubleExtra(EXTRA_LAT, 0.0);
-			double lng = intent.getDoubleExtra(EXTRA_LNG, 0.0);
-			Log.d(TAG,"Service setLatLng "+lat+","+lng);
-			if (mWebViewLoaded) {
+			mLastLat = intent.getDoubleExtra(EXTRA_LAT, 0.0);
+			mLastLng = intent.getDoubleExtra(EXTRA_LNG, 0.0);
+			mLastAccuracy = intent.getDoubleExtra(EXTRA_ACCURACY, 0.0);
+			mLastTime = intent.getLongExtra(EXTRA_TIME, System.currentTimeMillis());
+			Log.d(TAG,"Service setLatLng "+mLastLat+","+mLastLng+" acc="+mLastAccuracy+" at "+mLastTime);
+			log("SET POSITION "+mLastLat+","+mLastLng+" acc="+mLastAccuracy+" at "+mLastTime);
+			/*if (mWebViewLoaded) {
 				StringBuilder sb = new StringBuilder();
 				sb.append("window.position={lat:");
 				sb.append(lat);
@@ -265,17 +337,9 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				sb.append(",time:"+System.currentTimeMillis());
 				sb.append("}");
 				mScriptEngine.runScript(sb.toString());
-			}
+			}*/
 			if (mComposition!=null) {
-				if (mScene!=null)
-					updateScene(mScene);
-			}
-		}
-		else if (ACTION_UPDATE_SCENE.equals(intent.getAction())) {
-			Log.d(TAG,"update scene");
-			if (mComposition!=null) {
-				if (mScene!=null)
-					updateScene(mScene);
+				updateScene();
 			}
 		}
 		checkService();
@@ -284,6 +348,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 
 	private void loadComposition() {
 		Log.d(TAG,"loadComposition...");
+		log("LOAD COMPOSITION");
 		File filesDir = Compat.getExternalFilesDir(this);
 		Composition comp = mComposition = new Composition(mAudioEngine);
 		try {
@@ -337,6 +402,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		public void log(String msg) {
 			Log.d(TAG,"Javascript: "+msg);
 			// NOT a task main thread - can't do loadUrl
+			log(msg);
 		}
 		@JavascriptInterface
 		public void returnDouble(int ix, double result) {
@@ -347,6 +413,14 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		public void returnString(int ix, String result) {
 			Log.d(TAG,"returnString"+ix+": "+result);
 			postMBox(ix, result);
+		}
+		@JavascriptInterface
+		public void setScene(String scene) {
+			Log.d(TAG,"javascript:setScene("+scene+")");
+			Intent i = new Intent(ACTION_SET_SCENE);
+			i.putExtra(EXTRA_SCENE, scene);
+			i.setClass(getApplicationContext(), Service.class);
+			getApplicationContext().startService(i);
 		}
 	}
 	private Map<Integer,MBox> mResults = new HashMap<Integer,MBox>();
@@ -396,6 +470,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			removeMBox(ix);
 			if (result==null) {
 				Log.d(TAG,"Script timeout: "+sb.toString());
+				log("Timeout (Error) in script: "+sb.toString());
 				return null;
 			}
 			if (result instanceof String)
@@ -405,18 +480,74 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		}
 	}
 	private ScriptEngine mScriptEngine;
+	private String getPosition() {
+		StringBuilder sb = new StringBuilder();
+		if (mLastTime==0)
+			sb.append("null");
+		else {
+			sb.append("{lat:");
+			sb.append(mLastLat);
+			sb.append(",lng:");
+			sb.append(mLastLng);
+			sb.append(",accuracy:");
+			sb.append(mLastAccuracy);
+			sb.append(",age:");
+			sb.append((System.currentTimeMillis()-mLastTime)/1000.0);
+			sb.append("}");
+		}
+		return sb.toString();
+	}
 	private synchronized void setScene(String scene) {
-		if (mWebViewLoaded)
-			mComposition.setScene(scene, mScriptEngine);
+		if (mWebViewLoaded) {
+			log("SET SCENE "+scene);
+			mComposition.setScene(scene, getPosition(), mScriptEngine);
+			setSceneUpdateTimer(mComposition.getSceneUpdateDelay(scene));
+		}
 		else
 			mSetSceneOnLoad = scene;
 	}
-	private synchronized void updateScene(String scene) {
-		if (mWebViewLoaded)
-			mComposition.updateScene(scene, mScriptEngine);
+	private synchronized void updateScene() {
+		if (mScene==null)
+			return;
+		if (mWebViewLoaded) {
+			log("UPDATE SCENE "+mScene);
+			mComposition.updateScene(mScene, getPosition(), mScriptEngine);
+			setSceneUpdateTimer(mComposition.getSceneUpdateDelay(mScene));
+		}
 		else
-			Log.w(TAG,"dropped updateScene("+scene+") due to web view not loaded");
+			Log.w(TAG,"dropped updateScene("+mScene+") due to web view not loaded");
 	}
+	private void setSceneUpdateTimer(Long delay) {
+		if (delay==null || mScene==null) 
+			return;
+		final String scene = mScene;
+		Log.d(TAG,"setSceneUpdateTimer "+delay+" for "+scene);
+		mHandler.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				if (!started) {
+					Log.d(TAG,"ignore delayed scene update when stopped");
+					return;
+				}
+				if (scene.equals(mScene)) {
+					Long delay = mComposition.getSceneUpdateDelay(mScene);
+					if (delay==null)
+						Log.w(TAG,"ignore delayed scene update for "+scene+"; no longer needed?");
+					else if (delay>0)
+						Log.w(TAG,"ignore delayed scene update for "+scene+"; wait another "+delay);
+					else {
+						Log.d(TAG,"delayed scene update...");
+						updateScene();
+					}
+				}
+				else
+					Log.w(TAG,"ignore delayed scene update for "+scene+"; now "+mScene);
+			}			
+		}, delay);
+	}
+	private Handler mHandler = new Handler() {
+		
+	};
 	// This is the old onStart method that will be called on the pre-2.0
 	// platform.  On 2.0 or later we override onStartCommand() so this
 	// method will not be called.

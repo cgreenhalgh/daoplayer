@@ -38,7 +38,7 @@ Array of scene objects with:
 - `constants` - optional set of Javascript constants for the whole composition - see below
 - `onload` - Javascript code to execute (after onany) when this scene is loaded (string, see dynamic scenes, below).
 - `onupdate` - Javascript code to execute (after onany) when this scene is updated, e.g. when time or position changes (string, see dynamic scenes, below).
-- `updateInterval` - 
+- `updatePeriod` - regular period in seconds after which the scene should be updated (float, default undefined => never, see dynamic scenes, below). E.g. `3.0` implies update the scene every 3 seconds.
 
 Track ref is object with:
 - `name` - name of track
@@ -49,7 +49,7 @@ Track ref is object with:
 
 Map (i.e. name-value pairs) of Javascript constants to define before any `onload`, `onupdate` or dynamic volume script is executed. 
 
-For example, `"constants":{"a":0.5,"b":"function(x){return 1-x;}"}`
+For example, `"constants":{"a":0.5,"b":"function(x){return 1-x;}","c","{lat:52.953685,lng:-1.188429}"}`
 
 ## Dynamic scenes
 
@@ -63,11 +63,23 @@ If the scene has Javascript code specified in `onload` or `onupdate` then this i
 
 ### Standard variables
 
-`window.position`: last known user position (WGS-84 coordinates, i.e. GPS). Nulll or undefined if there has been no position reported since the app started. Value is an object with fields:
+`position`: last known user position (WGS-84 coordinates, i.e. GPS). Nulll or undefined if there has been no position reported since the app started. Value is an object with fields:
 - `lat`: latitude, degrees (float)
 - `lng`: longitude, degrees (float)
+- `age`: age of position, i.e. time since it was received, in seconds (float)
+- `accuracy`: estimated accuracy of position (float, metres)
+
+`sceneTime`: time in seconds since this scene was loaded (float).
+
+`totalTime`: time in seconds since this composition was started (float).
 
 ### Standard functions
 
-`window.distance(lat1,lng1,lat2,lng2)`: distance in metres from WGS-84 (GPS) position (`lat1`,`lng1`) and (`lat2`,`lng2`).
+`distance(coord1,coord2)`: distance in metres from WGS-84 (GPS) position `coord1` (`{"lat":...,"lng":...}`) and `coord2`. If `coord2` is not defined then the most recent `daoplayer.position` is used as the reference. Returns `null` if `coord1` or `coord2` are undefined.
+
+`setScene(name)`: load the specified scene.
+
+`log(message)`: diagnostic output to player log view.
+
+`pwl(in, [in1,out1,in2,out2,...], default)`: piece-wise linear interpolation `in` to `out`, i.e. if `in` is less than `in1` then `out1`; if `in` is between `in1` and `in2` then a proportional value between `out1` and `out2`; ...; if `in` is greater than the last in value then last out value; etc. For example, to convert a distance in metres to a volume such that volume is 1 (full) up to 10 metres, then drops off linearly to 0 at 30 metres or more, use `pwl(distance,[10,1,30,0])`. (optional) `default` is returned if `in` is undefined or null.
 

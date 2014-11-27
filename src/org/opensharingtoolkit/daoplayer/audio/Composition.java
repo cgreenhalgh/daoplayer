@@ -46,15 +46,20 @@ public class Composition {
 	private static final String PARTIAL = "partial";
 	private static final String VOLUME = "volume";
 	private static final String POS = "pos";
-	private static final String ONANY = "onany";
+	private static final String CONSTANTS = "constants";
+	private static final String UPDATE_PERIOD = "updatePeriod";
 	private static final String ONLOAD = "onload";
 	private static final String ONUPDATE = "onupdate";
 	private AudioEngine mEngine;
 	private String mDefaultScene;
+	private DynConstants mConstants = new DynConstants();
 	private Map<String,ITrack> mTracks = new HashMap<String,ITrack>();
 	private Map<String,DynScene> mScenes = new HashMap<String, DynScene>();
 	private Vector<String> mScenesInOrder = new Vector<String>();
-
+	private long mFirstSceneLoadTime;
+	private long mLastSceneUpdateTime;
+	private long mLastSceneLoadTime;
+	
 	public Composition(AudioEngine engine) {		
 		mEngine = engine;
 	}
@@ -78,6 +83,8 @@ public class Composition {
 		JSONObject jcomp = new JSONObject(data);
 		// TODO meta
 		mDefaultScene = (jcomp.has(DEFAULT_SCENE) ? jcomp.getString(DEFAULT_SCENE) : null);
+		if (jcomp.has(CONSTANTS))
+			mConstants.parse(jcomp.getJSONObject(CONSTANTS));
 		mTracks = new HashMap<String,ITrack>();
 		if (jcomp.has(TRACKS)) {
 			JSONArray jtracks = jcomp.getJSONArray(TRACKS);
@@ -100,9 +107,9 @@ public class Composition {
 						}
 						String fpath = jfile.getString(PATH);
 						IFile afile = mEngine.addFile(new File(parent, fpath).getCanonicalPath());
-						int trackPos = jfile.has(TRACK_POS) ? jfile.getInt(TRACK_POS) : 0;
-						int filePos = jfile.has(FILE_POS) ? jfile.getInt(FILE_POS) : 0;
-						int length = jfile.has(LENGTH) ? jfile.getInt(LENGTH) : IAudio.ITrack.LENGTH_ALL;
+						int trackPos = jfile.has(TRACK_POS) ? mEngine.secondsToSamples(jfile.getDouble(TRACK_POS)) : 0;
+						int filePos = jfile.has(FILE_POS) ? mEngine.secondsToSamples(jfile.getDouble(FILE_POS)) : 0;
+						int length = jfile.has(LENGTH) ? (jfile.getInt(LENGTH)<0 ? jfile.getInt(LENGTH) : mEngine.secondsToSamples(jfile.getDouble(LENGTH))) : IAudio.ITrack.LENGTH_ALL;
 						int repeats = jfile.has(REPEATS) ? jfile.getInt(REPEATS) : 1;
 						atrack.addFileRef(trackPos, afile, filePos, length, repeats);
 					}
@@ -123,8 +130,13 @@ public class Composition {
 					mScenes.put(name, ascene);
 				else 
 					Log.w(TAG,"Unnamed scene "+si);
-				if (jscene.has(ONANY))
-					ascene.setOnany(jscene.getString(ONANY));
+				if (jscene.has(CONSTANTS)) {
+					DynConstants cons = new DynConstants();
+					cons.parse(jscene.getJSONObject(CONSTANTS));
+					ascene.setConstants(cons);
+				}
+				if (jscene.has(UPDATE_PERIOD))
+					ascene.setUpdatePeriod(jscene.getDouble(UPDATE_PERIOD));
 				if (jscene.has(ONLOAD))
 					ascene.setOnload(jscene.getString(ONLOAD));
 				if (jscene.has(ONUPDATE))
@@ -138,7 +150,7 @@ public class Composition {
 						if (atrack==null) {
 							Log.w(TAG,"Scene "+name+" refers to unknown track "+trackName);
 						} else {
-							Integer pos = jtrack.has(POS) ? jtrack.getInt(POS) : null;
+							Integer pos = jtrack.has(POS) ? mEngine.secondsToSamples(jtrack.getDouble(POS)) : null;
 							Float volume = jtrack.has(VOLUME) && jtrack.get(VOLUME) instanceof Number ? (float)jtrack.getDouble(VOLUME) : null;
 							String dynVolume = jtrack.has(VOLUME) && jtrack.get(VOLUME) instanceof String ? jtrack.getString(VOLUME) : null;
 							ascene.set(atrack, volume, dynVolume, pos);
@@ -157,20 +169,32 @@ public class Composition {
 	}
 	private static float MIN_VOLUME = 0.0f;
 	private static float MAX_VOLUME = 16.0f;
-	private Map<Integer,Float> getDynVolumes(IScriptEngine scriptEngine, DynScene scene, boolean loadFlag) {
+	private Map<Integer,Float> getDynVolumes(IScriptEngine scriptEngine, DynScene scene, boolean loadFlag, String position, long time) {
 		StringBuilder sb = new StringBuilder();
-		if (scene.getOnany()!=null) {
-			sb.append(scene.getOnany());
-			sb.append(";");
-		}
+		// "built-in"
+		sb.append("var pwl=window.pwl;\n");
+		sb.append("var position=");
+		sb.append(position);
+		sb.append(";\n");
+		sb.append("var distance=function(coord1,coord2){return window.distance(coord1,coord2 ? coord2 : position);};\n");
+		sb.append("var sceneTime=");
+		sb.append((time-mLastSceneLoadTime)/1000.0);
+		sb.append(";\n");
+		sb.append("var totalTime=");
+		sb.append((time-mFirstSceneLoadTime)/1000.0);
+		sb.append(";\n");
+		// constants: composition, scene
+		mConstants.toJavascript(sb);
+		if (scene.getConstants()!=null)
+			scene.getConstants().toJavascript(sb);
 		if (loadFlag && scene.getOnload()!=null) {
 			sb.append(scene.getOnload());
-			sb.append(";");
+			sb.append(";\n");
 		} else if (!loadFlag && scene.getOnupdate()!=null) {
 			sb.append(scene.getOnupdate());
-			sb.append(";");			
+			sb.append(";\n");			
 		}
-		sb.append("var vs={};");
+		sb.append("var vs={};\n");
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			String dynVolume = tr.getDynVolume();
 			if (dynVolume!=null) {
@@ -178,12 +202,12 @@ public class Composition {
 				sb.append(tr.getTrack().getId());
 				sb.append("']=");
 				sb.append(dynVolume);
-				sb.append(";");
+				sb.append(";\n");
 			}			
 		}
 		sb.append("return JSON.stringify(vs);");
 		String res = scriptEngine.runScript(sb.toString());
-		Log.d(TAG,"Load script: "+res+"="+sb.toString());
+		//Log.d(TAG,"run script: "+res+"="+sb.toString());
 		Map<Integer,Float> dynVolumes = new HashMap<Integer,Float>();
 		try {
 			JSONObject vs = new JSONObject(res);
@@ -210,14 +234,18 @@ public class Composition {
 		}
 		return dynVolumes;
 	}
-	public boolean setScene(String name, IScriptEngine scriptEngine) {
+	public boolean setScene(String name, String position, IScriptEngine scriptEngine) {
 		DynScene scene = mScenes.get(name);
 		if (scene==null) {
 			Log.w(TAG, "setScene unknown "+name);
 			return false;			
 		}
 		AScene ascene = mEngine.newAScene(scene.isPartial());
-		Map<Integer,Float> dynVolumes = getDynVolumes(scriptEngine, scene, true);
+		mLastSceneLoadTime = System.currentTimeMillis();
+		if (mFirstSceneLoadTime==0)
+			mFirstSceneLoadTime = mLastSceneLoadTime;
+		mLastSceneUpdateTime = mLastSceneLoadTime;
+		Map<Integer,Float> dynVolumes = getDynVolumes(scriptEngine, scene, true, position, mLastSceneLoadTime);
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			Float volume = dynVolumes.get(tr.getTrack().getId());
 			if (volume==null)
@@ -227,7 +255,7 @@ public class Composition {
 		mEngine.setScene(ascene);
 		return true;
 	}
-	public boolean updateScene(String name, IScriptEngine scriptEngine) {
+	public boolean updateScene(String name, String position, IScriptEngine scriptEngine) {
 		DynScene scene = mScenes.get(name);
 		if (scene==null) {
 			Log.w(TAG, "updateScene unknown "+name);
@@ -235,7 +263,8 @@ public class Composition {
 		}
 		// partial
 		AScene ascene = mEngine.newAScene(true);
-		Map<Integer,Float> dynVolumes = getDynVolumes(scriptEngine, scene, false);
+		mLastSceneUpdateTime = System.currentTimeMillis();
+		Map<Integer,Float> dynVolumes = getDynVolumes(scriptEngine, scene, false, position, mLastSceneUpdateTime);
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			Float volume = dynVolumes.get(tr.getTrack().getId());
 			if (volume!=null)
@@ -243,6 +272,22 @@ public class Composition {
 		}
 		mEngine.setScene(ascene);
 		return true;
+	}
+	public Long getSceneUpdateDelay(String name) {
+		DynScene scene = mScenes.get(name);
+		if (scene==null) {
+			Log.w(TAG, "getSceneUpdateDelay unknown "+name);
+			return null;			
+		}
+		Double period = scene.getUpdatePeriod();
+		if (period==null || period<=0)
+			return null;
+		long now = System.currentTimeMillis();
+		long elapsed = now-mLastSceneUpdateTime;
+		long delay = ((long)(period*1000))-elapsed;
+		if (delay<0)
+			return 0L;
+		return delay;
 	}
 	public String getNextScene(String name) {
 		int ix = mScenesInOrder.indexOf(name);

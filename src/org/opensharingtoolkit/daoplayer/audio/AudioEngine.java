@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import org.opensharingtoolkit.daoplayer.IAudio;
+import org.opensharingtoolkit.daoplayer.ILog;
 
 import android.content.Context;
 import android.media.AudioFormat;
@@ -23,8 +24,13 @@ import android.util.Log;
 public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	private static int AUDIO_CHANNELS = AudioFormat.CHANNEL_OUT_STEREO;
 	private Context mContext;
+	private ILog mLog;
 	public static String TAG = "daoplayer-engine";
+	private static int DEFAULT_SAMPLE_RATE = 44100;
 	
+	public AudioEngine(ILog log) {
+		mLog = log;
+	}
 	public void start(Context context) {
 		mContext = context;
 		AudioManager am = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
@@ -67,6 +73,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			startAudio();
         } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
     		Log.d(TAG,"onAudioFocusChange(LOSS)");
+    		mLog.log("LOST AUDIO FOCUS");
             // Stop playback
     		stopAudio();
         } else {
@@ -91,6 +98,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		Log.d(TAG,"native(music) rate="+nrate);
 		int bsize = AudioTrack.getMinBufferSize(nrate, AUDIO_CHANNELS, AudioFormat.ENCODING_PCM_16BIT);
 		Log.d(TAG,"native(music) rate="+nrate+", minBufferSize="+bsize+" ("+(AUDIO_CHANNELS==AudioFormat.CHANNEL_OUT_STEREO ? "stereo" : "mono")+", 16bit pcm)");
+		mLog.log("native(music) rate="+nrate+", minBufferSize="+bsize+" ("+(AUDIO_CHANNELS==AudioFormat.CHANNEL_OUT_STEREO ? "stereo" : "mono")+", 16bit pcm)");
 		// samsung google nexus, android 4.3.1: 144 frames/buffer; native rate 44100; min buffer 6912 bytes (1728 frames, 39ms)
 		//bsize *= 16;
 		track = new AudioTrack(AudioManager.STREAM_MUSIC, nrate, AUDIO_CHANNELS, AudioFormat.ENCODING_PCM_16BIT, bsize, AudioTrack.MODE_STREAM);
@@ -296,5 +304,13 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			state.set(track, track.getVolume(), track.getPosition(), track.getVolume()<=0 && track.isPauseIfSilent());
 		}
 		return state;
+	}
+	
+	public Integer secondsToSamples(Double seconds) {
+		if (seconds==null)
+			return null;
+		if (seconds<0)
+			return -1;
+		return new Double(seconds*DEFAULT_SAMPLE_RATE).intValue();
 	}
 }
