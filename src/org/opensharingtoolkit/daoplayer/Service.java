@@ -5,9 +5,11 @@ package org.opensharingtoolkit.daoplayer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Vector;
 
 import org.json.JSONException;
 import org.opensharingtoolkit.daoplayer.audio.AudioEngine;
@@ -22,10 +24,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.location.GpsSatellite;
+import android.location.GpsStatus;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.AudioTrack;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -60,6 +68,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	public static final String EXTRA_SCENE = "scene";
 	public static final String EXTRA_TIME = "time";
 	public static final String EXTRA_ACCURACY = "accuracy";
+	private static final String PREF_USEGPS = "pref_usegps";
 	private AudioEngine mAudioEngine;
 	private boolean started = false;
 	private Composition mComposition = null;
@@ -67,6 +76,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private WebView mWebView;
 	private double mLastLat, mLastLng, mLastAccuracy;
 	private long mLastTime;
+	private boolean mGpsStarted = false;
+	
 	class LogEntry {
 		long time;
 		String message;
@@ -230,6 +241,10 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			updateScene();
 			
 		mAudioEngine.start(this);	
+		
+		boolean usegps = spref.getBoolean(PREF_USEGPS, false);
+		if (usegps)
+			startGps();
 	}
 
 	@Override
@@ -247,6 +262,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		Log.d(TAG,"onStop");
 		started = false;
 		log("STOP AUDIO");
+	
+		stopGps();
 		
 		mWebView.pauseTimers();
 		
@@ -583,6 +600,76 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			Log.d(TAG,"service pref_runservice changed to "+runservice);
 			checkService();
 		}		
+		else if (PREF_USEGPS.equals(key)) {
+			boolean usegps = spref.getBoolean(PREF_USEGPS, false);
+			Log.d(TAG,"service pref_usegps changed to "+usegps);
+			if (started && usegps)
+				startGps();
+			else if (!usegps)
+				stopGps();
+		}
 	}
+	private void startGps() {
+		if (mGpsStarted)
+			return;
+		mGpsStarted = true;
+		final LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+		// Register the listener with the Location Manager to receive location updates
+		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
+		locationManager.addGpsStatusListener(mStatusListener = new GpsStatus.Listener() {
+			private GpsStatus status;
+			@Override
+			public void onGpsStatusChanged(int event) {
+				status = locationManager.getGpsStatus(status);
+				int inFix = 0;
+				int total = 0;
+				Vector<Float> snrs = new Vector<Float>();
+				for (GpsSatellite sat : status.getSatellites()) {
+					if (sat.usedInFix())
+						inFix++;
+					total++;
+					snrs.add(sat.getSnr());
+				}
+				Float asnrs [] = snrs.toArray(new Float[snrs.size()]);
+				Arrays.sort(asnrs);
+				log("Gps status: Fixed="+inFix+" Total="+total+" "+(asnrs.length>0 ? " SNRs="+asnrs[asnrs.length-1]+(asnrs.length>3 ? "/"+asnrs[asnrs.length-4] : "") : ""));
+			}
+		});
+	}
+	GpsStatus.Listener mStatusListener;
+	// Define a listener that responds to location updates
+	LocationListener mLocationListener = new LocationListener() {
+		public void onLocationChanged(Location location) {
+			// Called when a new location is found by the network location provider.
+			//makeUseOfNewLocation(location);
+			Log.d(TAG,"New gps location: "+location);
+			log("New gps location "+location.getLatitude()+","+location.getLongitude()+" acc="+location.getAccuracy()+" at "+location.getTime());
+			Intent i = new Intent(Service.ACTION_SET_LATLNG);
+			i.putExtra(EXTRA_LAT, location.getLatitude());
+			i.putExtra(EXTRA_LNG, location.getLongitude());
+			i.putExtra(EXTRA_ACCURACY, (double)location.getAccuracy());
+			i.putExtra(EXTRA_TIME, location.getTime());
+			i.setClass(getApplicationContext(), Service.class);
+			startService(i);
+		}
 
+		public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+		public void onProviderEnabled(String provider) {
+			log("LOCATION PROVIDED ENABLED ("+provider+")");
+		}
+
+		public void onProviderDisabled(String provider) {
+			log("LOCATION PROVIDED DISABLED ("+provider+")");
+		}
+	};
+	private void stopGps() {
+		if (!mGpsStarted)
+			return;
+		mGpsStarted = false;
+		LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+		// Register the listener with the Location Manager to receive location updates
+		locationManager.removeUpdates(mLocationListener);	
+		locationManager.removeGpsStatusListener(mStatusListener);
+	}
 }

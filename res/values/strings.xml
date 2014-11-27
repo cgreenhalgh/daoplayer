@@ -4,6 +4,7 @@
     <string name="pref_runservice_title">Run audio service</string>
     <string name="pref_showgui_title">Show User Interface</string>
     <string name="pref_showlogs_title">Show Logs</string>
+    <string name="pref_usegps_title">Use GPS for position</string>
     <string name="pref_reload_title">Reload composition</string>
     <string name="pref_defaultscene_title">Load Default Scene</string>
     <string name="pref_nextscene_title">Load Next Scene</string>

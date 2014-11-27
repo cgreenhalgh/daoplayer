@@ -14,6 +14,12 @@
             android:targetClass="org.opensharingtoolkit.daoplayer.ui.BrowserActivity" />
     </Preference>
 
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:enabled="true"
+        android:key="pref_usegps"
+        android:title="@string/pref_usegps_title" />
+    
     <Preference 
         android:title="@string/pref_showlogs_title">
         <intent
