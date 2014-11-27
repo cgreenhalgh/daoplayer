@@ -402,7 +402,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		public void log(String msg) {
 			Log.d(TAG,"Javascript: "+msg);
 			// NOT a task main thread - can't do loadUrl
-			log(msg);
+			Service.this.log(msg);
 		}
 		@JavascriptInterface
 		public void returnDouble(int ix, double result) {
