@@ -77,9 +77,9 @@ If the scene has Javascript code specified in `onload` or `onupdate` then this i
 
 `distance(coord1,coord2)`: distance in metres from WGS-84 (GPS) position `coord1` (`{"lat":...,"lng":...}`) and `coord2`. If `coord2` is not defined then the most recent `daoplayer.position` is used as the reference. Returns `null` if `coord1` or `coord2` are undefined.
 
-`setScene(name)`: load the specified scene.
+`daoplayer.setScene(name)`: load the specified scene.
 
-`log(message)`: diagnostic output to player log view.
+`daoplayer.log(message)`: diagnostic output to player log view.
 
 `pwl(in, [in1,out1,in2,out2,...], default)`: piece-wise linear interpolation `in` to `out`, i.e. if `in` is less than `in1` then `out1`; if `in` is between `in1` and `in2` then a proportional value between `out1` and `out2`; ...; if `in` is greater than the last in value then last out value; etc. For example, to convert a distance in metres to a volume such that volume is 1 (full) up to 10 metres, then drops off linearly to 0 at 30 metres or more, use `pwl(distance,[10,1,30,0])`. (optional) `default` is returned if `in` is undefined or null.
 
