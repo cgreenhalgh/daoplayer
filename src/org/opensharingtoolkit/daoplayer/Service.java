@@ -537,31 +537,33 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private void setSceneUpdateTimer(Long delay) {
 		if (delay==null || mScene==null) 
 			return;
-		final String scene = mScene;
-		Log.d(TAG,"setSceneUpdateTimer "+delay+" for "+scene);
-		mHandler.postDelayed(new Runnable() {
-			@Override
-			public void run() {
-				if (!started) {
-					Log.d(TAG,"ignore delayed scene update when stopped");
-					return;
-				}
-				if (scene.equals(mScene)) {
-					Long delay = mComposition.getSceneUpdateDelay(mScene);
-					if (delay==null)
-						Log.w(TAG,"ignore delayed scene update for "+scene+"; no longer needed?");
-					else if (delay>0)
-						Log.w(TAG,"ignore delayed scene update for "+scene+"; wait another "+delay);
-					else {
-						Log.d(TAG,"delayed scene update...");
-						updateScene();
-					}
-				}
-				else
-					Log.w(TAG,"ignore delayed scene update for "+scene+"; now "+mScene);
-			}			
-		}, delay);
+		Log.d(TAG,"setSceneUpdateTimer "+delay+" for "+mScene);
+		mHandler.postDelayed(mSceneUpdateTimer, delay);
 	}
+	private Runnable mSceneUpdateTimer = new Runnable() {
+		@Override
+		public void run() {
+			if (!started) {
+				Log.d(TAG,"ignore delayed scene update when stopped");
+				return;
+			}
+			if (mScene==null) {
+				Log.d(TAG,"ignore delayed scene update when scene null");
+				return;
+			}
+			Long delay = mComposition.getSceneUpdateDelay(mScene);
+			if (delay==null)
+				Log.w(TAG,"ignore delayed scene update for "+mScene+"; no longer needed?");
+			else if (delay>0) {
+				Log.w(TAG,"ignore delayed scene update for "+mScene+"; wait another "+delay);
+				setSceneUpdateTimer(delay);
+			}
+			else {
+				Log.d(TAG,"delayed scene update...");
+				updateScene();
+			}
+		}		
+	};
 	private Handler mHandler = new Handler() {
 		
 	};
