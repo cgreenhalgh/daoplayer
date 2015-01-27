@@ -22,7 +22,14 @@ Play out is via a single `AudioTrack`, currently fixed as stereo, 16 bit PCM and
 
 Note: currently looping to file length is an option, and requires File length to be determined, which is currently only done by fully decoding the File.
 
-Current Composition, on `setScene` or `updateScene` calls `AudioEngine` `setScene`. These in turn are called by (daoplayer) `Service`, with update scene called at a scene-defined interval, called on the application thread via `postDelayed`.
+Current Composition, on `setScene` or `updateScene` calls `AudioEngine` `setScene`. These in turn are called by (daoplayer) `Service`, with update scene called at a scene-defined interval, called on the application thread via `postDelayed`. All JavaScript evaluation is performed in `setScene`/`updateScene`; static values are passed to `setScene`.
 
 `AudioFile` `queueDecode` is called by `AudioEngine` `addFile` which is called in turn by `Composition` `read`.
+
+## Thread summary
+
+- decode - AsyncTask per File, started by AudioEngine addFile
+- play - single PlayThread, uses current AudioEngine State to fill a fresh (half) buffer at a time and blocking play
+- setScene / updateScene - single application thread, from UI event, postDelayed or location update
+
 
