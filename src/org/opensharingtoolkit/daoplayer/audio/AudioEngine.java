@@ -31,9 +31,10 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	private int mSamplesPerBlock;
 	private long mWrittenFramePosition = 0, mWrittenTime = 0;
 	private Vector<StateRec> mStateQueue = new Vector<StateRec>();
-
-	enum StateType { STATE_FUTURE, STATE_IN_PROGRESS, STATE_WRITTEN, STATE_DISCARDED };
-	private class StateRec {
+	private FileCache mFileCache;
+	
+	static enum StateType { STATE_FUTURE, STATE_IN_PROGRESS, STATE_WRITTEN, STATE_DISCARDED };
+	static class StateRec {
 		AState mState;
 		long mStartFramePosition;
 		StateType mType = StateType.STATE_FUTURE;
@@ -45,7 +46,9 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	public void start(Context context) {
 		mContext = context;
 		AudioManager am = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
-
+		if (mFileCache==null)
+			mFileCache = new FileCache(context);
+		
 		// Request audio focus for playback
 		int result = am.requestAudioFocus(this,
 		                                 // Use the music stream.
@@ -163,7 +166,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 					}
 				}
 				catch (Exception e) {
-					Log.e(TAG,"Error doing track write: "+e.getMessage());
+					Log.e(TAG,"Error doing track write: "+e.getMessage(), e);
 				}
 			}
 			Log.d(TAG,"PlayThread exit");
@@ -197,10 +200,11 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 					srec.mType = StateType.STATE_IN_PROGRESS;
 					mStateQueue.add(srec);
 				}
+				mFileCache.update(mStateQueue);
 			}
 			for (ATrack track : mTracks.values()) {
 				AState.TrackRef tr = current.get(track);
-				if (tr.isPaused()) 
+				if (tr==null || tr.isPaused()) 
 					continue;
 				int tpos = tr.getPos();
 				// 12 bit shift
@@ -217,8 +221,6 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 						spos = fr.mTrackPos;
 					int repetition = 0;
 					AFile file = (AFile)fr.mFile;
-					if (!file.isExtracted()) 
-						continue;
 					int length = fr.mLength;
 					if (length==IAudio.ITrack.LENGTH_ALL)
 						repetition = 0;
@@ -232,18 +234,12 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 						}
 					}
 					// within file?
-					int bix = 0, bpos = 0;
+					FileCache.Block block = null;
 					while (spos <= epos) {
 						int fpos = fr.mFilePos+(spos-fr.mTrackPos-repetition*length);
-						if (fpos < bpos) {
-							bix = bpos = 0;
-						}
-						while (bpos <= fpos && bix < file.mBuffers.size() && bpos+file.mBuffers.get(bix).length/file.mChannels <= fpos) {
-							bpos += file.mBuffers.get(bix).length/file.mChannels;
-							bix++;
-						}
-						if (bix >= file.mBuffers.size()/file.mChannels) {
-							// past the end - skip to next repetition
+						block = mFileCache.getBlock(file, fpos, block);
+						if (block==null) {
+							// past the end or not available - skip to next repetition
 							if (length==IAudio.ITrack.LENGTH_ALL)
 								// can't repeat length all (for now, anyway)
 								break;
@@ -253,26 +249,26 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 							spos = fr.mTrackPos+repetition*length;
 							continue;
 						}
-						short b[] = file.mBuffers.get(bix);
-						int offset = fpos-bpos;
+						short b[] = block.mSamples;
+						int offset = fpos-block.mStartFrame;
 						int len = (epos-spos+1);
-						if (len + offset > b.length/file.mChannels)
-							len = b.length/file.mChannels - offset;
+						if (len + offset > b.length/block.mChannels)
+							len = b.length/block.mChannels - offset;
 						if (len==0) {
-							Log.e(TAG,"Try to copy 0 bytes! epos="+epos+" spos="+spos+" fpos="+fpos+" bpos="+bpos+" bix="+bix+" length="+b.length);
+							Log.e(TAG,"Try to copy 0 bytes! epos="+epos+" spos="+spos+" fpos="+fpos+" bpos="+block.mStartFrame+" bix="+block.mIndex+" length="+b.length);
 							break;
 						}
 						int boffset = 2*(spos-tpos);
 						spos += len;
 						//Log.d(TAG,"Mix file buffer="+bix+" offset="+offset+" len="+len+" into "+boffset);
-						if (file.mChannels==1) {
+						if (block.mChannels==1) {
 							for (int i=0; i<len; i++) {
 								int val = vol*b[offset+i];
 								buf[boffset+2*i] += val;
 								buf[boffset+2*i+1] += val;
 							}
 							
-						} else if (file.mChannels==2) {
+						} else if (block.mChannels==2) {
 							offset *= 2;
 							len *= 2;
 							for (int i=0; i<len; i++) {
@@ -298,11 +294,11 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 
 	@Override
 	public void reset() {
-		for (AFile afile : mFiles.values())
-			afile.cancel();
 		mFiles = new HashMap<String,AFile>();
 		mTracks = new HashMap<Integer,ATrack>();
 		mStateQueue = new Vector<StateRec>();
+		if (mFileCache!=null)
+			mFileCache.reset();
 	}
 
 	private Map<String,AFile> mFiles = new HashMap<String,AFile>();
@@ -312,7 +308,6 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		if (file==null) {
 			file = new AFile(path);
 			mFiles.put(path, file);
-			file.queueDecode(mContext);
 		}
 		return file;
 	}
