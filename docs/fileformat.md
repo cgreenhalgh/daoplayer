@@ -27,7 +27,7 @@ File ref is Object with:
 - `trackPos` - start position in track, in seconds (float, default 0)
 - `filePos` - start position in file, in second (float, default 0)
 - `length` - length of file to play (float, default -1 = all)
-- `repeats` - how many times to repeat (integer, default 1, -1 = forever)
+- `repeats` - how many times to repeat (integer, default 1, -1 = forever; NB cannot repeat a file with length -1/unspecified)
 
 ### `scenes`
 
@@ -44,6 +44,7 @@ Track ref is object with:
 - `name` - name of track
 - `volume` - volume to play (float or string, 1.0 is "full", default unchanged). 
 - `pos` - play position in track, in seconds (float, unspecified => "current")
+- `prepare` - audio engine should prepare to play track, even if volume is currently 0 (boolean, default false)
 
 ### `constants`
 

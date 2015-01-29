@@ -23,10 +23,12 @@ import android.util.Log;
  */
 public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	private static int AUDIO_CHANNELS = AudioFormat.CHANNEL_OUT_STEREO;
+	private static int SAMPLES_PER_FRAME = 2; // stereo :-)
 	private Context mContext;
 	private ILog mLog;
 	public static String TAG = "daoplayer-engine";
 	private static int DEFAULT_SAMPLE_RATE = 44100;
+	private long mWrittenFramePosition = 0, mWrittenTime = 0;
 	
 	public AudioEngine(ILog log) {
 		mLog = log;
@@ -102,6 +104,8 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		// samsung google nexus, android 4.3.1: 144 frames/buffer; native rate 44100; min buffer 6912 bytes (1728 frames, 39ms)
 		//bsize *= 16;
 		track = new AudioTrack(AudioManager.STREAM_MUSIC, nrate, AUDIO_CHANNELS, AudioFormat.ENCODING_PCM_16BIT, bsize, AudioTrack.MODE_STREAM);
+		mWrittenFramePosition = 0;
+		mWrittenTime = 0;
 		thread = new PlayThread();
 		thread.start();
 
@@ -144,6 +148,10 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 						Log.w(TAG,"Error doing track write");
 						break;
 					}
+					synchronized(AudioEngine.this) {
+						mWrittenFramePosition += (sbuf.length/SAMPLES_PER_FRAME);
+						mWrittenTime = System.currentTimeMillis();
+					}
 				}
 				catch (Exception e) {
 					Log.e(TAG,"Error doing track write: "+e.getMessage());
@@ -163,12 +171,12 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 				// 12 bit shift
 				int vol = (int)(tr.getVolume() * 0x1000);
 				if (vol<=0) {
-					// TODO stereo/mono
-					track.setPosition(tpos+buf.length);
+					// stereo buffer
+					track.setPosition(tpos+buf.length/2);
 					continue;
 				}
 				for (ATrack.FileRef fr : track.mFileRefs) {
-					int spos = tpos, epos = tpos+buf.length-1;
+					int spos = tpos, epos = tpos+buf.length/2-1;
 					if (fr.mTrackPos > epos || fr.mRepeats==0)
 						continue;
 					if (fr.mTrackPos > spos)
@@ -179,13 +187,15 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 						continue;
 					int length = fr.mLength;
 					if (length==IAudio.ITrack.LENGTH_ALL)
-						length = file.getLength();
-					repetition = (spos - fr.mTrackPos)/length;
-					if (fr.mRepeats!=IAudio.ITrack.REPEATS_FOREVER) {
-						if (repetition >= fr.mRepeats)
-							continue;
-						if (fr.mTrackPos+length*fr.mRepeats<epos)
-							epos = fr.mTrackPos+length*fr.mRepeats;
+						repetition = 0;
+					else {
+						repetition = (spos - fr.mTrackPos)/length;
+						if (fr.mRepeats!=IAudio.ITrack.REPEATS_FOREVER) {
+							if (repetition >= fr.mRepeats)
+								continue;
+							if (fr.mTrackPos+length*fr.mRepeats<epos)
+								epos = fr.mTrackPos+length*fr.mRepeats;
+						}
 					}
 					// within file?
 					int bix = 0, bpos = 0;
@@ -194,12 +204,15 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 						if (fpos < bpos) {
 							bix = bpos = 0;
 						}
-						while (bpos <= fpos && bix < file.mBuffers.size() && bpos+file.mBuffers.get(bix).length <= fpos) {
-							bpos += file.mBuffers.get(bix).length;
+						while (bpos <= fpos && bix < file.mBuffers.size() && bpos+file.mBuffers.get(bix).length/file.mChannels <= fpos) {
+							bpos += file.mBuffers.get(bix).length/file.mChannels;
 							bix++;
 						}
-						if (bix >= file.mBuffers.size()) {
+						if (bix >= file.mBuffers.size()/file.mChannels) {
 							// past the end - skip to next repetition
+							if (length==IAudio.ITrack.LENGTH_ALL)
+								// can't repeat length all (for now, anyway)
+								break;
 							repetition++;
 							if (fr.mRepeats!=IAudio.ITrack.REPEATS_FOREVER && repetition >= fr.mRepeats)
 								break;
@@ -209,20 +222,34 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 						short b[] = file.mBuffers.get(bix);
 						int offset = fpos-bpos;
 						int len = (epos-spos+1);
-						if (len + offset > b.length)
-							len = b.length - offset;
+						if (len + offset > b.length/file.mChannels)
+							len = b.length/file.mChannels - offset;
 						if (len==0) {
 							Log.e(TAG,"Try to copy 0 bytes! epos="+epos+" spos="+spos+" fpos="+fpos+" bpos="+bpos+" bix="+bix+" length="+b.length);
 							break;
 						}
-						int boffset = spos-tpos;
-						//Log.d(TAG,"Mix file buffer="+bix+" offset="+offset+" len="+len+" into "+boffset);
-						for (int i=0; i<len; i++)
-							buf[boffset+i] += vol*b[offset+i];
+						int boffset = 2*(spos-tpos);
 						spos += len;
+						//Log.d(TAG,"Mix file buffer="+bix+" offset="+offset+" len="+len+" into "+boffset);
+						if (file.mChannels==1) {
+							for (int i=0; i<len; i++) {
+								int val = vol*b[offset+i];
+								buf[boffset+2*i] += val;
+								buf[boffset+2*i+1] += val;
+							}
+							
+						} else if (file.mChannels==2) {
+							offset *= 2;
+							len *= 2;
+							for (int i=0; i<len; i++) {
+								buf[boffset+i] += vol*b[offset+i];
+							}
+						} else {
+							// error?!
+						}
 					}
 				}
-				track.setPosition(tpos+buf.length);
+				track.setPosition(tpos+buf.length/2);
 			}
 		}
 	}
@@ -238,7 +265,6 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 
 	@Override
 	public void reset() {
-		// TODO Auto-generated method stub
 		for (AFile afile : mFiles.values())
 			afile.cancel();
 		mFiles = new HashMap<String,AFile>();
@@ -262,9 +288,9 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		IFile f1 = this.addFile("file:///android_asset/audio/test/meeting by the river snippet.mp3");
 		//((AFile)f1).decode(mContext);
 		ITrack t1 = this.addTrack(true);
-		t1.addFileRef(0, f1, 0, f1.getLength(), ITrack.REPEATS_FOREVER);
+		t1.addFileRef(0, f1, 0, 44100*4, ITrack.REPEATS_FOREVER);
 		AScene s1 = this.newAScene(false);
-		s1.set(t1, 1.0f, 0);
+		s1.set(t1, 1.0f, 0, false);
 		this.setScene(s1);
 	}
 

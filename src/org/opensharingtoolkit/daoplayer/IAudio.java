@@ -15,7 +15,7 @@ public interface IAudio {
 	
 	public static interface IFile {
 		public String getPath();
-		public int getLength();
+		/* getLength not supported for on-the-fly decode */
 	};
 	/** add a file 
 	 */
@@ -36,7 +36,7 @@ public interface IAudio {
 
 	public static interface IScene {
 		public boolean isPartial();
-		public void set(ITrack track, Float volume, Integer pos);
+		public void set(ITrack track, Float volume, Integer pos, Boolean prepare);
 		public void setVolume(ITrack track, float volume);
 		public void setPosition(ITrack track, int pos);
 	}

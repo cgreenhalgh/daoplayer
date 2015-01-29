@@ -41,7 +41,7 @@ public class AFile implements IAudio.IFile {
 	private boolean mExtracted= false;
 	private boolean mDecoded = false;
 	private boolean mCancelled = false;
-	private int mChannels;
+	int mChannels = 2;
 	private int mRate;
 	Vector<short[]> mBuffers = new Vector<short[]>();
 	//private static int MAX_BUFFER_SIZE = 44100;
@@ -226,6 +226,9 @@ public class AFile implements IAudio.IFile {
 		}
 		return false;
 	}
+	private int getChannels() {
+		return mChannels;
+	}
 	private boolean decodeWithJLayer(Context context) {
 		// TODO incomplete handling of output buffer data
 		Log.d(TAG,"decode with JLayer "+mPath);
@@ -409,12 +412,7 @@ public class AFile implements IAudio.IFile {
 				}
 			}
 	}
-	public int getLength() {
-		int len = 0;
-		for (int i=0; i<mBuffers.size();i++)
-			len += mBuffers.get(i).length;
-		return len;
-	}
+	/* getLength() not supported for on-the-fly decode */
 	public synchronized boolean isExtracted() {
 		return mExtracted;
 	}

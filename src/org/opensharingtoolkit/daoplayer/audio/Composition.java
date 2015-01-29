@@ -50,6 +50,7 @@ public class Composition {
 	private static final String UPDATE_PERIOD = "updatePeriod";
 	private static final String ONLOAD = "onload";
 	private static final String ONUPDATE = "onupdate";
+	private static final String PREPARE = "prepare";
 	private AudioEngine mEngine;
 	private String mDefaultScene;
 	private DynConstants mConstants = new DynConstants();
@@ -153,7 +154,8 @@ public class Composition {
 							Integer pos = jtrack.has(POS) ? mEngine.secondsToSamples(jtrack.getDouble(POS)) : null;
 							Float volume = jtrack.has(VOLUME) && jtrack.get(VOLUME) instanceof Number ? (float)jtrack.getDouble(VOLUME) : null;
 							String dynVolume = jtrack.has(VOLUME) && jtrack.get(VOLUME) instanceof String ? jtrack.getString(VOLUME) : null;
-							ascene.set(atrack, volume, dynVolume, pos);
+							Boolean prepare = jtrack.has(PREPARE) && jtrack.get(PREPARE) instanceof Boolean ? jtrack.getBoolean(PREPARE) : null;
+							ascene.set(atrack, volume, dynVolume, pos, prepare);
 						}
 					}
 				}
@@ -250,7 +252,7 @@ public class Composition {
 			Float volume = dynVolumes.get(tr.getTrack().getId());
 			if (volume==null)
 				volume = tr.getVolume();
-			ascene.set(tr.getTrack(), volume, tr.getPos());
+			ascene.set(tr.getTrack(), volume, tr.getPos(), tr.getPrepare());
 		}
 		mEngine.setScene(ascene);
 		return true;
@@ -268,7 +270,7 @@ public class Composition {
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			Float volume = dynVolumes.get(tr.getTrack().getId());
 			if (volume!=null)
-				ascene.set(tr.getTrack(), volume, null);
+				ascene.set(tr.getTrack(), volume, null, null);
 		}
 		mEngine.setScene(ascene);
 		return true;
