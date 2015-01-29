@@ -145,6 +145,8 @@ public class FileDecoder {
         mStarted = true;
 	}
 	private void getBuffers() {
+		if (!mStarted)
+			return;
         final long kTimeOutUs = 10000;
         int noOutputCounter = 0;
         while (!mSawOutputEOS && noOutputCounter < 50) {
@@ -222,6 +224,9 @@ public class FileDecoder {
         }
 	}
 	private void stop() {
+		if (!mStarted)
+			return;
+		
         mCodec.stop();
         mCodec.release();
         mCodec = null;
@@ -230,6 +235,8 @@ public class FileDecoder {
 		mExtractor.release();
 		mExtractor = null;
 
+		mStarted = false;
+		
 		// optional?!
 		tidyEnds();
 		
