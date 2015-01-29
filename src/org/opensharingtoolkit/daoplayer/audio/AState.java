@@ -66,7 +66,7 @@ public class AState {
 	TrackRef get(ITrack track) {
 		return mTrackRefs.get(track.getId());
 	}
-	AState applyScene(AScene scene) {
+	AState applyScene(AScene scene, int defaultPosAdvance) {
 		AState state = new AState();
 		Collection<AScene.TrackRef> strs = scene.getTrackRefs();
 		for (AScene.TrackRef str : strs) {
@@ -79,17 +79,35 @@ public class AState {
 			float volume = tr.mVolume;
 			if (str.getVolume()!=null)
 				volume = str.getVolume();
-			state.set(track, volume, str.getPos()!=null ? str.getPos() : tr.mPos, volume<=0 && track.isPauseIfSilent());
+			boolean wasPaused = tr.mVolume<=0 && track.isPauseIfSilent();
+			int defaultPos = tr.mPos;
+			if (!wasPaused)
+				defaultPos += defaultPosAdvance;
+			state.set(track, volume, str.getPos()!=null ? str.getPos() : defaultPos, volume<=0 && track.isPauseIfSilent());
 		}
 		for (TrackRef tr : mTrackRefs.values()) {
 			if (!state.mTrackRefs.containsKey(tr.mTrack.getId())) {
+				int pos = tr.mPos;
+				if (!tr.mPaused)
+					pos += defaultPosAdvance;
 				if (scene.isPartial()) 
 					// copy existing
-					state.set(tr.mTrack, tr.mVolume, tr.mPos, tr.mPaused);
+					state.set(tr.mTrack, tr.mVolume, pos, tr.mPaused);
 				else 
 					// total -> silent
-					state.set(tr.mTrack, 0.0f, tr.mPos, tr.mTrack.isPauseIfSilent());
+					state.set(tr.mTrack, 0.0f, pos, tr.mTrack.isPauseIfSilent());
 			}
+		}
+		return state;
+	}
+	AState advance(int posAdvance) {
+		AState state = new AState();
+		for (TrackRef tr : mTrackRefs.values()) {
+			int pos = tr.mPos;
+			if (!tr.mPaused)
+				pos += posAdvance;
+				// copy existing
+			state.set(tr.mTrack, tr.mVolume, pos, tr.mPaused);
 		}
 		return state;
 	}

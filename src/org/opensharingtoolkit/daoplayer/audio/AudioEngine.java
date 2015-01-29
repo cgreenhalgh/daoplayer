@@ -23,12 +23,21 @@ import android.util.Log;
  */
 public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	private static int AUDIO_CHANNELS = AudioFormat.CHANNEL_OUT_STEREO;
-	private static int SAMPLES_PER_FRAME = 2; // stereo :-)
+	private static int N_CHANNELS = 2; // stereo :-)
 	private Context mContext;
 	private ILog mLog;
 	public static String TAG = "daoplayer-engine";
 	private static int DEFAULT_SAMPLE_RATE = 44100;
+	private int mSamplesPerBlock;
 	private long mWrittenFramePosition = 0, mWrittenTime = 0;
+	private Vector<StateRec> mStateQueue = new Vector<StateRec>();
+
+	enum StateType { STATE_FUTURE, STATE_IN_PROGRESS, STATE_WRITTEN, STATE_DISCARDED };
+	private class StateRec {
+		AState mState;
+		long mStartFramePosition;
+		StateType mType = StateType.STATE_FUTURE;
+	};
 	
 	public AudioEngine(ILog log) {
 		mLog = log;
@@ -104,6 +113,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		// samsung google nexus, android 4.3.1: 144 frames/buffer; native rate 44100; min buffer 6912 bytes (1728 frames, 39ms)
 		//bsize *= 16;
 		track = new AudioTrack(AudioManager.STREAM_MUSIC, nrate, AUDIO_CHANNELS, AudioFormat.ENCODING_PCM_16BIT, bsize, AudioTrack.MODE_STREAM);
+		mSamplesPerBlock = bsize/ /*bytes/value*/2 /N_CHANNELS/ /*half buffer*/2;
 		mWrittenFramePosition = 0;
 		mWrittenTime = 0;
 		thread = new PlayThread();
@@ -118,10 +128,9 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		public void run() {
 			int nrate = AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC);
 			// mono sounds ok
-			int bsize = AudioTrack.getMinBufferSize(nrate, AUDIO_CHANNELS, AudioFormat.ENCODING_PCM_16BIT);
 			// with 3x sounds quite good, whether track bsize is x1 or x8
-			short sbuf[] = new short[bsize/4];
-			int ibuf[] = new int[bsize/4];
+			short sbuf[] = new short[mSamplesPerBlock*N_CHANNELS];
+			int ibuf[] = new int[mSamplesPerBlock*N_CHANNELS];
 			int pos = 0;
 			while (track!=null) {
 				try {
@@ -149,7 +158,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 						break;
 					}
 					synchronized(AudioEngine.this) {
-						mWrittenFramePosition += (sbuf.length/SAMPLES_PER_FRAME);
+						mWrittenFramePosition += (sbuf.length/N_CHANNELS);
 						mWrittenTime = System.currentTimeMillis();
 					}
 				}
@@ -162,17 +171,42 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		private void fillBuffer(int[] buf) {
 			for (int i=0; i<buf.length; i++)
 				buf[i] = 0;
-			AState current = getCurrentState();
+			// take next state
+			AState current = null, last = null;
+			synchronized(AudioEngine.this) {
+				for (int i=0; i<mStateQueue.size(); i++) {
+					StateRec srec = mStateQueue.get(i);
+					if (srec.mType==StateType.STATE_WRITTEN || srec.mType==StateType.STATE_DISCARDED) {
+						mStateQueue.remove(i);
+						i--;						
+					} else if (srec.mType==StateType.STATE_IN_PROGRESS) {
+						srec.mType = StateType.STATE_WRITTEN;
+						last = srec.mState;
+					} else if (srec.mType==StateType.STATE_FUTURE) {
+						srec.mType = StateType.STATE_IN_PROGRESS;
+						current = srec.mState;
+					}
+				}
+				if (current==null) {
+					if (last!=null)
+						current = last.advance(mSamplesPerBlock);
+					else
+						current = getIdleState();
+					StateRec srec = new StateRec();
+					srec.mState = current;
+					srec.mType = StateType.STATE_IN_PROGRESS;
+					mStateQueue.add(srec);
+				}
+			}
 			for (ATrack track : mTracks.values()) {
 				AState.TrackRef tr = current.get(track);
 				if (tr.isPaused()) 
 					continue;
-				int tpos = track.getPosition();
+				int tpos = tr.getPos();
 				// 12 bit shift
 				int vol = (int)(tr.getVolume() * 0x1000);
 				if (vol<=0) {
 					// stereo buffer
-					track.setPosition(tpos+buf.length/2);
 					continue;
 				}
 				for (ATrack.FileRef fr : track.mFileRefs) {
@@ -249,7 +283,6 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 						}
 					}
 				}
-				track.setPosition(tpos+buf.length/2);
 			}
 		}
 	}
@@ -269,6 +302,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			afile.cancel();
 		mFiles = new HashMap<String,AFile>();
 		mTracks = new HashMap<Integer,ATrack>();
+		mStateQueue = new Vector<StateRec>();
 	}
 
 	private Map<String,AFile> mFiles = new HashMap<String,AFile>();
@@ -308,26 +342,38 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	}
 
 	public void setScene(AScene ascene) {
-		AState current = getCurrentState();
-		//Log.d(TAG,"CurrentState="+current);
-		AState target = current.applyScene(ascene);
-		//Log.d(TAG,"TargetState="+target);
-		for (ATrack track : mTracks.values()) {
-			AState.TrackRef tr = target.get(track);
-			if (tr==null) {
-				Log.w(TAG,"No state for track "+track.getId());
-			} else {
-				track.setPosition(tr.getPos());
-				track.setVolume(tr.getVolume());
-				Log.d(TAG,"Track "+track.getId()+" set to pos="+track.getPosition()+", vol="+track.getVolume());
+		// new future state
+		// find basis - current else written else idle
+		synchronized(this) {
+			AState current = null;
+			for (int i=0; i<mStateQueue.size(); i++) {
+				StateRec srec = mStateQueue.get(i);
+				if (srec.mType==StateType.STATE_WRITTEN || srec.mType==StateType.STATE_IN_PROGRESS)
+					current = srec.mState;
+				else if (srec.mType==StateType.STATE_FUTURE) {
+					// discard?!
+					srec.mType = StateType.STATE_DISCARDED;
+					mStateQueue.remove(i);
+					i--;
+				}
 			}
+			if (current==null)
+				current = getIdleState();
+				
+			//Log.d(TAG,"CurrentState="+current);
+			AState target = current.applyScene(ascene, mSamplesPerBlock);
+			
+			StateRec srec = new StateRec();
+			srec.mType = StateType.STATE_FUTURE;
+			srec.mState = target;
+			mStateQueue.add(srec);
 		}
 	}
 	
-	AState getCurrentState() {
+	AState getIdleState() {
 		AState state = new AState();
 		for (ATrack track : mTracks.values()) {
-			state.set(track, track.getVolume(), track.getPosition(), track.getVolume()<=0 && track.isPauseIfSilent());
+			state.set(track, 0, 0, true);
 		}
 		return state;
 	}
