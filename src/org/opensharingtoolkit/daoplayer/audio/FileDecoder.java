@@ -39,7 +39,6 @@ public class FileDecoder {
 	int mChannels = 2;
 	private int mRate;
 	private Context mContext;
-	Vector<short[]> mBuffers = new Vector<short[]>();
 
 	private MediaExtractor mExtractor;
 	private MediaCodec mCodec;
@@ -48,7 +47,7 @@ public class FileDecoder {
 	private MediaCodec.BufferInfo mCodecInfo;
 	private boolean mSawInputEOS = false;
     private boolean mSawOutputEOS = false;
-
+    private long mFramePosition;
 	public FileDecoder(String path, Context context) {
 		this.mPath = path;
 		this.mContext = context;
@@ -57,7 +56,7 @@ public class FileDecoder {
 		mCancelled = true;
 	}
 	static String FILE_ASSET = "file:///android_asset/";
-	private void start() {
+	void start() {
 		synchronized (this) {
 			if (mExtractFailed)
 				return;
@@ -142,14 +141,36 @@ public class FileDecoder {
         mSawInputEOS = false;
         mSawOutputEOS = false;
         
+        mFramePosition = 0;
+        
         mStarted = true;
 	}
-	private void getBuffers() {
+	public FileCache.Block getBlock(int fromFrame) {
 		if (!mStarted)
-			return;
+			return null;
+		// seek?
+		if (mFramePosition != fromFrame) {
+			mCodec.flush();
+			// seek doesn't work reliably
+			int offset = 0, attempts = 0;
+			do {
+				mExtractor.seekTo(1000000L*(fromFrame-offset)/mRate, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
+				long timeUs = mExtractor.getSampleTime();
+				mFramePosition = timeUs*mRate/1000000;
+				Log.d(TAG,"Seek to "+fromFrame+" -> "+mFramePosition+" with offset "+offset+", attempt "+attempts);
+				if (mFramePosition>0 && fromFrame>0 && mFramePosition>fromFrame)
+					offset += (mFramePosition-fromFrame);
+				else
+					break;
+				attempts++;
+			} while (offset < 10000 && attempts<10);
+			mSawInputEOS = false;
+			mSawOutputEOS = false;
+		}
         final long kTimeOutUs = 10000;
         int noOutputCounter = 0;
-        while (!mSawOutputEOS && noOutputCounter < 50) {
+        FileCache.Block block = null;
+        while (block==null && !mSawOutputEOS && noOutputCounter < 50) {
         	synchronized (this) {
         		if (mCancelled) {
         			Log.d(TAG,"decode cancelled");
@@ -159,7 +180,7 @@ public class FileDecoder {
         			mCodec = null;
         			mExtractor.release();
         			mExtractor = null;
-        			return;
+        			return null;
         		}
         	}
             noOutputCounter++;
@@ -176,6 +197,7 @@ public class FileDecoder {
                         sampleSize = 0;
                     } else {
                         presentationTimeUs = mExtractor.getSampleTime();
+                        //Log.d(TAG,"Presentation time = "+(presentationTimeUs*mRate/1000000)+" vs "+mFramePosition+" & "+fromFrame);
                     }
                     mCodec.queueInputBuffer(
                             inputBufIndex,
@@ -190,23 +212,27 @@ public class FileDecoder {
             }
             int res = mCodec.dequeueOutputBuffer(mCodecInfo, kTimeOutUs);
             if (res >= 0) {
-                Log.d(TAG, "got frame, size " + mCodecInfo.size + "/" + mCodecInfo.presentationTimeUs);
+                Log.d(TAG, "got frame, size " + mCodecInfo.size + "/" + (mCodecInfo.presentationTimeUs*mRate/1000000));
                 if (mCodecInfo.size > 0) {
                     noOutputCounter = 0;
                 }
                 int outputBufIndex = res;
-                if (mCodecInfo.size > 0) {
+                if (mCodecInfo.size > 0 && mFramePosition+mCodecInfo.size/2/mChannels>fromFrame) {
 	                ByteBuffer buf = mCodecOutputBuffers[outputBufIndex];
 	                //if (decodedIdx + (info.size / 2) >= decoded.length) {
 	                //    decoded = Arrays.copyOf(decoded, decodedIdx + (info.size / 2));
 	                //}
 	                short decoded[] = new short[mCodecInfo.size / 2];
 	                int decodedIdx = 0;
-	                mBuffers.add(decoded);
 	                for (int i = 0; i < mCodecInfo.size; i += 2) {
 	                    decoded[decodedIdx++] = buf.getShort(i);
 	                }
+	                block = new FileCache.Block();
+	                block.mChannels = mChannels;
+	                block.mStartFrame = (int)mFramePosition;
+	                block.mSamples = decoded;
                 }
+                mFramePosition += mCodecInfo.size/2/mChannels;
                 mCodec.releaseOutputBuffer(outputBufIndex, false /* render */);
                 if ((mCodecInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                     Log.d(TAG, "saw output EOS.");
@@ -222,6 +248,7 @@ public class FileDecoder {
                 Log.d(TAG, "dequeueOutputBuffer returned " + res);
             }
         }
+        return block;
 	}
 	private void stop() {
 		if (!mStarted)
@@ -230,7 +257,6 @@ public class FileDecoder {
         mCodec.stop();
         mCodec.release();
         mCodec = null;
-        Log.d(TAG,"decoded "+mBuffers.size()+" blocks");
         
 		mExtractor.release();
 		mExtractor = null;
@@ -238,7 +264,7 @@ public class FileDecoder {
 		mStarted = false;
 		
 		// optional?!
-		tidyEnds();
+		//tidyEnds();
 		
 		synchronized (this) {
 			if (mSawOutputEOS)
@@ -399,7 +425,7 @@ public class FileDecoder {
 		}
 		
 	}
-	private void tidyEnds() {
+	/*private void tidyEnds() {
 		// squash up to first zero-crossing
 		short lval = 0;
 		doneStart:
@@ -431,33 +457,15 @@ public class FileDecoder {
 					buf[i] = buf[i+1] = 0;
 				}
 			}
-	}
+	}*/
 	/* getLength() not supported for on-the-fly decode */
 	public synchronized boolean isExtracted() {
 		return mExtracted;
 	}
-	private class DecodeTask extends AsyncTask<Context,Integer,Boolean> {
-
-		@Override
-		protected Boolean doInBackground(Context... params) {
-			FileDecoder.this.start();
-			FileDecoder.this.getBuffers();
-			FileDecoder.this.stop();
-			return true;
-		}
-
-		/* (non-Javadoc)
-		 * @see android.os.AsyncTask#onPostExecute(java.lang.Object)
-		 */
-		@Override
-		protected void onPostExecute(Boolean result) {
-			//Toast.makeText(context, "Decoded "+mPath, Toast.LENGTH_SHORT).show();
-			super.onPostExecute(result);
-		}
-		
+	public synchronized boolean isFailed() {
+		return mExtractFailed;
 	}
-	public void queueDecode() {
-		DecodeTask t = new DecodeTask();
-		t.execute();
+	public synchronized boolean isStarted() {
+		return mStarted;
 	}
 }
