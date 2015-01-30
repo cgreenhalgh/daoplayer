@@ -149,21 +149,21 @@ public class FileDecoder {
 		if (!mStarted)
 			return null;
 		// seek?
-		if (mFramePosition != fromFrame) {
+		if (mFramePosition != fromFrame && (fromFrame < mFramePosition || fromFrame > mFramePosition+mRate/5)) {
 			mCodec.flush();
-			// seek doesn't work reliably
+			// seek doesn't work reliably. Or is time of end of frame?!
 			int offset = 0, attempts = 0;
-			do {
+			//do {
 				mExtractor.seekTo(1000000L*(fromFrame-offset)/mRate, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
 				long timeUs = mExtractor.getSampleTime();
 				mFramePosition = timeUs*mRate/1000000;
 				Log.d(TAG,"Seek to "+fromFrame+" -> "+mFramePosition+" with offset "+offset+", attempt "+attempts);
-				if (mFramePosition>0 && fromFrame>0 && mFramePosition>fromFrame)
-					offset += (mFramePosition-fromFrame);
-				else
-					break;
-				attempts++;
-			} while (offset < 10000 && attempts<10);
+				//if (mFramePosition>0 && fromFrame>0 && mFramePosition>fromFrame)
+				//	offset += (mFramePosition-fromFrame);
+				//else
+				//	break;
+				//attempts++;
+			//} while (offset < 10000 && attempts<10);
 			mSawInputEOS = false;
 			mSawOutputEOS = false;
 		}
@@ -197,7 +197,7 @@ public class FileDecoder {
                         sampleSize = 0;
                     } else {
                         presentationTimeUs = mExtractor.getSampleTime();
-                        //Log.d(TAG,"Presentation time = "+(presentationTimeUs*mRate/1000000)+" vs "+mFramePosition+" & "+fromFrame);
+                        Log.d(TAG,"Presentation time = "+(presentationTimeUs*mRate/1000000)+" vs "+mFramePosition+" & "+fromFrame);
                     }
                     mCodec.queueInputBuffer(
                             inputBufIndex,
@@ -212,7 +212,9 @@ public class FileDecoder {
             }
             int res = mCodec.dequeueOutputBuffer(mCodecInfo, kTimeOutUs);
             if (res >= 0) {
-                Log.d(TAG, "got frame, size " + mCodecInfo.size + "/" + (mCodecInfo.presentationTimeUs*mRate/1000000));
+                Log.d(TAG, "got frame, size " + (mCodecInfo.size/2/mChannels) + "/" + (mCodecInfo.presentationTimeUs*mRate/1000000)+" cf "+mFramePosition);
+                // start of frame?
+                mFramePosition = (mCodecInfo.presentationTimeUs*mRate/1000000)-(mCodecInfo.size/2/mChannels);
                 if (mCodecInfo.size > 0) {
                     noOutputCounter = 0;
                 }
