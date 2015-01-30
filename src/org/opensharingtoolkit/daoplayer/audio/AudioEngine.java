@@ -175,11 +175,12 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			for (int i=0; i<buf.length; i++)
 				buf[i] = 0;
 			// take next state
-			AState current = null, last = null;
+			AState current = null, last = null, future = null;
 			synchronized(AudioEngine.this) {
 				for (int i=0; i<mStateQueue.size(); i++) {
 					StateRec srec = mStateQueue.get(i);
 					if (srec.mType==StateType.STATE_WRITTEN || srec.mType==StateType.STATE_DISCARDED) {
+						last = srec.mState;
 						mStateQueue.remove(i);
 						i--;						
 					} else if (srec.mType==StateType.STATE_IN_PROGRESS) {
@@ -200,7 +201,14 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 					srec.mType = StateType.STATE_IN_PROGRESS;
 					mStateQueue.add(srec);
 				}
-				mFileCache.update(mStateQueue, mTracks, mSamplesPerBlock);
+				if (future==null) {
+					future = current.advance(mSamplesPerBlock);
+					mFileCache.update(mStateQueue, mTracks, mSamplesPerBlock);
+					StateRec srec = new StateRec();
+					srec.mState = current;
+					srec.mType = StateType.STATE_FUTURE;
+					mStateQueue.add(srec);
+				}
 			}
 			for (ATrack track : mTracks.values()) {
 				AState.TrackRef tr = current.get(track);

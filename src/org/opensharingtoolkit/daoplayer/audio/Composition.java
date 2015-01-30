@@ -151,6 +151,7 @@ public class Composition {
 						if (atrack==null) {
 							Log.w(TAG,"Scene "+name+" refers to unknown track "+trackName);
 						} else {
+							Log.d(TAG,"Scene "+name+" uses track "+atrack.getId()+" as "+trackName);
 							Integer pos = jtrack.has(POS) ? mEngine.secondsToSamples(jtrack.getDouble(POS)) : null;
 							Float volume = jtrack.has(VOLUME) && jtrack.get(VOLUME) instanceof Number ? (float)jtrack.getDouble(VOLUME) : null;
 							String dynVolume = jtrack.has(VOLUME) && jtrack.get(VOLUME) instanceof String ? jtrack.getString(VOLUME) : null;
