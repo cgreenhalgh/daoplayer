@@ -203,12 +203,12 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 				}
 				if (future==null) {
 					future = current.advance(mSamplesPerBlock);
-					mFileCache.update(mStateQueue, mTracks, mSamplesPerBlock);
 					StateRec srec = new StateRec();
-					srec.mState = current;
+					srec.mState = future;
 					srec.mType = StateType.STATE_FUTURE;
 					mStateQueue.add(srec);
 				}
+				mFileCache.update(mStateQueue, mTracks, mSamplesPerBlock);
 			}
 			for (ATrack track : mTracks.values()) {
 				AState.TrackRef tr = current.get(track);

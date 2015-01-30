@@ -312,9 +312,9 @@ public class FileCache {
 			}, true);
 		}
 		private static void work(NeedRec nrec, File file, int priority) {
-			Log.d(TAG,"work pri="+priority+" on "+nrec.mFile.getPath());
+			//Log.d(TAG,"work pri="+priority+" on "+nrec.mFile.getPath());
 			for (Interval needed : nrec.mIntervals.values()) {
-				Log.d(TAG,"work pri="+needed.mPriority+"/"+priority+" "+needed.mFromInclusive+"-"+needed.mToExclusive+" of "+nrec.mFile.getPath());
+				//Log.d(TAG,"work pri="+needed.mPriority+"/"+priority+" "+needed.mFromInclusive+"-"+needed.mToExclusive+" of "+nrec.mFile.getPath());
 				if (needed.mPriority!=priority)
 					continue;
 				Collection<Block> blocks = null;
