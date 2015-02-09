@@ -46,7 +46,7 @@ public class FileCache {
 	}
 	private static final String TAG = "daoplayer-filecache";
 	private Map<String,File> mFiles = new HashMap<String,File>();
-	private HashMap<String,FileNeedTask> mTasks = new HashMap<String,FileNeedTask>();
+	private Vector<FileNeedTask> mTasks = new Vector<FileNeedTask>();
 	private ExecutorService mExecutor;
 	
 	/** may use context to access assets */
@@ -285,6 +285,11 @@ public class FileCache {
 		}
 		// Throw this over the the background thread!!
 		
+		// old tasks
+		for (FileNeedTask task : mTasks) {
+			task.cancel(false);
+		}
+		mTasks.clear();
 		// decode / blocks...?
 		for (NeedRec nrec : needRecs.values()) {
 			File file = null;
@@ -296,10 +301,12 @@ public class FileCache {
 				}
 				if (file.mDecoder==null) {
 					file.mDecoder = new FileDecoder(nrec.mFile.getPath(), mContext);
-					file.mDecoder.queueDecode();
+					//file.mDecoder.queueDecode();
 				}
 			}
-			mExecutor.execute(new FileNeedTask(nrec, file, 1));
+			FileNeedTask task = new FileNeedTask(nrec, file, 1);
+			mTasks.add(task);
+			mExecutor.execute(task);
 		}
 	}
 	/** handle needed stuff from a File */
@@ -312,10 +319,11 @@ public class FileCache {
 			}, true);
 		}
 		private static void work(NeedRec nrec, File file, int priority) {
-			Log.d(TAG,"work pri="+priority+" on "+nrec.mFile.getPath());
+			//Log.d(TAG,"work pri="+priority+" on "+nrec.mFile.getPath());
 			for (Interval needed : nrec.mIntervals.values()) {
 				Log.d(TAG,"work pri="+needed.mPriority+"/"+priority+" "+needed.mFromInclusive+"-"+needed.mToExclusive+" of "+nrec.mFile.getPath());
 				if (needed.mPriority!=priority)
+				//if (needed.mPriority<0)
 					continue;
 				Collection<Block> blocks = null;
 				synchronized(file.mBlocks) {
@@ -360,27 +368,25 @@ public class FileCache {
 				// these are the fragment(s) we are missing from that particular interval
 				for (Interval gap : gaps.values()) {
 					Log.d(TAG,"gap "+gap.mFromInclusive+"-"+gap.mToExclusive+" in "+nrec.mFile.getPath());
-					// placeholder
-					if (file.mDecoder.isExtracted()) {
-						int bix = 0, bpos = 0;
-						while (bpos <= gap.mFromInclusive && bix < file.mDecoder.mBuffers.size() && bpos+file.mDecoder.mBuffers.get(bix).length/file.mDecoder.mChannels <= gap.mFromInclusive) {
-							bpos += file.mDecoder.mBuffers.get(bix).length/file.mDecoder.mChannels;
-							bix++;
-						}
-						while (bix < file.mDecoder.mBuffers.size()) {
-							if (bpos>=gap.mToExclusive)
+					
+					int bpos = gap.mFromInclusive;
+					while (!file.mDecoder.isFailed() && bpos<gap.mToExclusive) {
+						if (!file.mDecoder.isStarted()) {
+							file.mDecoder.start();
+							if (file.mDecoder.isFailed()) {
+								Log.e(TAG,"Failed to start decoder for "+file.mPath);
 								break;
-							Block b = new Block();
-							b.mChannels = file.mDecoder.mChannels;
-							b.mIndex = bix;
-							b.mSamples = file.mDecoder.mBuffers.get(bix);
-							b.mStartFrame = bpos;
-							synchronized (file.mBlocks) {
-								file.mBlocks.put(b.mStartFrame, b);
 							}
-							bpos += file.mDecoder.mBuffers.get(bix).length/file.mDecoder.mChannels;
-							bix++;
 						}
+						Block b = file.mDecoder.getBlock(bpos);
+						if (b==null) {
+							Log.d(TAG,"Could not get block "+bpos+" for "+file.mPath);
+							break;
+						}
+						synchronized (file.mBlocks) {
+							file.mBlocks.put(b.mStartFrame, b);
+						}
+						bpos += b.mSamples.length/b.mChannels;
 					}
 				}
 				// TODO mark past end
