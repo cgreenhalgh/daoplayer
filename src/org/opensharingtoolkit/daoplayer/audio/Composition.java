@@ -322,4 +322,20 @@ public class Composition {
 			return mScenesInOrder.get(ix);
 		}			
 	}
+	public String getTestTrack(String name) {
+		DynScene scene = mScenes.get(name);
+		if (scene==null) {
+			Log.w(TAG, "getTestTrack: scene unknown "+name);
+			return null;			
+		}
+		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
+			if (tr.getVolume()!=null && tr.getVolume()<=0)
+				continue;
+			ATrack track = (ATrack)tr.getTrack();
+			ATrack.FileRef fr = track.mFileRefs.first();
+			if (fr!=null)
+				return fr.mFile.getPath();
+		}
+		return null;
+	}
 }

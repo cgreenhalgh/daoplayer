@@ -47,6 +47,8 @@ public class FileDecoder {
 	private MediaCodec.BufferInfo mCodecInfo;
 	private boolean mSawInputEOS = false;
     private boolean mSawOutputEOS = false;
+    private long mLength = 0;
+    private boolean mSeenEnd = false, mReadSinceSeek = false;
     private long mFramePosition;
 	public FileDecoder(String path, Context context) {
 		this.mPath = path;
@@ -56,7 +58,7 @@ public class FileDecoder {
 		mCancelled = true;
 	}
 	static String FILE_ASSET = "file:///android_asset/";
-	void start() {
+	public void start() {
 		synchronized (this) {
 			if (mExtractFailed)
 				return;
@@ -148,22 +150,32 @@ public class FileDecoder {
 	public FileCache.Block getBlock(int fromFrame) {
 		if (!mStarted)
 			return null;
+		if (mSeenEnd && fromFrame>mLength)
+			return null;
 		// seek?
 		if (mFramePosition != fromFrame && (fromFrame < mFramePosition || fromFrame > mFramePosition+mRate/5)) {
 			mCodec.flush();
 			// seek doesn't work reliably. Or is time of end of frame?!
 			int offset = 0, attempts = 0;
-			//do {
-				mExtractor.seekTo(1000000L*(fromFrame-offset)/mRate, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
+			mReadSinceSeek = false;
+			do {
+				long target = 1000000L*(fromFrame-offset)/mRate;
+				if (target<0)
+					target = 0;
+				mExtractor.seekTo(target, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
 				long timeUs = mExtractor.getSampleTime();
 				mFramePosition = timeUs*mRate/1000000;
 				Log.d(TAG,"Seek to "+fromFrame+" -> "+mFramePosition+" with offset "+offset+", attempt "+attempts);
-				//if (mFramePosition>0 && fromFrame>0 && mFramePosition>fromFrame)
-				//	offset += (mFramePosition-fromFrame);
-				//else
-				//	break;
-				//attempts++;
-			//} while (offset < 10000 && attempts<10);
+				if (mFramePosition>0 && fromFrame>0 && mFramePosition>fromFrame)
+					offset += (mFramePosition-fromFrame);
+				else
+				    break;
+				attempts++;
+			} while (offset < 10000 && attempts<10);
+			if (fromFrame < mFramePosition || fromFrame > mFramePosition+mRate/5) {
+				Log.d(TAG,"Could not seek close to "+fromFrame+"; got "+mFramePosition);
+				return null;
+			}
 			mSawInputEOS = false;
 			mSawOutputEOS = false;
 		}
@@ -197,7 +209,7 @@ public class FileDecoder {
                         sampleSize = 0;
                     } else {
                         presentationTimeUs = mExtractor.getSampleTime();
-                        Log.d(TAG,"Presentation time = "+(presentationTimeUs*mRate/1000000)+" vs "+mFramePosition+" & "+fromFrame);
+                        Log.d(TAG,"Input presentation time after "+sampleSize+" samples = "+(presentationTimeUs*mRate/1000000)+" vs "+mFramePosition+" & request "+fromFrame);
                     }
                     mCodec.queueInputBuffer(
                             inputBufIndex,
@@ -212,11 +224,12 @@ public class FileDecoder {
             }
             int res = mCodec.dequeueOutputBuffer(mCodecInfo, kTimeOutUs);
             if (res >= 0) {
-                Log.d(TAG, "got frame, size " + (mCodecInfo.size/2/mChannels) + "/" + (mCodecInfo.presentationTimeUs*mRate/1000000)+" cf "+mFramePosition);
+                Log.d(TAG, "got frame, size " + (mCodecInfo.size/2/mChannels) + " at " + (mCodecInfo.presentationTimeUs*mRate/1000000)+", expected "+mFramePosition);
                 // start of frame?
-                mFramePosition = (mCodecInfo.presentationTimeUs*mRate/1000000)-(mCodecInfo.size/2/mChannels);
+                //mFramePosition = (mCodecInfo.presentationTimeUs*mRate/1000000); //-(mCodecInfo.size/2/mChannels-1);
                 if (mCodecInfo.size > 0) {
                     noOutputCounter = 0;
+                    mReadSinceSeek = true;
                 }
                 int outputBufIndex = res;
                 if (mCodecInfo.size > 0 && mFramePosition+mCodecInfo.size/2/mChannels>fromFrame) {
@@ -239,6 +252,10 @@ public class FileDecoder {
                 if ((mCodecInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                     Log.d(TAG, "saw output EOS.");
                     mSawOutputEOS = true;
+                    if (mReadSinceSeek && !mSeenEnd) {
+                    	mLength = mFramePosition;
+                    	Log.d(TAG, "record length = "+mLength);
+                    }
                 }
             } else if (res == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
                 mCodecOutputBuffers = mCodec.getOutputBuffers();

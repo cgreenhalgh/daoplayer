@@ -35,6 +35,31 @@ public class FileCache {
 		int mStartFrame; // Note frame number
 		// internal
 		int mIndex;
+		/**
+		 * @return the mSamples
+		 */
+		public short[] getSamples() {
+			return mSamples;
+		}
+		/**
+		 * @return the mChannels
+		 */
+		public int getChannels() {
+			return mChannels;
+		}
+		/**
+		 * @return the mStartFrame
+		 */
+		public int getStartFrame() {
+			return mStartFrame;
+		}
+		/**
+		 * @return the mIndex
+		 */
+		public int getIndex() {
+			return mIndex;
+		}
+		
 	};
 	static class File {
 		String mPath;
@@ -202,9 +227,11 @@ public class FileCache {
 		default:
 			return -1;
 		case STATE_IN_PROGRESS:
-			return 0;
-		case STATE_FUTURE:
 			return 1;
+		case STATE_NEXT:
+			return 1;
+		case STATE_FUTURE:
+			return 0;
 		}
 	}
 	static class Interval {
@@ -225,7 +252,7 @@ public class FileCache {
 		// What file spans do we need and how soon?
 		HashMap<String,NeedRec> needRecs = new HashMap<String,NeedRec>();
 		for (AudioEngine.StateRec srec : stateQueue) {
-			if (srec.mType==AudioEngine.StateType.STATE_IN_PROGRESS || srec.mType==AudioEngine.StateType.STATE_FUTURE) {
+			if (srec.mType==AudioEngine.StateType.STATE_IN_PROGRESS || srec.mType==AudioEngine.StateType.STATE_NEXT) {
 				int blockLength = samplesPerBlock*2;
 				for (ATrack track : mTracks.values()) {
 					AState.TrackRef tr = srec.mState.get(track);

@@ -48,4 +48,8 @@
         android:title="@string/pref_prevscene_title" 
         android:key="pref_prevscene" />
     
+    <Preference 
+        android:title="@string/pref_runtest_title"
+        android:key="pref_runtest" />
+
 </PreferenceScreen>

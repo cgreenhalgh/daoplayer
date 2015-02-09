@@ -14,6 +14,8 @@ import java.util.Vector;
 import org.json.JSONException;
 import org.opensharingtoolkit.daoplayer.audio.AudioEngine;
 import org.opensharingtoolkit.daoplayer.audio.Composition;
+import org.opensharingtoolkit.daoplayer.audio.FileCache;
+import org.opensharingtoolkit.daoplayer.audio.FileDecoder;
 import org.opensharingtoolkit.daoplayer.audio.IScriptEngine;
 import org.opensharingtoolkit.daoplayer.ui.BrowserActivity;
 
@@ -63,6 +65,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	public static final String ACTION_SET_LATLNG = "org.opensharingtoolkit.daoplayer.SET_LATLNG";
 	public static final String ACTION_SET_SCENE = "org.opensharingtoolkit.daoplayer.SET_SCENE";
 	public static final String ACTION_CLEAR_LOGS = "org.opensharingtoolkit.daoplayer.CLEAR_LOGS";
+	public static final String ACTION_RUN_TEST = "org.opensharingtoolkit.daoplayer.RUN_TEST";
 	public static final String EXTRA_LAT = "lat";
 	public static final String EXTRA_LNG = "lng";
 	public static final String EXTRA_SCENE = "scene";
@@ -358,6 +361,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			if (mComposition!=null) {
 				updateScene();
 			}
+		} else if (ACTION_RUN_TEST.equals(intent.getAction())) {
+			runTest();
 		}
 		checkService();
 	}
@@ -673,5 +678,100 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		// Register the listener with the Location Manager to receive location updates
 		locationManager.removeUpdates(mLocationListener);	
 		locationManager.removeGpsStatusListener(mStatusListener);
+	}
+	private void runTest() {
+		if (mComposition==null) {
+			Log.d(TAG,"runTest: null composition");
+			return;
+		}
+		String scene = mScene;
+		if (scene==null)
+			scene = mComposition.getDefaultScene();
+		if (scene==null) {
+			Log.d(TAG,"runTest: null scene (no default)");
+			return;			
+		}
+		String path = mComposition.getTestTrack(scene);
+		if (path==null) {
+			Log.d(TAG,"runTest: no file found");
+			return;
+		}
+		Log.d(TAG,"runTest: path "+path);
+		FileDecoder fd = new FileDecoder(path, this);
+		fd.start();
+		if (fd.isFailed()) {
+			Log.d(TAG,"runTest: could not start "+path);
+			return;
+		}
+		int pos = 0;
+		Vector<FileCache.Block> blocks =  new Vector<FileCache.Block>();
+		while (true) {
+			FileCache.Block block = fd.getBlock(pos);
+			if (block!=null) {
+				blocks.add(block);
+				int len = (block.getSamples().length/block.getChannels());
+				Log.d(TAG,"Read block "+pos+": @"+block.getStartFrame()+", len "+len);
+				pos = block.getStartFrame()+len;
+			}
+			else
+				break;
+		}
+		FileCache.Block block = blocks.get(0);
+		FileCache.Block block0 = fd.getBlock(0);
+		if (block0==null) 
+			Log.d(TAG,"Could not read block 0");
+		else {
+			Log.d(TAG,"Read block 0: @"+block0.getStartFrame()+", len "+block0.getSamples().length/block0.getChannels());
+			findBlock(block0, blocks);
+		}
+		fd.getBlock(700);
+		FileCache.Block block1 = fd.getBlock(700);
+		if (block1==null) 
+			Log.d(TAG,"Could not read block 700");
+		else {
+			Log.d(TAG,"Read block 700: @"+block1.getStartFrame()+", len "+block1.getSamples().length/block1.getChannels());
+			findBlock(block1, blocks);
+		}
+		FileCache.Block block2 = fd.getBlock(15000);
+		if (block2==null) 
+			Log.d(TAG,"Could not read block 15000");
+		else  {
+			Log.d(TAG,"Read block 15000: @"+block2.getStartFrame()+", len "+block2.getSamples().length/block2.getChannels());
+			findBlock(block2, blocks);
+			block2 = fd.getBlock(block2.getStartFrame()+block2.getSamples().length/block2.getChannels());
+			findBlock(block2, blocks);
+		}
+	}
+	void findBlock(FileCache.Block block2, Vector<FileCache.Block> blocks) {
+		short as[] = block2.getSamples();
+		for (int i=0; i<blocks.size(); i++ )
+		{
+			FileCache.Block block = blocks.get(i);
+			short bs[] = block.getSamples();
+			for (int j=0; j<bs.length; j+=block.getChannels()) {
+				int k;
+				for (k=0; k<as.length && j+k<bs.length; k++)
+					if (as[k]!=bs[j+k])
+						break;					
+				if (j+k>=bs.length) {
+					Log.d(TAG,"match "+k+" samples @"+block.getStartFrame()+"+"+j);
+					break;
+				}
+			}
+		}
+
+	}
+	boolean equal(FileCache.Block a, FileCache.Block b) {
+		if (a==null || b==null)
+			return false;
+		short as[] = a.getSamples();
+		short bs[] = b.getSamples();
+		if (as.length!=bs.length)
+			return false;
+		for (int i=0; i<as.length; i++)
+			if (as[i]!=bs[i]) {
+				return false;
+			}
+		return true;
 	}
 }

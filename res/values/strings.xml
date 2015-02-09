@@ -10,6 +10,7 @@
     <string name="pref_nextscene_title">Load Next Scene</string>
     <string name="pref_prevscene_title">Load Previous Scene</string>
     <string name="pref_updatescene_title">Update Current Scene</string>
+    <string name="pref_runtest_title">Run Test</string>
     <string name="notification_title">DAO Player</string>
     <string name="notification_description">Audio service is running</string>
     <string name="zip_handler_name">Unzip to DAOPlayer</string>

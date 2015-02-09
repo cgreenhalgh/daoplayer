@@ -33,7 +33,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	private Vector<StateRec> mStateQueue = new Vector<StateRec>();
 	private FileCache mFileCache;
 	
-	static enum StateType { STATE_FUTURE, STATE_IN_PROGRESS, STATE_WRITTEN, STATE_DISCARDED };
+	static enum StateType { STATE_FUTURE, STATE_NEXT, STATE_IN_PROGRESS, STATE_WRITTEN, STATE_DISCARDED };
 	static class StateRec {
 		AState mState;
 		long mStartFramePosition;
@@ -186,9 +186,12 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 					} else if (srec.mType==StateType.STATE_IN_PROGRESS) {
 						srec.mType = StateType.STATE_WRITTEN;
 						last = srec.mState;
-					} else if (srec.mType==StateType.STATE_FUTURE) {
+					} else if (srec.mType==StateType.STATE_NEXT) {
 						srec.mType = StateType.STATE_IN_PROGRESS;
 						current = srec.mState;
+					} else if (srec.mType==StateType.STATE_FUTURE) {
+						srec.mType = StateType.STATE_NEXT;
+						future = srec.mState;
 					}
 				}
 				if (current==null) {
@@ -205,7 +208,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 					future = current.advance(mSamplesPerBlock);
 					StateRec srec = new StateRec();
 					srec.mState = future;
-					srec.mType = StateType.STATE_FUTURE;
+					srec.mType = StateType.STATE_NEXT;
 					mStateQueue.add(srec);
 				}
 				mFileCache.update(mStateQueue, mTracks, mSamplesPerBlock);
@@ -351,7 +354,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			AState current = null;
 			for (int i=0; i<mStateQueue.size(); i++) {
 				StateRec srec = mStateQueue.get(i);
-				if (srec.mType==StateType.STATE_WRITTEN || srec.mType==StateType.STATE_IN_PROGRESS)
+				if (srec.mType==StateType.STATE_WRITTEN || srec.mType==StateType.STATE_IN_PROGRESS || srec.mType==StateType.STATE_NEXT)
 					current = srec.mState;
 				else if (srec.mType==StateType.STATE_FUTURE) {
 					// discard?!
