@@ -33,6 +33,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	private long mWrittenFramePosition = 0, mWrittenTime = 0;
 	private Vector<StateRec> mStateQueue = new Vector<StateRec>();
 	private FileCache mFileCache;
+	private boolean debug = false;
 	
 	static enum StateType { STATE_FUTURE, STATE_NEXT, STATE_IN_PROGRESS, STATE_WRITTEN, STATE_DISCARDED };
 	public static class StateRec {
@@ -274,7 +275,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 					srec.mType = StateType.STATE_NEXT;
 					mStateQueue.add(srec);
 				}
-				mFileCache.update(mStateQueue, mTracks, mSamplesPerBlock);
+				mFileCache.update(mStateQueue, mTracks, mSamplesPerBlock, AudioEngine.this);
 			}
 			for (ATrack track : mTracks.values()) {
 				AState.TrackRef tr = current.get(track);
@@ -289,7 +290,8 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 					float toTrackTime = (float)samplesToSeconds(tpos+buf.length/2-1);
 					if (!pwlNonzero(fromTrackTime, toTrackTime, pwlVolume)) {
 						// silent
-						Log.d(TAG,"Track "+tr.getTrack().getId()+" pwl silent "+fromTrackTime+"-"+toTrackTime+" for "+Arrays.toString(pwlVolume));
+						if (debug)
+							Log.d(TAG,"Track "+tr.getTrack().getId()+" pwl silent "+fromTrackTime+"-"+toTrackTime+" for "+Arrays.toString(pwlVolume));
 						continue;
 					}
 					Float cvol = pwlConstant(fromTrackTime, toTrackTime, pwlVolume);
@@ -356,7 +358,8 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 							Log.e(TAG,"Try to copy 0 bytes! epos="+epos+" spos="+spos+" fpos="+fpos+" bpos="+block.mStartFrame+" bix="+block.mIndex+" length="+b.length);
 							break;
 						}
-						Log.d(TAG,"Mix file buffer @"+block.mStartFrame+"+"+offset+" len="+len+" into "+boffset);
+						if (debug)
+							Log.d(TAG,"Mix file buffer @"+block.mStartFrame+"+"+offset+" len="+len+" into "+boffset);
 						if (block.mChannels==1) {
 							if (pwlVolume!=null)
 								for (int i=0; i<len; i++) {
@@ -456,6 +459,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	public ITrack addTrack(boolean pauseIfSilent) {
 		ATrack track = new ATrack(pauseIfSilent);
 		mTracks.put(track.getId(), track);
+		Log.d(TAG,"addTrack -> "+track.getId());
 		return track;
 	}
 

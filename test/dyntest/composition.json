@@ -30,7 +30,7 @@
       "tracks": [
         {
           "name": "track1",
-          "volume": "pwl(sceneTime,[0,0,1,1])",
+          "volume": "[0.0,0.0,1.0,1.0]",
           "pos": 0
         }
       ]
@@ -42,7 +42,7 @@
       "tracks": [
         {
           "name": "track1",
-          "volume": "[sceneTime,0,sceneTime+1,1]",
+          "volume": "[sceneTime,0,sceneTime+0.5,1,sceneTime+1,0]",
           "pos": 0
         }
       ]

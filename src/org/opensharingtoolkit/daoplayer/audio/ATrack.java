@@ -48,7 +48,7 @@ public class ATrack implements IAudio.ITrack {
 	}
 
 	@Override
-	public void addFileRef(int trackPos, IFile file, int filePos, int length,
+	public synchronized void addFileRef(int trackPos, IFile file, int filePos, int length,
 			int repeats) {
 		mFileRefs.add(new FileRef(trackPos, file, filePos, length, repeats));
 	}
@@ -58,9 +58,17 @@ public class ATrack implements IAudio.ITrack {
 	private float mVolume = 0.0f;
 	private int mPosition = 0;
 	private boolean mPauseIfSilent = true;
+	private boolean mDynamic = false;
 	
 	public ATrack(boolean pauseIfSilent) {
 		mPauseIfSilent = pauseIfSilent;
+		synchronized (ATrack.class) {
+			mId = sNextId++;
+		}
+	}
+	public ATrack(boolean pauseIfSilent, boolean dynamic) {
+		mPauseIfSilent = pauseIfSilent;
+		mDynamic = dynamic;
 		synchronized (ATrack.class) {
 			mId = sNextId++;
 		}
@@ -90,5 +98,8 @@ public class ATrack implements IAudio.ITrack {
 	public boolean isPauseIfSilent() {
 		return mPauseIfSilent;
 	}
-	
+
+	public boolean isDynamic() {
+		return mDynamic;
+	}
 }

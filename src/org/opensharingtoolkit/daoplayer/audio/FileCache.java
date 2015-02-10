@@ -3,6 +3,7 @@
  */
 package org.opensharingtoolkit.daoplayer.audio;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -26,7 +27,6 @@ import android.util.Log;
  * background.
  * 
  * @author pszcmg
- *
  */
 public class FileCache {
 	static boolean debug = false;
@@ -250,7 +250,7 @@ public class FileCache {
 			mPriority = priority;
 		}
 	}
-	public void update(Vector<AudioEngine.StateRec> stateQueue, HashMap<Integer, ATrack> mTracks, int samplesPerBlock) {
+	public void update(Vector<AudioEngine.StateRec> stateQueue, HashMap<Integer, ATrack> mTracks, int samplesPerBlock, AudioEngine engine) {
 		// What file spans do we need and how soon?
 		HashMap<String,NeedRec> needRecs = new HashMap<String,NeedRec>();
 		for (AudioEngine.StateRec srec : stateQueue) {
@@ -261,11 +261,22 @@ public class FileCache {
 					if (tr==null || tr.isPaused()) 
 						continue;
 					int tpos = tr.getPos();
-					// 12 bit shift
-					int vol = (int)(tr.getVolume() * 0x1000);
-					// TODO prepare?
-					if (vol<=0) {
-						continue;
+					float pwlVolume[] = tr.getPwlVolume();
+					int vol = 0;
+					if (pwlVolume!=null) {
+						float fromTrackTime = (float)engine.samplesToSeconds(tpos);
+						float toTrackTime = (float)engine.samplesToSeconds(tpos+blockLength);
+						if (!engine.pwlNonzero(fromTrackTime, toTrackTime, pwlVolume)) {
+							// silent
+							continue;
+						}
+					} else {
+						// 12 bit shift
+						vol = (int)(tr.getVolume() * 0x1000);
+						if (vol<=0) {
+							// silent
+							continue;
+						}
 					}
 					for (ATrack.FileRef fr : track.mFileRefs) {
 						int spos = tpos, epos = tpos+blockLength-1;

@@ -285,8 +285,13 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		Log.d(TAG,"handleCommand "+intent.getAction());
 		if (ACTION_RELOAD.equals(intent.getAction())) {
 			if (mAudioEngine!=null) {
+				boolean start = started;
+				if (started)
+					mAudioEngine.stop();
 				mAudioEngine.reset();
 				loadComposition();
+				if (start)
+					mAudioEngine.start(this);
 			}
 		}
 		else if (ACTION_DEFAULT_SCENE.equals(intent.getAction())) {
