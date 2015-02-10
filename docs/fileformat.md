@@ -43,7 +43,7 @@ Array of scene objects with:
 Track ref is object with:
 - `name` - name of track
 - `volume` - volume to play (float or string, 1.0 is "full", default unchanged). 
-- `pos` - play position in track, in seconds (float, unspecified => "current")
+- `pos` - play position in track, in seconds (float, unspecified => "current"), or (planned!) function returning an array of alternating `sceneTime`,`trackPos` values.
 - `prepare` - audio engine should prepare to play track, even if volume is currently 0 (boolean, default false)
 
 ### `constants`
@@ -63,6 +63,9 @@ Any constants at the whole composition or current scene level are defined before
 If the scene has Javascript code specified in `onload` or `onupdate` then this is executed first, as appropriate (i.e. `onload` if the scene is being loaded and `onupdate` if it has already been loaded and is being updated).
 
 If a volume function returns an array then this is assumed to define a piece-wise linear-interpolated function of `trackTime` (in seconds). For example, a smooth fade in over three seconds at the start of the track would be `[0,0,3.0,1.0]`.
+
+(planned!) 
+If the `pos` of a track ref is a String then it is evaluated as a javascript expression. Expected return should be an array of alternating `sceneTime`,`trackPos` (time) values. As each scene time is reached the track position jumps to the specified track time.
 
 ### Standard variables
 

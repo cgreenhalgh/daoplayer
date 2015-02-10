@@ -32,13 +32,15 @@ public class DynScene implements IAudio.IScene {
 		private Float mVolume;
 		private String mDynVolume;
 		private Integer mPos;
+		private String mDynPos;
 		private Boolean mPrepare;
-		public TrackRef(ITrack mTrack, Float mVolume, String mDynVolume, Integer mPos, Boolean mPrepare) {
+		public TrackRef(ITrack mTrack, Float mVolume, String mDynVolume, Integer mPos, String dynPos, Boolean mPrepare) {
 			super();
 			this.mTrack = mTrack;
 			this.mVolume = mVolume;
 			this.mDynVolume = mDynVolume;
 			this.mPos = mPos;
+			this.mDynPos = dynPos;
 			this.mPrepare = mPrepare;
 		}
 		public ITrack getTrack() {
@@ -53,6 +55,9 @@ public class DynScene implements IAudio.IScene {
 		public Integer getPos() {
 			return mPos;
 		}	
+		public String getDynPos() {
+			return mDynPos;
+		}
 		public Boolean getPrepare() {
 			return mPrepare;
 		}
@@ -99,11 +104,11 @@ public class DynScene implements IAudio.IScene {
 
 	@Override
 	public void set(ITrack track, Float volume, Integer pos, Boolean prepare) {
-		set(track, volume, null, pos, prepare);
+		set(track, volume, null, pos, null, prepare);
 	}
 
-	public void set(ITrack track, Float volume, String dynVolume, Integer pos, Boolean prepare) {
-		TrackRef tref = new TrackRef(track, volume, dynVolume, pos, prepare);
+	public void set(ITrack track, Float volume, String dynVolume, Integer pos, String dynPos, Boolean prepare) {
+		TrackRef tref = new TrackRef(track, volume, dynVolume, pos, dynPos, prepare);
 		mTrackRefs.put(track.getId(), tref);		
 	}
 

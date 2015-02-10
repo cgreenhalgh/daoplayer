@@ -152,11 +152,12 @@ public class Composition {
 							Log.w(TAG,"Scene "+name+" refers to unknown track "+trackName);
 						} else {
 							Log.d(TAG,"Scene "+name+" uses track "+atrack.getId()+" as "+trackName);
-							Integer pos = jtrack.has(POS) ? mEngine.secondsToSamples(jtrack.getDouble(POS)) : null;
+							Integer pos = jtrack.has(POS) && jtrack.get(POS) instanceof Number ? mEngine.secondsToSamples(jtrack.getDouble(POS)) : null;
+							String dynPos = jtrack.has(POS) && jtrack.get(POS) instanceof String ? jtrack.getString(POS) : null;
 							Float volume = jtrack.has(VOLUME) && jtrack.get(VOLUME) instanceof Number ? (float)jtrack.getDouble(VOLUME) : null;
 							String dynVolume = jtrack.has(VOLUME) && jtrack.get(VOLUME) instanceof String ? jtrack.getString(VOLUME) : null;
 							Boolean prepare = jtrack.has(PREPARE) && jtrack.get(PREPARE) instanceof Boolean ? jtrack.getBoolean(PREPARE) : null;
-							ascene.set(atrack, volume, dynVolume, pos, prepare);
+							ascene.set(atrack, volume, dynVolume, pos, dynPos, prepare);
 						}
 					}
 				}
@@ -172,8 +173,13 @@ public class Composition {
 	}
 	private static float MIN_VOLUME = 0.0f;
 	private static float MAX_VOLUME = 16.0f;
+	static class DynInfo {
+		Float volume;
+		float [] pwlVolume;
+		float [] align;
+	}
 	/** value in map is either null, Float (single volume) or float[] (array of args for pwl) */
-	private Map<Integer,Object> getDynVolumes(IScriptEngine scriptEngine, DynScene scene, boolean loadFlag, String position, long time) {
+	private Map<Integer,DynInfo> getDynInfo(IScriptEngine scriptEngine, DynScene scene, boolean loadFlag, String position, long time) {
 		AudioEngine.StateRec srec = mEngine.getWrittenState();
 		AState astate = (srec!=null ? srec.getState() : null);
 		StringBuilder sb = new StringBuilder();
@@ -229,13 +235,15 @@ public class Composition {
 		sb.append("return JSON.stringify(vs);");
 		String res = scriptEngine.runScript(sb.toString());
 		Log.d(TAG,"run script: "+res+"="+sb.toString());
-		Map<Integer,Object> dynVolumes = new HashMap<Integer,Object>();
+		Map<Integer,DynInfo> dynInfos = new HashMap<Integer,DynInfo>();
 		try {
 			JSONObject vs = new JSONObject(res);
 			Iterator<String> keys = vs.keys();
 			while(keys.hasNext()) {
 				String key = keys.next();
 				int id = Integer.valueOf(key);
+				DynInfo di = new DynInfo();
+				dynInfos.put(id,  di);
 				Object val = vs.get(key);
 				if (val instanceof JSONArray) {
 					JSONArray aval = (JSONArray)val;
@@ -245,17 +253,17 @@ public class Composition {
 						if (i+1<aval.length())
 							fvals[i+1] = clipVolume(extractFloat(aval.get(i+1)));
 					}
-					dynVolumes.put(id, fvals);
+					di.pwlVolume = fvals;
 				} else {
 					float fval = clipVolume(extractFloat(val));
-					dynVolumes.put(id, fval);
+					di.volume = fval;
 				}
 			}
 		}
 		catch (Exception e) {
 			Log.w(TAG,"error parsing load script result "+res+": "+e);
 		}
-		return dynVolumes;
+		return dynInfos;
 	}
 	private float extractFloat(Object val) {
 		if (val instanceof Number) {
@@ -294,13 +302,13 @@ public class Composition {
 		if (mFirstSceneLoadTime==0)
 			mFirstSceneLoadTime = mLastSceneLoadTime;
 		mLastSceneUpdateTime = mLastSceneLoadTime;
-		Map<Integer,Object> dynVolumes = getDynVolumes(scriptEngine, scene, true, position, mLastSceneLoadTime);
+		Map<Integer,DynInfo> dynInfos = getDynInfo(scriptEngine, scene, true, position, mLastSceneLoadTime);
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
-			Object volume = dynVolumes.get(tr.getTrack().getId());
-			if (volume instanceof Float)
-				ascene.set(tr.getTrack(), (Float)volume, tr.getPos(), tr.getPrepare());
-			else if (volume instanceof float[]) 
-				ascene.set(tr.getTrack(), (float[])volume, tr.getPos(), tr.getPrepare());				
+			DynInfo di = dynInfos.get(tr.getTrack().getId());
+			if (di!=null && di.volume instanceof Float)
+				ascene.set(tr.getTrack(), (Float)di.volume, tr.getPos(), tr.getPrepare());
+			else if (di!=null && di.pwlVolume instanceof float[]) 
+				ascene.set(tr.getTrack(), (float[])di.pwlVolume, tr.getPos(), tr.getPrepare());				
 			else
 				ascene.set(tr.getTrack(), tr.getVolume(), tr.getPos(), tr.getPrepare());
 		}
@@ -316,13 +324,13 @@ public class Composition {
 		// partial
 		AScene ascene = mEngine.newAScene(true);
 		mLastSceneUpdateTime = System.currentTimeMillis();
-		Map<Integer,Object> dynVolumes = getDynVolumes(scriptEngine, scene, false, position, mLastSceneUpdateTime);
+		Map<Integer,DynInfo> dynInfos = getDynInfo(scriptEngine, scene, false, position, mLastSceneUpdateTime);
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
-			Object volume = dynVolumes.get(tr.getTrack().getId());
-			if (volume instanceof Float)
-				ascene.set(tr.getTrack(), (Float)volume, null, null);
-			else if (volume instanceof float[]) 
-				ascene.set(tr.getTrack(), (float[])volume, null, null);				
+			DynInfo di = dynInfos.get(tr.getTrack().getId());
+			if (di!=null && di.volume instanceof Float)
+				ascene.set(tr.getTrack(), (Float)di.volume, null, null);
+			else if (di!=null && di.pwlVolume instanceof float[]) 
+				ascene.set(tr.getTrack(), (float[])di.pwlVolume, null, null);				
 		}
 		mEngine.setScene(ascene);
 		return true;

@@ -46,6 +46,19 @@
           "pos": 0
         }
       ]
+    },
+    {
+      "name": "scene2",
+      "partial": false,
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "track1",
+          "volume": 1.0,
+          "pos": "[0,0]",
+
+        }
+      ]
     }
   ]
 }
