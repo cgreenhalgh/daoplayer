@@ -217,7 +217,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 						"return R * c;\n"+
 					"};\n"+
 					"window.pwl = function (inval, map, def) { \n"+
-					    "if (!inval) return def;\n"+
+					    "if (inval===null || inval===undefined) return def;\n"+
 					    "var lin=inval, lout=map[1], i;\n"+
 					    "for (i=0; i+1<map.length; i=i+2) {\n"+
 					        "if (inval==map[i]) return map[i+1];\n"+

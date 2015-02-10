@@ -25,6 +25,7 @@ public class AScene implements IAudio.IScene {
 	static class TrackRef {
 		private ITrack mTrack;
 		private Float mVolume;
+		private float [] mPwlVolume;
 		private Integer mPos;
 		private Boolean mPrepare;
 		public TrackRef(ITrack mTrack, Float mVolume, Integer mPos, Boolean mPrepare) {
@@ -34,11 +35,21 @@ public class AScene implements IAudio.IScene {
 			this.mPos = mPos;
 			this.mPrepare = mPrepare;
 		}
+		public TrackRef(ITrack mTrack, float[] mPwlVolume, Integer mPos, Boolean mPrepare) {
+			super();
+			this.mTrack = mTrack;
+			this.mPwlVolume = mPwlVolume;
+			this.mPos = mPos;
+			this.mPrepare = mPrepare;
+		}
 		public ITrack getTrack() {
 			return mTrack;
 		}
 		public Float getVolume() {
 			return mVolume;
+		}
+		public float[] getPwlVolume() {
+			return mPwlVolume;
 		}
 		public Integer getPos() {
 			return mPos;
@@ -65,6 +76,11 @@ public class AScene implements IAudio.IScene {
 		mTrackRefs.put(track.getId(), tref);		
 	}
 
+	public void set(ITrack track, float[] volumes, Integer pos, Boolean prepare) {
+		TrackRef tref = new TrackRef(track, volumes, pos, prepare);
+		mTrackRefs.put(track.getId(), tref);		
+	}
+
 	@Override
 	public void setVolume(ITrack track, float volume) {
 		TrackRef tref = mTrackRefs.get(track.getId());
@@ -80,6 +96,6 @@ public class AScene implements IAudio.IScene {
 		if (tref!=null)
 			tref.mPos = pos;
 		else 
-			set(track, null, pos, null);		
+			set(track, (Float)null, pos, null);		
 	}
 }

@@ -39,7 +39,7 @@ public class FileDecoder {
 	int mChannels = 2;
 	private int mRate;
 	private Context mContext;
-
+	private boolean debug = false;
 	private MediaExtractor mExtractor;
 	private MediaCodec mCodec;
 	private ByteBuffer [] mCodecInputBuffers;
@@ -65,7 +65,8 @@ public class FileDecoder {
 			if (mStarted)
 				return;
 		}
-		Log.d(TAG,"start decode "+mPath);
+		if (debug)
+			Log.d(TAG,"start decode "+mPath);
 		mExtractor = new MediaExtractor();
 		// asset?
 		if (mPath.startsWith(FILE_ASSET)) {
@@ -106,7 +107,8 @@ public class FileDecoder {
 			mExtractor = null;
 			return;
 		}
-		Log.d(TAG,"Found "+mExtractor.getTrackCount()+" tracks");
+		if (debug)
+			Log.d(TAG,"Found "+mExtractor.getTrackCount()+" tracks");
 		MediaFormat format = mExtractor.getTrackFormat(0);
 		String mime = format.containsKey(MediaFormat.KEY_MIME) ? format.getString(MediaFormat.KEY_MIME): "";
 		mChannels = format.containsKey(MediaFormat.KEY_CHANNEL_COUNT) ? format.getInteger(MediaFormat.KEY_CHANNEL_COUNT): -1;
@@ -165,7 +167,8 @@ public class FileDecoder {
 				mExtractor.seekTo(target, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
 				long timeUs = mExtractor.getSampleTime();
 				mFramePosition = timeUs*mRate/1000000;
-				Log.d(TAG,"Seek to "+fromFrame+" -> "+mFramePosition+" with offset "+offset+", attempt "+attempts);
+				if (debug)
+					Log.d(TAG,"Seek to "+fromFrame+" -> "+mFramePosition+" with offset "+offset+", attempt "+attempts);
 				if (mFramePosition>0 && fromFrame>0 && mFramePosition>fromFrame)
 					offset += (mFramePosition-fromFrame);
 				else
@@ -204,12 +207,14 @@ public class FileDecoder {
                         mExtractor.readSampleData(dstBuf, 0 /* offset */);
                     long presentationTimeUs = 0;
                     if (sampleSize < 0) {
-                        Log.d(TAG, "saw input EOS.");
+                    	if (debug)
+                    		Log.d(TAG, "saw input EOS.");
                         mSawInputEOS = true;
                         sampleSize = 0;
                     } else {
                         presentationTimeUs = mExtractor.getSampleTime();
-                        Log.d(TAG,"Input presentation time after "+sampleSize+" samples = "+(presentationTimeUs*mRate/1000000)+" vs "+mFramePosition+" & request "+fromFrame);
+                    	if (debug)
+                    		Log.d(TAG,"Input presentation time after "+sampleSize+" samples = "+(presentationTimeUs*mRate/1000000)+" vs "+mFramePosition+" & request "+fromFrame);
                     }
                     mCodec.queueInputBuffer(
                             inputBufIndex,
@@ -224,7 +229,8 @@ public class FileDecoder {
             }
             int res = mCodec.dequeueOutputBuffer(mCodecInfo, kTimeOutUs);
             if (res >= 0) {
-                Log.d(TAG, "got frame, size " + (mCodecInfo.size/2/mChannels) + " at " + (mCodecInfo.presentationTimeUs*mRate/1000000)+", expected "+mFramePosition);
+            	if (debug)
+            		Log.d(TAG, "got frame, size " + (mCodecInfo.size/2/mChannels) + " at " + (mCodecInfo.presentationTimeUs*mRate/1000000)+", expected "+mFramePosition);
                 // start of frame?
                 //mFramePosition = (mCodecInfo.presentationTimeUs*mRate/1000000); //-(mCodecInfo.size/2/mChannels-1);
                 if (mCodecInfo.size > 0) {
@@ -250,19 +256,23 @@ public class FileDecoder {
                 mFramePosition += mCodecInfo.size/2/mChannels;
                 mCodec.releaseOutputBuffer(outputBufIndex, false /* render */);
                 if ((mCodecInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                    Log.d(TAG, "saw output EOS.");
+                	if (debug)
+                		Log.d(TAG, "saw output EOS.");
                     mSawOutputEOS = true;
                     if (mReadSinceSeek && !mSeenEnd) {
                     	mLength = mFramePosition;
-                    	Log.d(TAG, "record length = "+mLength);
+                    	if (debug)
+                    		Log.d(TAG, "file length = "+mLength);
                     }
                 }
             } else if (res == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
                 mCodecOutputBuffers = mCodec.getOutputBuffers();
-                Log.d(TAG, "output buffers have changed.");
+            	if (debug)
+            		Log.d(TAG, "output buffers have changed.");
             } else if (res == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                 MediaFormat oformat = mCodec.getOutputFormat();
-                Log.d(TAG, "output format has changed to " + oformat);
+            	if (debug)
+            		Log.d(TAG, "output format has changed to " + oformat);
             } else {
                 Log.d(TAG, "dequeueOutputBuffer returned " + res);
             }

@@ -3,6 +3,7 @@
  */
 package org.opensharingtoolkit.daoplayer.audio;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
@@ -34,10 +35,24 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	private FileCache mFileCache;
 	
 	static enum StateType { STATE_FUTURE, STATE_NEXT, STATE_IN_PROGRESS, STATE_WRITTEN, STATE_DISCARDED };
-	static class StateRec {
+	public static class StateRec {
 		AState mState;
-		long mStartFramePosition;
+		long mWrittenFramePosition;
+		long mWrittenTime;
 		StateType mType = StateType.STATE_FUTURE;
+		public AState getState() {
+			return mState;
+		}
+		public long getWrittenFramePosition() {
+			return mWrittenFramePosition;
+		}
+		public long getWrittenTime() {
+			return mWrittenTime;
+		}
+		public StateType getType() {
+			return mType;
+		}
+		
 	};
 	
 	public AudioEngine(ILog log) {
@@ -125,6 +140,41 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		//test();
 
 	}
+	public float pwl(float inval, float [] map) {
+		if (map.length<2)
+			return 0;
+	    float lin=inval, lout=map[1];
+	    for (int i=0; i+1<map.length; i=i+2) {
+	    	if (inval==map[i]) 
+	    		return map[i+1];
+	    	if (inval<map[i]) 
+	    		return lout+(map[i+1]-lout)*(inval-lin)/(map[i]-lin);
+	    	lin=map[i]; 
+	    	lout=map[i+1];
+	    }
+	    if (map.length>=2) 
+	    	return map[map.length-1];
+	    return 0;
+	}
+	public boolean pwlNonzero(float fromval, float toval, float [] map) {
+		if (map.length<2)
+			return false;
+		float lout = map[1];
+	    for (int i=0; i+1<map.length; i=i+2) {
+	    	if (map[i]>=toval) 
+	    		// next after us; no more to check
+		    	return map[i+1]>0;
+		    else if (map[i]<fromval)
+		    	// all before us - depends what happens next
+		    	lout = map[i+1];
+		    else {
+		    	// ok, inc. last
+		    	if (lout>0 || map[i+1]>0)
+		    		return true;
+		    }
+	    }
+	    return false;
+	}
 	
 	class PlayThread extends Thread {
 		boolean stopped = false;
@@ -185,6 +235,8 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 						i--;						
 					} else if (srec.mType==StateType.STATE_IN_PROGRESS) {
 						srec.mType = StateType.STATE_WRITTEN;
+						srec.mWrittenFramePosition = mWrittenFramePosition;
+						srec.mWrittenTime = mWrittenTime;
 						last = srec.mState;
 					} else if (srec.mType==StateType.STATE_NEXT) {
 						srec.mType = StateType.STATE_IN_PROGRESS;
@@ -218,11 +270,23 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 				if (tr==null || tr.isPaused()) 
 					continue;
 				int tpos = tr.getPos();
-				// 12 bit shift
-				int vol = (int)(tr.getVolume() * 0x1000);
-				if (vol<=0) {
-					// stereo buffer
-					continue;
+				// pwl volume?
+				float pwlVolume[] = tr.getPwlVolume();
+				int vol = 0;
+				if (pwlVolume!=null) {
+					float fromTrackTime = (float)samplesToSeconds(tpos);
+					float toTrackTime = (float)samplesToSeconds(tpos+buf.length/2-1);
+					if (pwlNonzero(fromTrackTime, toTrackTime, pwlVolume))
+						// silent
+						Log.d(TAG,"Track "+tr.getTrack().getId()+" pwl silent "+fromTrackTime+"-"+toTrackTime+" for "+Arrays.toString(pwlVolume));
+						continue;
+				} else {
+					// 12 bit shift
+					vol = (int)(tr.getVolume() * 0x1000);
+					if (vol<=0) {
+						// silent
+						continue;
+					}
 				}
 				for (ATrack.FileRef fr : track.mFileRefs) {
 					int spos = tpos, epos = tpos+buf.length/2-1;
@@ -270,28 +334,58 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 							break;
 						}
 						int boffset = 2*(spos-tpos);
-						spos += len;
-						//Log.d(TAG,"Mix file buffer="+bix+" offset="+offset+" len="+len+" into "+boffset);
+						Log.d(TAG,"Mix file buffer @"+block.mStartFrame+"+"+offset+" len="+len+" into "+boffset);
 						if (block.mChannels==1) {
-							for (int i=0; i<len; i++) {
-								int val = vol*b[offset+i];
-								buf[boffset+2*i] += val;
-								buf[boffset+2*i+1] += val;
-							}
-							
+							if (pwlVolume!=null)
+								for (int i=0; i<len; i++) {
+									// 12 bit shift
+									vol = (int)(pwl((float)samplesToSeconds(spos+i), pwlVolume) * 0x1000);
+									int val = vol*b[offset+i];
+									buf[boffset+2*i] += val;
+									buf[boffset+2*i+1] += val;
+								}
+							else
+								for (int i=0; i<len; i++) {
+									int val = vol*b[offset+i];
+									buf[boffset+2*i] += val;
+									buf[boffset+2*i+1] += val;
+								}
+								
 						} else if (block.mChannels==2) {
 							offset *= 2;
 							len *= 2;
-							for (int i=0; i<len; i++) {
-								buf[boffset+i] += vol*b[offset+i];
-							}
+							if (pwlVolume!=null)
+								for (int i=0; i+1<len; i+=2) {
+									// 12 bit shift
+									vol = (int)(pwl((float)samplesToSeconds(spos+i/2), pwlVolume) * 0x1000);
+									buf[boffset+i] += vol*b[offset+i];
+									buf[boffset+i+1] += vol*b[offset+i+1];
+								}
+							else
+								for (int i=0; i<len; i++) {
+									buf[boffset+i] += vol*b[offset+i];
+								}
 						} else {
 							// error?!
 						}
+						spos += len;
 					}
 				}
 			}
 		}
+	}
+	public StateRec getWrittenState() {
+		synchronized(this) {
+			for (int i=0; i<mStateQueue.size(); i++) {
+				StateRec srec = mStateQueue.get(i);
+				if (srec.mType==StateType.STATE_WRITTEN) 
+					return srec;
+			}
+		}
+		return null;
+	}
+	public int getFutureOffset() {
+		return 2*mSamplesPerBlock;
 	}
 	private PlayThread thread;
 	private void stopAudio() {
@@ -390,5 +484,8 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		if (seconds<0)
 			return -1;
 		return new Double(seconds*DEFAULT_SAMPLE_RATE).intValue();
+	}
+	public double samplesToSeconds(int trackPos) {
+		return trackPos*1.0/DEFAULT_SAMPLE_RATE;
 	}
 }

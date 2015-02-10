@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1
+  },
+  "defaultScene": "scene1",
+  "constants": {
+    "d1":"20"
+  },
+  "tracks": [
+    {
+      "name": "track1",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "626898.mp3", 
+          "trackPos": 0,
+          "filePos": 0,
+          "repeats": -1
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "scene1",
+      "partial": false,
+      "onload": "daoplayer.log('onload!')",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "track1",
+          "volume": "pwl(sceneTime,[0,0,1,1])",
+          "pos": 0
+        }
+      ]
+    },
+    {
+      "name": "scene2",
+      "partial": false,
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "track1",
+          "volume": "[sceneTime,0,sceneTime+1,1]",
+          "pos": 0
+        }
+      ]
+    }
+  ]
+}
+

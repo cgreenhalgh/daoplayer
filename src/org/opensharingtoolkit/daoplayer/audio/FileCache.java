@@ -29,6 +29,8 @@ import android.util.Log;
  *
  */
 public class FileCache {
+	static boolean debug = false;
+	
 	public static class Block {
 		short mSamples[];
 		int mChannels;
@@ -348,7 +350,8 @@ public class FileCache {
 		private static void work(NeedRec nrec, File file, int priority) {
 			//Log.d(TAG,"work pri="+priority+" on "+nrec.mFile.getPath());
 			for (Interval needed : nrec.mIntervals.values()) {
-				Log.d(TAG,"work pri="+needed.mPriority+"/"+priority+" "+needed.mFromInclusive+"-"+needed.mToExclusive+" of "+nrec.mFile.getPath());
+				if (debug)
+					Log.d(TAG,"work pri="+needed.mPriority+"/"+priority+" "+needed.mFromInclusive+"-"+needed.mToExclusive+" of "+nrec.mFile.getPath());
 				if (needed.mPriority!=priority)
 				//if (needed.mPriority<0)
 					continue;
@@ -394,7 +397,8 @@ public class FileCache {
 				}
 				// these are the fragment(s) we are missing from that particular interval
 				for (Interval gap : gaps.values()) {
-					Log.d(TAG,"gap "+gap.mFromInclusive+"-"+gap.mToExclusive+" in "+nrec.mFile.getPath());
+					if (debug)
+						Log.d(TAG,"gap "+gap.mFromInclusive+"-"+gap.mToExclusive+" in "+nrec.mFile.getPath());
 					
 					int bpos = gap.mFromInclusive;
 					while (!file.mDecoder.isFailed() && bpos<gap.mToExclusive) {
@@ -407,7 +411,8 @@ public class FileCache {
 						}
 						Block b = file.mDecoder.getBlock(bpos);
 						if (b==null) {
-							Log.d(TAG,"Could not get block "+bpos+" for "+file.mPath);
+							if (debug)
+								Log.d(TAG,"Could not get block "+bpos+" for "+file.mPath);
 							break;
 						}
 						synchronized (file.mBlocks) {

@@ -19,6 +19,7 @@ public class AState {
 	static class TrackRef {
 		private ITrack mTrack;
 		private float mVolume;
+		private float mPwlVolume[];
 		private int mPos;
 		private boolean mPaused;
 		public TrackRef(ITrack mTrack, float mVolume, int mPos, boolean paused) {
@@ -28,11 +29,29 @@ public class AState {
 			this.mPos = mPos;
 			this.mPaused = paused;
 		}
+		public TrackRef(ITrack mTrack, float [] mPwlVolume, int mPos, boolean paused) {
+			super();
+			this.mTrack = mTrack;
+			this.mPwlVolume = mPwlVolume;
+			this.mPos = mPos;
+			this.mPaused = paused;
+		}
+		public TrackRef(ITrack mTrack, float mVolume, float [] mPwlVolume, int mPos, boolean paused) {
+			super();
+			this.mTrack = mTrack;
+			this.mVolume = mVolume;
+			this.mPwlVolume = mPwlVolume;
+			this.mPos = mPos;
+			this.mPaused = paused;
+		}
 		public ITrack getTrack() {
 			return mTrack;
 		}
 		public float getVolume() {
 			return mVolume;
+		}
+		public float[] getPwlVolume() {
+			return mPwlVolume;
 		}
 		public int getPos() {
 			return mPos;
@@ -57,11 +76,15 @@ public class AState {
 	 */
 	public AState(AState state) {
 		for (TrackRef tr : state.mTrackRefs.values()) {
-			mTrackRefs.put(tr.mTrack.getId(), new TrackRef(tr.mTrack, tr.mVolume, tr.mPos, tr.mPaused));
+			mTrackRefs.put(tr.mTrack.getId(), new TrackRef(tr.mTrack, tr.mVolume, tr.mPwlVolume, tr.mPos, tr.mPaused));
 		}
 	}
 	public void set(ITrack track, float volume, int pos, boolean paused) {
 		mTrackRefs.put(track.getId(), new TrackRef(track, volume, pos, paused));
+	}
+	private void set(ITrack track, float volume, float[] pwlVolume, int pos,
+			boolean paused) {
+		mTrackRefs.put(track.getId(), new TrackRef(track, volume, pwlVolume, pos, paused));
 	}
 	TrackRef get(ITrack track) {
 		return mTrackRefs.get(track.getId());
@@ -77,13 +100,19 @@ public class AState {
 				continue;
 			}
 			float volume = tr.mVolume;
-			if (str.getVolume()!=null)
+			float pwlVolume[] = tr.mPwlVolume;
+			if (str.getVolume()!=null) {
 				volume = str.getVolume();
+				pwlVolume = null;
+			}
+			if (str.getPwlVolume()!=null) {
+				pwlVolume = str.getPwlVolume();
+			}
 			boolean wasPaused = tr.mVolume<=0 && track.isPauseIfSilent();
 			int defaultPos = tr.mPos;
 			if (!wasPaused)
 				defaultPos += defaultPosAdvance;
-			state.set(track, volume, str.getPos()!=null ? str.getPos() : defaultPos, volume<=0 && track.isPauseIfSilent());
+			state.set(track, volume, pwlVolume, str.getPos()!=null ? str.getPos() : defaultPos, volume<=0 && track.isPauseIfSilent());
 		}
 		for (TrackRef tr : mTrackRefs.values()) {
 			if (!state.mTrackRefs.containsKey(tr.mTrack.getId())) {
@@ -92,7 +121,7 @@ public class AState {
 					pos += defaultPosAdvance;
 				if (scene.isPartial()) 
 					// copy existing
-					state.set(tr.mTrack, tr.mVolume, pos, tr.mPaused);
+					state.set(tr.mTrack, tr.mVolume, tr.mPwlVolume, pos, tr.mPaused);
 				else 
 					// total -> silent
 					state.set(tr.mTrack, 0.0f, pos, tr.mTrack.isPauseIfSilent());
@@ -107,7 +136,7 @@ public class AState {
 			if (!tr.mPaused)
 				pos += posAdvance;
 				// copy existing
-			state.set(tr.mTrack, tr.mVolume, pos, tr.mPaused);
+			state.set(tr.mTrack, tr.mVolume, tr.mPwlVolume, pos, tr.mPaused);
 		}
 		return state;
 	}
