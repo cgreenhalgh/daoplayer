@@ -62,6 +62,8 @@ Any constants at the whole composition or current scene level are defined before
 
 If the scene has Javascript code specified in `onload` or `onupdate` then this is executed first, as appropriate (i.e. `onload` if the scene is being loaded and `onupdate` if it has already been loaded and is being updated).
 
+If a volume function returns an array then this is assumed to define a piece-wise linear-interpolated function of `trackTime` (in seconds). For example, a smooth fade in over three seconds at the start of the track would be `[0,0,3.0,1.0]`.
+
 ### Standard variables
 
 `position`: last known user position (WGS-84 coordinates, i.e. GPS). Nulll or undefined if there has been no position reported since the app started. Value is an object with fields:
@@ -73,6 +75,8 @@ If the scene has Javascript code specified in `onload` or `onupdate` then this i
 `sceneTime`: time in seconds since this scene was loaded (float).
 
 `totalTime`: time in seconds since this composition was started (float).
+
+`trackTime`: time in seconds of current playout point within track (float). This is currently a slightly conservative estimate (i.e. part of a second into the future), and is only available to code within the context of a track ref, i.e. a dynamic volume expression. 
 
 ### Standard functions
 

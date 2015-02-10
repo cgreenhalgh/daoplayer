@@ -161,10 +161,10 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			return false;
 		float lout = map[1];
 	    for (int i=0; i+1<map.length; i=i+2) {
-	    	if (map[i]>=toval) 
-	    		// next after us; no more to check
-		    	return map[i+1]>0;
-		    else if (map[i]<fromval)
+	    	if (toval < map[i]) 
+	    		// next is after us; no more to check
+		    	return lout>0 || map[i+1]>0;
+		    if (fromval > map[i])
 		    	// all before us - depends what happens next
 		    	lout = map[i+1];
 		    else {
@@ -173,7 +173,18 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		    		return true;
 		    }
 	    }
-	    return false;
+	    // the last one still matters
+	    return lout>0;
+	}
+	public Float pwlConstant(float fromval, float toval, float [] map) {
+		if (map.length<=2)
+			return 0.0f;
+		if (toval <= map[0])
+			return map[1];
+		if (fromval >= map[(map.length/2-1)*2])
+			return map[map.length-1];
+		// TODO linear bits in the middle!
+		return null;
 	}
 	
 	class PlayThread extends Thread {
@@ -276,10 +287,20 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 				if (pwlVolume!=null) {
 					float fromTrackTime = (float)samplesToSeconds(tpos);
 					float toTrackTime = (float)samplesToSeconds(tpos+buf.length/2-1);
-					if (pwlNonzero(fromTrackTime, toTrackTime, pwlVolume))
+					if (!pwlNonzero(fromTrackTime, toTrackTime, pwlVolume)) {
 						// silent
 						Log.d(TAG,"Track "+tr.getTrack().getId()+" pwl silent "+fromTrackTime+"-"+toTrackTime+" for "+Arrays.toString(pwlVolume));
 						continue;
+					}
+					Float cvol = pwlConstant(fromTrackTime, toTrackTime, pwlVolume);
+					if (cvol!=null) {
+						pwlVolume = null;
+						vol = (int)(cvol * 0x1000);
+						if (vol<=0) {
+							// silent
+							continue;
+						}
+					}
 				} else {
 					// 12 bit shift
 					vol = (int)(tr.getVolume() * 0x1000);
@@ -312,9 +333,11 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 					FileCache.Block block = null;
 					while (spos <= epos) {
 						int fpos = fr.mFilePos+(spos-fr.mTrackPos-repetition*length);
+						int boffset = 2*(spos-tpos);
 						block = mFileCache.getBlock(file, fpos, block);
 						if (block==null) {
 							// past the end or not available - skip to next repetition
+							Log.d(TAG,"Null buffer @"+fpos+" into "+boffset);
 							if (length==IAudio.ITrack.LENGTH_ALL)
 								// can't repeat length all (for now, anyway)
 								break;
@@ -333,7 +356,6 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 							Log.e(TAG,"Try to copy 0 bytes! epos="+epos+" spos="+spos+" fpos="+fpos+" bpos="+block.mStartFrame+" bix="+block.mIndex+" length="+b.length);
 							break;
 						}
-						int boffset = 2*(spos-tpos);
 						Log.d(TAG,"Mix file buffer @"+block.mStartFrame+"+"+offset+" len="+len+" into "+boffset);
 						if (block.mChannels==1) {
 							if (pwlVolume!=null)
@@ -353,16 +375,16 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 								
 						} else if (block.mChannels==2) {
 							offset *= 2;
-							len *= 2;
+							int len2 = len * 2;
 							if (pwlVolume!=null)
-								for (int i=0; i+1<len; i+=2) {
+								for (int i=0; i+1<len2; i+=2) {
 									// 12 bit shift
 									vol = (int)(pwl((float)samplesToSeconds(spos+i/2), pwlVolume) * 0x1000);
 									buf[boffset+i] += vol*b[offset+i];
 									buf[boffset+i+1] += vol*b[offset+i+1];
 								}
 							else
-								for (int i=0; i<len; i++) {
+								for (int i=0; i<len2; i++) {
 									buf[boffset+i] += vol*b[offset+i];
 								}
 						} else {
