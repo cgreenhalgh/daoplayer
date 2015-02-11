@@ -5,6 +5,7 @@ package org.opensharingtoolkit.daoplayer.audio;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.opensharingtoolkit.daoplayer.IAudio;
 import org.opensharingtoolkit.daoplayer.IAudio.ITrack;
@@ -21,6 +22,7 @@ public class DynScene implements IAudio.IScene {
 	private String mOnupdate;
 	private DynConstants mConstants;
 	private Double mUpdatePeriod;
+	private Map<String,String> mWaypoints;
 	
 	public DynScene(boolean mPartial) {
 		super();
@@ -156,6 +158,20 @@ public class DynScene implements IAudio.IScene {
 	 */
 	public void setUpdatePeriod(Double updatePeriod) {
 		this.mUpdatePeriod = updatePeriod;
+	}
+
+	/**
+	 * @return the mWaypoints
+	 */
+	public Map<String, String> getWaypoints() {
+		return mWaypoints;
+	}
+
+	/**
+	 * @param mWaypoints the mWaypoints to set
+	 */
+	public void setWaypoints(Map<String, String> mWaypoints) {
+		this.mWaypoints = mWaypoints;
 	}
 	
 }

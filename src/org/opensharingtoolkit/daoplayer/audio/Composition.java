@@ -32,37 +32,44 @@ import android.util.Log;
  */
 public class Composition {
 	private static final String TAG = "daoplayer-compositionreader";
+
+	private static final String CONSTANTS = "constants";
+	private static final String CONTEXT = "context";	
 	private static final String DEFAULT_SCENE = "defaultScene";
-	private static final String TRACKS = "tracks";
-	private static final String NAME = "name";
-	private static final String PAUSE_IF_SILENT = "pauseIfSilent";
 	private static final String FILES = "files";
-	private static final String PATH = "path";
-	private static final String TRACK_POS = "trackPos";
 	private static final String FILE_POS = "filePos";
 	private static final String LENGTH = "length";
-	private static final String REPEATS = "repeats";
-	private static final String SCENES = "scenes";
-	private static final String PARTIAL = "partial";
-	private static final String VOLUME = "volume";
-	private static final String POS = "pos";
-	private static final String CONSTANTS = "constants";
-	private static final String UPDATE_PERIOD = "updatePeriod";
+	private static final String NAME = "name";
 	private static final String ONLOAD = "onload";
 	private static final String ONUPDATE = "onupdate";
+	private static final String PARTIAL = "partial";
+	private static final String PATH = "path";
+	private static final String PAUSE_IF_SILENT = "pauseIfSilent";
+	private static final String POS = "pos";
 	private static final String PREPARE = "prepare";
+	private static final String REPEATS = "repeats";
+	private static final String SCENES = "scenes";
+	private static final String TRACKS = "tracks";
+	private static final String TRACK_POS = "trackPos";
+	private static final String UPDATE_PERIOD = "updatePeriod";
+	private static final String VOLUME = "volume";
+	private static final String WAYPOINTS = "waypoints";
+
 	private AudioEngine mEngine;
 	private String mDefaultScene;
 	private DynConstants mConstants = new DynConstants();
 	private Map<String,ITrack> mTracks = new HashMap<String,ITrack>();
 	private Map<String,DynScene> mScenes = new HashMap<String, DynScene>();
 	private Vector<String> mScenesInOrder = new Vector<String>();
+	private Context mContext;
 	private long mFirstSceneLoadTime;
 	private long mLastSceneUpdateTime;
 	private long mLastSceneLoadTime;
+	private UserModel mUserModel;
 	
-	public Composition(AudioEngine engine) {		
+	public Composition(AudioEngine engine, UserModel userModel) {		
 		mEngine = engine;
+		mUserModel = userModel;
 	}
 	public static String readFully(File file) throws IOException {
 		StringBuilder sb = new StringBuilder();
@@ -82,6 +89,11 @@ public class Composition {
 		File parent = file.getParentFile();
 		String data = readFully(file);
 		JSONObject jcomp = new JSONObject(data);
+		if (jcomp.has(CONTEXT))
+			mContext = Context.parse(jcomp.getJSONObject(CONTEXT));
+		else
+			// empty context
+			mContext = new Context();
 		// TODO meta
 		mDefaultScene = (jcomp.has(DEFAULT_SCENE) ? jcomp.getString(DEFAULT_SCENE) : null);
 		if (jcomp.has(CONSTANTS))
@@ -142,6 +154,17 @@ public class Composition {
 					ascene.setOnload(jscene.getString(ONLOAD));
 				if (jscene.has(ONUPDATE))
 					ascene.setOnload(jscene.getString(ONUPDATE));
+				Map<String,String> waypoints = new HashMap<String,String>();
+				if (jscene.has(WAYPOINTS)) {
+					JSONObject jwaypoints = jscene.getJSONObject(WAYPOINTS);
+					Iterator<String> keys = jwaypoints.keys();
+					while (keys.hasNext()) {
+						String key = keys.next();
+						String value = jwaypoints.getString(key);
+						waypoints.put(key, value);
+					}
+				}
+				ascene.setWaypoints(waypoints);
 				if (jscene.has(TRACKS)) {
 					JSONArray jtracks = jscene.getJSONArray(TRACKS);
 					for (int ti=0; ti<jtracks.length(); ti++) {
@@ -164,6 +187,13 @@ public class Composition {
 			}
 		}
 		Log.i(TAG,"Read composition "+file);
+	}
+	
+	/**
+	 * @return the context
+	 */
+	public Context getContext() {
+		return mContext;
 	}
 	/**
 	 * @return the mDefaultScene
@@ -201,6 +231,7 @@ public class Composition {
 		else
 			sb.append("0");
 		sb.append(";\n");
+		mUserModel.toJavascript(sb, scene.getWaypoints());
 		// constants: composition, scene
 		mConstants.toJavascript(sb);
 		if (scene.getConstants()!=null)

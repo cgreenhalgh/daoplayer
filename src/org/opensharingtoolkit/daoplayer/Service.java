@@ -17,6 +17,7 @@ import org.opensharingtoolkit.daoplayer.audio.Composition;
 import org.opensharingtoolkit.daoplayer.audio.FileCache;
 import org.opensharingtoolkit.daoplayer.audio.FileDecoder;
 import org.opensharingtoolkit.daoplayer.audio.IScriptEngine;
+import org.opensharingtoolkit.daoplayer.audio.UserModel;
 import org.opensharingtoolkit.daoplayer.ui.BrowserActivity;
 
 import android.annotation.SuppressLint;
@@ -80,6 +81,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private double mLastLat, mLastLng, mLastAccuracy;
 	private long mLastTime;
 	private boolean mGpsStarted = false;
+	private UserModel mUserModel = new UserModel();
 	
 	class LogEntry {
 		long time;
@@ -363,6 +365,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				sb.append("}");
 				mScriptEngine.runScript(sb.toString());
 			}*/
+			mUserModel.setLocation(mLastLat, mLastLng, mLastAccuracy, mLastTime);
 			if (mComposition!=null) {
 				updateScene();
 			}
@@ -377,7 +380,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		Log.d(TAG,"loadComposition...");
 		log("LOAD COMPOSITION");
 		File filesDir = Compat.getExternalFilesDir(this);
-		Composition comp = mComposition = new Composition(mAudioEngine);
+		Composition comp = mComposition = new Composition(mAudioEngine, mUserModel);
 		try {
 			comp.read(new File(filesDir, DEFAULT_COMPOSITION));
 		} catch (Exception e) {
@@ -385,6 +388,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			Toast.makeText(this, "Error reading composition: "+e.getMessage(), Toast.LENGTH_SHORT).show();
 			return;
 		}
+		mUserModel.setContext(comp.getContext());
 		String defaultScene = mScene = comp.getDefaultScene();
 		if (defaultScene!=null) {
 			setScene(defaultScene);
@@ -448,6 +452,11 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			i.putExtra(EXTRA_SCENE, scene);
 			i.setClass(getApplicationContext(), Service.class);
 			getApplicationContext().startService(i);
+		}
+		@JavascriptInterface
+		public void setLastWaypoint(String name) {
+			Log.d(TAG,"javascript:setLastWaypoint("+name+")");
+			mUserModel.setLastWaypoint(name);
 		}
 	}
 	private Map<Integer,MBox> mResults = new HashMap<Integer,MBox>();
@@ -548,6 +557,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		if (delay==null || mScene==null) 
 			return;
 		Log.d(TAG,"setSceneUpdateTimer "+delay+" for "+mScene);
+		mHandler.removeCallbacks(mSceneUpdateTimer);
 		mHandler.postDelayed(mSceneUpdateTimer, delay);
 	}
 	private Runnable mSceneUpdateTimer = new Runnable() {
