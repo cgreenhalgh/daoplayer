@@ -180,7 +180,7 @@ public class Composition {
 	}
 	/** value in map is either null, Float (single volume) or float[] (array of args for pwl) */
 	private Map<Integer,DynInfo> getDynInfo(IScriptEngine scriptEngine, DynScene scene, boolean loadFlag, String position, long time) {
-		AudioEngine.StateRec srec = mEngine.getWrittenState();
+		AudioEngine.StateRec srec = mEngine.getNextState();
 		AState astate = (srec!=null ? srec.getState() : null);
 		StringBuilder sb = new StringBuilder();
 		// "built-in"
@@ -190,10 +190,16 @@ public class Composition {
 		sb.append(";\n");
 		sb.append("var distance=function(coord1,coord2){return window.distance(coord1,coord2 ? coord2 : position);};\n");
 		sb.append("var sceneTime=");
-		sb.append((time-mLastSceneLoadTime)/1000.0);
+		if (srec!=null)
+			sb.append(srec.mSceneTime+mEngine.samplesToSeconds(mEngine.getFutureOffset()));
+		else
+			sb.append("0");
 		sb.append(";\n");
 		sb.append("var totalTime=");
-		sb.append((time-mFirstSceneLoadTime)/1000.0);
+		if (srec!=null)
+			sb.append(srec.mTotalTime+mEngine.samplesToSeconds(mEngine.getFutureOffset()));
+		else
+			sb.append("0");
 		sb.append(";\n");
 		// constants: composition, scene
 		mConstants.toJavascript(sb);
@@ -312,7 +318,7 @@ public class Composition {
 			else
 				ascene.set(tr.getTrack(), tr.getVolume(), tr.getPos(), tr.getPrepare());
 		}
-		mEngine.setScene(ascene);
+		mEngine.setScene(ascene, true);
 		return true;
 	}
 	public boolean updateScene(String name, String position, IScriptEngine scriptEngine) {
@@ -332,7 +338,7 @@ public class Composition {
 			else if (di!=null && di.pwlVolume instanceof float[]) 
 				ascene.set(tr.getTrack(), (float[])di.pwlVolume, null, null);				
 		}
-		mEngine.setScene(ascene);
+		mEngine.setScene(ascene, false);
 		return true;
 	}
 	public Long getSceneUpdateDelay(String name) {

@@ -3,7 +3,7 @@
     "mimetype": "application/x-daoplayer-composition",
     "version": 1
   },
-  "defaultScene": "scene1",
+  "defaultScene": "5s fade out with totalTime",
   "constants": {
     "d1":"20"
   },
@@ -23,7 +23,31 @@
   ],
   "scenes": [
     {
-      "name": "scene1",
+      "name": "5s fade out with totalTime",
+      "partial": false,
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "track1",
+          "volume": "pwl(totalTime,[0,1,5,0])",
+          "pos": 0
+        }
+      ]
+    },
+    {
+      "name": "5s fade out with sceneTime",
+      "partial": false,
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "track1",
+          "volume": "pwl(sceneTime,[0,1,5,0])",
+          "pos": 0
+        }
+      ]
+    },
+    {
+      "name": "1 second fade-in",
       "partial": false,
       "onload": "daoplayer.log('onload!')",
       "updatePeriod":1.0,
@@ -36,7 +60,7 @@
       ]
     },
     {
-      "name": "scene2",
+      "name": "saw-tooth envelope",
       "partial": false,
       "updatePeriod":1.0,
       "tracks": [
@@ -48,15 +72,14 @@
       ]
     },
     {
-      "name": "scene2",
+      "name": "static alignment test",
       "partial": false,
       "updatePeriod":1.0,
       "tracks": [
         {
           "name": "track1",
           "volume": 1.0,
-          "pos": "[0,0]",
-
+          "pos": "[0,0]"
         }
       ]
     }

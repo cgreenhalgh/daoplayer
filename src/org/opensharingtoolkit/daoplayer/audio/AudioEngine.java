@@ -40,6 +40,8 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		AState mState;
 		long mWrittenFramePosition;
 		long mWrittenTime;
+		double mTotalTime;
+		double mSceneTime;
 		StateType mType = StateType.STATE_FUTURE;
 		public AState getState() {
 			return mState;
@@ -53,7 +55,12 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		public StateType getType() {
 			return mType;
 		}
-		
+		public double getTotalTime() {
+			return mTotalTime;
+		}
+		public double getSceneTime() {
+			return mSceneTime;
+		}
 	};
 	
 	public AudioEngine(ILog log) {
@@ -237,48 +244,52 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			for (int i=0; i<buf.length; i++)
 				buf[i] = 0;
 			// take next state
-			AState current = null, last = null, future = null;
+			StateRec current = null, last = null, future = null;
 			synchronized(AudioEngine.this) {
 				for (int i=0; i<mStateQueue.size(); i++) {
 					StateRec srec = mStateQueue.get(i);
 					if (srec.mType==StateType.STATE_WRITTEN || srec.mType==StateType.STATE_DISCARDED) {
-						last = srec.mState;
+						last = srec;
 						mStateQueue.remove(i);
 						i--;						
 					} else if (srec.mType==StateType.STATE_IN_PROGRESS) {
 						srec.mType = StateType.STATE_WRITTEN;
 						srec.mWrittenFramePosition = mWrittenFramePosition;
 						srec.mWrittenTime = mWrittenTime;
-						last = srec.mState;
+						last = srec;
 					} else if (srec.mType==StateType.STATE_NEXT) {
 						srec.mType = StateType.STATE_IN_PROGRESS;
-						current = srec.mState;
+						current = srec;
 					} else if (srec.mType==StateType.STATE_FUTURE) {
 						srec.mType = StateType.STATE_NEXT;
-						future = srec.mState;
+						future = srec;
 					}
 				}
 				if (current==null) {
-					if (last!=null)
-						current = last.advance(mSamplesPerBlock);
-					else
-						current = getIdleState();
-					StateRec srec = new StateRec();
-					srec.mState = current;
-					srec.mType = StateType.STATE_IN_PROGRESS;
-					mStateQueue.add(srec);
+					current = new StateRec();
+					if (last!=null) {
+						current.mState = last.mState.advance(mSamplesPerBlock);
+						current.mTotalTime = last.mTotalTime+samplesToSeconds(mSamplesPerBlock);
+						current.mSceneTime = last.mSceneTime+samplesToSeconds(mSamplesPerBlock);
+					} else {
+						current.mState = getIdleState();
+						current.mTotalTime = current.mSceneTime = 0;
+					}
+					current.mType = StateType.STATE_IN_PROGRESS;
+					mStateQueue.add(current);
 				}
 				if (future==null) {
-					future = current.advance(mSamplesPerBlock);
-					StateRec srec = new StateRec();
-					srec.mState = future;
-					srec.mType = StateType.STATE_NEXT;
-					mStateQueue.add(srec);
+					future = new StateRec();
+					future.mState = current.mState.advance(mSamplesPerBlock);
+					future.mType = StateType.STATE_NEXT;
+					future.mTotalTime = current.mTotalTime+samplesToSeconds(mSamplesPerBlock);
+					future.mSceneTime = current.mSceneTime+samplesToSeconds(mSamplesPerBlock);
+					mStateQueue.add(future);
 				}
 				mFileCache.update(mStateQueue, mTracks, mSamplesPerBlock, AudioEngine.this);
 			}
 			for (ATrack track : mTracks.values()) {
-				AState.TrackRef tr = current.get(track);
+				AState.TrackRef tr = current.mState.get(track);
 				if (tr==null || tr.isPaused()) 
 					continue;
 				int tpos = tr.getPos();
@@ -399,18 +410,18 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			}
 		}
 	}
-	public StateRec getWrittenState() {
+	public StateRec getNextState() {
 		synchronized(this) {
 			for (int i=0; i<mStateQueue.size(); i++) {
 				StateRec srec = mStateQueue.get(i);
-				if (srec.mType==StateType.STATE_WRITTEN) 
+				if (srec.mType==StateType.STATE_NEXT) 
 					return srec;
 			}
 		}
 		return null;
 	}
 	public int getFutureOffset() {
-		return 2*mSamplesPerBlock;
+		return mSamplesPerBlock;
 	}
 	private PlayThread thread;
 	private void stopAudio() {
@@ -450,7 +461,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		t1.addFileRef(0, f1, 0, 44100*4, ITrack.REPEATS_FOREVER);
 		AScene s1 = this.newAScene(false);
 		s1.set(t1, 1.0f, 0, false);
-		this.setScene(s1);
+		this.setScene(s1, true);
 	}
 
 	private HashMap<Integer,ATrack> mTracks = new HashMap<Integer,ATrack>();
@@ -467,15 +478,15 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		return new AScene(partial);
 	}
 
-	public void setScene(AScene ascene) {
+	public void setScene(AScene ascene, boolean newScene) {
 		// new future state
 		// find basis - current else written else idle
 		synchronized(this) {
-			AState current = null;
+			StateRec current = null;
 			for (int i=0; i<mStateQueue.size(); i++) {
 				StateRec srec = mStateQueue.get(i);
 				if (srec.mType==StateType.STATE_WRITTEN || srec.mType==StateType.STATE_IN_PROGRESS || srec.mType==StateType.STATE_NEXT)
-					current = srec.mState;
+					current = srec;
 				else if (srec.mType==StateType.STATE_FUTURE) {
 					// discard?!
 					srec.mType = StateType.STATE_DISCARDED;
@@ -483,15 +494,26 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 					i--;
 				}
 			}
-			if (current==null)
-				current = getIdleState();
+			if (current==null) {
+				// temporary placeholder!
+				current = new StateRec();
+				current.mState = getIdleState();
+				current.mTotalTime = samplesToSeconds((int)mWrittenFramePosition);
+				current.mSceneTime = current.mTotalTime;
+			}
 				
 			//Log.d(TAG,"CurrentState="+current);
-			AState target = current.applyScene(ascene, mSamplesPerBlock);
+			AState target = current.mState.applyScene(ascene, mSamplesPerBlock);
 			
 			StateRec srec = new StateRec();
 			srec.mType = StateType.STATE_FUTURE;
 			srec.mState = target;
+			srec.mTotalTime = current.mTotalTime+samplesToSeconds(mSamplesPerBlock);
+			if (newScene)
+				srec.mSceneTime = 0;
+			else 
+				srec.mSceneTime = current.mSceneTime+samplesToSeconds(mSamplesPerBlock);
+			
 			mStateQueue.add(srec);
 		}
 	}
