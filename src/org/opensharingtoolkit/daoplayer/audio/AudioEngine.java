@@ -148,7 +148,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		//test();
 
 	}
-	public float pwl(float inval, float [] map) {
+	static public float pwl(float inval, float [] map) {
 		if (map.length<2)
 			return 0;
 	    float lin=inval, lout=map[1];
@@ -164,7 +164,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	    	return map[map.length-1];
 	    return 0;
 	}
-	public boolean pwlNonzero(float fromval, float toval, float [] map) {
+	static public boolean pwlNonzero(float fromval, float toval, float [] map) {
 		if (map.length<2)
 			return false;
 		float lout = map[1];
@@ -184,7 +184,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	    // the last one still matters
 	    return lout>0;
 	}
-	public Float pwlConstant(float fromval, float toval, float [] map) {
+	static public Float pwlConstant(float fromval, float toval, float [] map) {
 		if (map.length<=2)
 			return 0.0f;
 		if (toval <= map[0])
@@ -498,7 +498,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 				// temporary placeholder!
 				current = new StateRec();
 				current.mState = getIdleState();
-				current.mTotalTime = samplesToSeconds((int)mWrittenFramePosition);
+				current.mTotalTime = 0;
 				current.mSceneTime = current.mTotalTime;
 			}
 				

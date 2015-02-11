@@ -27,6 +27,7 @@ public class AScene implements IAudio.IScene {
 		private Float mVolume;
 		private float [] mPwlVolume;
 		private Integer mPos;
+		private int [] mAlign;
 		private Boolean mPrepare;
 		public TrackRef(ITrack mTrack, Float mVolume, Integer mPos, Boolean mPrepare) {
 			super();
@@ -42,6 +43,20 @@ public class AScene implements IAudio.IScene {
 			this.mPos = mPos;
 			this.mPrepare = mPrepare;
 		}
+		public TrackRef(ITrack mTrack, Float mVolume, int[] mAlign, Boolean mPrepare) {
+			super();
+			this.mTrack = mTrack;
+			this.mVolume = mVolume;
+			this.mAlign = mAlign;
+			this.mPrepare = mPrepare;
+		}
+		public TrackRef(ITrack mTrack, float[] mPwlVolume, int [] mAlign, Boolean mPrepare) {
+			super();
+			this.mTrack = mTrack;
+			this.mPwlVolume = mPwlVolume;
+			this.mAlign = mAlign;
+			this.mPrepare = mPrepare;
+		}
 		public ITrack getTrack() {
 			return mTrack;
 		}
@@ -54,6 +69,9 @@ public class AScene implements IAudio.IScene {
 		public Integer getPos() {
 			return mPos;
 		}	
+		public int [] getAlign() {
+			return mAlign;
+		}
 		public Boolean getPrepare() {
 			return mPrepare;			
 		}
@@ -75,6 +93,15 @@ public class AScene implements IAudio.IScene {
 		TrackRef tref = new TrackRef(track, volume, pos, prepare);
 		mTrackRefs.put(track.getId(), tref);		
 	}
+	public void set(ITrack track, float[] pwlVolume, int[] align,
+			Boolean prepare) {
+		TrackRef tref = new TrackRef(track, pwlVolume, align, prepare);
+		mTrackRefs.put(track.getId(), tref);		
+	}
+	public void set(ITrack track, Float volume, int[] align, Boolean prepare) {
+		TrackRef tref = new TrackRef(track, volume, align, prepare);
+		mTrackRefs.put(track.getId(), tref);		
+	}
 
 	public void set(ITrack track, float[] volumes, Integer pos, Boolean prepare) {
 		TrackRef tref = new TrackRef(track, volumes, pos, prepare);
@@ -87,7 +114,7 @@ public class AScene implements IAudio.IScene {
 		if (tref!=null)
 			tref.mVolume = volume;
 		else 
-			set(track, volume, null, null);		
+			set(track, volume, (Integer)null, (Boolean)null);		
 	}
 
 	@Override
@@ -98,4 +125,5 @@ public class AScene implements IAudio.IScene {
 		else 
 			set(track, (Float)null, pos, null);		
 	}
+
 }

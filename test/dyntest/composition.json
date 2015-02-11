@@ -72,14 +72,14 @@
       ]
     },
     {
-      "name": "static alignment test",
+      "name": "static alignment test (+5 seconds)",
       "partial": false,
       "updatePeriod":1.0,
       "tracks": [
         {
           "name": "track1",
           "volume": 1.0,
-          "pos": "[0,0]"
+          "pos": "[0,5]"
         }
       ]
     }

@@ -176,7 +176,7 @@ public class Composition {
 	static class DynInfo {
 		Float volume;
 		float [] pwlVolume;
-		float [] align;
+		int [] align;
 	}
 	/** value in map is either null, Float (single volume) or float[] (array of args for pwl) */
 	private Map<Integer,DynInfo> getDynInfo(IScriptEngine scriptEngine, DynScene scene, boolean loadFlag, String position, long time) {
@@ -213,9 +213,11 @@ public class Composition {
 			sb.append(";\n");			
 		}
 		sb.append("var vs={};\n");
+		sb.append("var ps={};\n");
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			String dynVolume = tr.getDynVolume();
-			if (dynVolume!=null) {
+			String dynPos = tr.getDynPos();
+			if (dynVolume!=null || dynPos!=null) {
 				int trackPos = 0;
 				if (loadFlag && tr.getPos()!=null)
 					trackPos = tr.getPos();
@@ -229,21 +231,33 @@ public class Composition {
 							trackPos += mEngine.getFutureOffset();
 					}
 				}
-				sb.append("vs['");
-				sb.append(tr.getTrack().getId());
-				sb.append("']=(function(trackTime){return(");
-				sb.append(dynVolume);
-				sb.append(");})(");
-				sb.append(mEngine.samplesToSeconds(trackPos));
-				sb.append(");\n");
+				if (dynVolume!=null) {
+					sb.append("vs['");
+					sb.append(tr.getTrack().getId());
+					sb.append("']=(function(trackTime){return(");
+					sb.append(dynVolume);
+					sb.append(");})(");
+					sb.append(mEngine.samplesToSeconds(trackPos));
+					sb.append(");\n");
+				}
+				if (dynPos!=null) {
+					sb.append("ps['");
+					sb.append(tr.getTrack().getId());
+					sb.append("']=(function(trackTime){return(");
+					sb.append(dynPos);
+					sb.append(");})(");
+					sb.append(mEngine.samplesToSeconds(trackPos));
+					sb.append(");\n");					
+				}
 			}			
 		}
-		sb.append("return JSON.stringify(vs);");
+		sb.append("return JSON.stringify({vs:vs,ps:ps});");
 		String res = scriptEngine.runScript(sb.toString());
 		Log.d(TAG,"run script: "+res+"="+sb.toString());
 		Map<Integer,DynInfo> dynInfos = new HashMap<Integer,DynInfo>();
 		try {
-			JSONObject vs = new JSONObject(res);
+			JSONObject jres = new JSONObject(res);
+			JSONObject vs = jres.getJSONObject("vs");
 			Iterator<String> keys = vs.keys();
 			while(keys.hasNext()) {
 				String key = keys.next();
@@ -263,6 +277,34 @@ public class Composition {
 				} else {
 					float fval = clipVolume(extractFloat(val));
 					di.volume = fval;
+				}
+			}
+			JSONObject ps = jres.getJSONObject("ps");
+			keys = ps.keys();
+			while(keys.hasNext()) {
+				String key = keys.next();
+				int id = Integer.valueOf(key);
+				DynInfo di = dynInfos.get(id);
+				if (di==null) {
+					di = new DynInfo();
+					dynInfos.put(id,  di);
+				}
+				Object val = ps.get(key);
+				if (val instanceof JSONArray) {
+					JSONArray aval = (JSONArray)val;
+					int ivals[] = new int[aval.length()];
+					for (int i=0; i<aval.length(); i+=2) {
+						ivals[i] = (int)mEngine.secondsToSamples((double)extractFloat(aval.get(i)));
+					}
+					di.align = ivals;
+				} else if (val!=null) {
+					float fval = extractFloat(val);
+					//Log.d(TAG,"dynPos single value "+fval+"-> array");
+					di.align = new int[2];
+					di.align[0] = (int)mEngine.secondsToSamples(srec!=null ? srec.mSceneTime : 0);
+					di.align[1] = (int)mEngine.secondsToSamples((double)fval);
+				} else {
+					//Log.d(TAG,"dynPos null");
 				}
 			}
 		}
@@ -311,10 +353,20 @@ public class Composition {
 		Map<Integer,DynInfo> dynInfos = getDynInfo(scriptEngine, scene, true, position, mLastSceneLoadTime);
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			DynInfo di = dynInfos.get(tr.getTrack().getId());
-			if (di!=null && di.volume instanceof Float)
-				ascene.set(tr.getTrack(), (Float)di.volume, tr.getPos(), tr.getPrepare());
-			else if (di!=null && di.pwlVolume instanceof float[]) 
-				ascene.set(tr.getTrack(), (float[])di.pwlVolume, tr.getPos(), tr.getPrepare());				
+			if (di!=null && di.volume!=null) {
+				if (di.align!=null)
+					ascene.set(tr.getTrack(), di.volume, di.align, tr.getPrepare());
+				else
+					ascene.set(tr.getTrack(), di.volume, tr.getPos(), tr.getPrepare());
+			}
+			else if (di!=null && di.pwlVolume!=null) {
+				if (di.align!=null)
+					ascene.set(tr.getTrack(), di.pwlVolume, di.align, tr.getPrepare());
+				else
+					ascene.set(tr.getTrack(), di.pwlVolume, tr.getPos(), tr.getPrepare());
+			}
+			else if (di!=null && di.align!=null)
+				ascene.set(tr.getTrack(), tr.getVolume(), di.align, tr.getPrepare());
 			else
 				ascene.set(tr.getTrack(), tr.getVolume(), tr.getPos(), tr.getPrepare());
 		}
@@ -333,10 +385,20 @@ public class Composition {
 		Map<Integer,DynInfo> dynInfos = getDynInfo(scriptEngine, scene, false, position, mLastSceneUpdateTime);
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			DynInfo di = dynInfos.get(tr.getTrack().getId());
-			if (di!=null && di.volume instanceof Float)
-				ascene.set(tr.getTrack(), (Float)di.volume, null, null);
-			else if (di!=null && di.pwlVolume instanceof float[]) 
-				ascene.set(tr.getTrack(), (float[])di.pwlVolume, null, null);				
+			if (di!=null && di.volume!=null) {
+				if (di.align!=null)
+					ascene.set(tr.getTrack(), di.volume, di.align, (Boolean)null);
+				else
+					ascene.set(tr.getTrack(), di.volume, (Integer)null, null);
+			}
+			else if (di!=null && di.pwlVolume!=null) {
+				if (di.align!=null)
+					ascene.set(tr.getTrack(), di.pwlVolume, di.align, null);
+				else
+					ascene.set(tr.getTrack(), di.pwlVolume, (Integer)null, null);
+			}
+			else if (di!=null && di.align!=null)
+				ascene.set(tr.getTrack(), (Float)null, di.align, null);
 		}
 		mEngine.setScene(ascene, false);
 		return true;

@@ -21,6 +21,7 @@ public class AState {
 		private float mVolume;
 		private float mPwlVolume[];
 		private int mPos;
+		private int mAlign[];
 		private boolean mPaused;
 		public TrackRef(ITrack mTrack, float mVolume, int mPos, boolean paused) {
 			super();
@@ -36,12 +37,13 @@ public class AState {
 			this.mPos = mPos;
 			this.mPaused = paused;
 		}
-		public TrackRef(ITrack mTrack, float mVolume, float [] mPwlVolume, int mPos, boolean paused) {
+		public TrackRef(ITrack mTrack, float mVolume, float [] mPwlVolume, int mPos, int[] align, boolean paused) {
 			super();
 			this.mTrack = mTrack;
 			this.mVolume = mVolume;
 			this.mPwlVolume = mPwlVolume;
 			this.mPos = mPos;
+			this.mAlign = align;
 			this.mPaused = paused;
 		}
 		public ITrack getTrack() {
@@ -55,6 +57,9 @@ public class AState {
 		}
 		public int getPos() {
 			return mPos;
+		}
+		public int[] getAlign() {
+			return mAlign;
 		}
 		public boolean isPaused() {
 			return mPaused;
@@ -76,15 +81,15 @@ public class AState {
 	 */
 	public AState(AState state) {
 		for (TrackRef tr : state.mTrackRefs.values()) {
-			mTrackRefs.put(tr.mTrack.getId(), new TrackRef(tr.mTrack, tr.mVolume, tr.mPwlVolume, tr.mPos, tr.mPaused));
+			mTrackRefs.put(tr.mTrack.getId(), new TrackRef(tr.mTrack, tr.mVolume, tr.mPwlVolume, tr.mPos, tr.mAlign, tr.mPaused));
 		}
 	}
 	public void set(ITrack track, float volume, int pos, boolean paused) {
 		mTrackRefs.put(track.getId(), new TrackRef(track, volume, pos, paused));
 	}
 	private void set(ITrack track, float volume, float[] pwlVolume, int pos,
-			boolean paused) {
-		mTrackRefs.put(track.getId(), new TrackRef(track, volume, pwlVolume, pos, paused));
+			int[] align, boolean paused) {
+		mTrackRefs.put(track.getId(), new TrackRef(track, volume, pwlVolume, pos, align, paused));
 	}
 	TrackRef get(ITrack track) {
 		return mTrackRefs.get(track.getId());
@@ -108,11 +113,23 @@ public class AState {
 			if (str.getPwlVolume()!=null) {
 				pwlVolume = str.getPwlVolume();
 			}
-			boolean wasPaused = tr.mVolume<=0 && track.isPauseIfSilent();
-			int defaultPos = tr.mPos;
+			boolean silent = volume<=0;
+			if (pwlVolume!=null)
+				// TODO silent if dynamic?!
+				silent = false;
+			boolean wasPaused = (tr.mVolume<=0 && tr.mPwlVolume==null) && track.isPauseIfSilent();
+			int pos = tr.mPos;
 			if (!wasPaused)
-				defaultPos += defaultPosAdvance;
-			state.set(track, volume, pwlVolume, str.getPos()!=null ? str.getPos() : defaultPos, volume<=0 && track.isPauseIfSilent());
+				pos += defaultPosAdvance;
+			int align[] = tr.mAlign;
+			if (str.getPos()!=null) {
+				pos = str.getPos();
+				align = null;
+			}
+			if (str.getAlign()!=null) {
+				align = str.getAlign();
+			}
+			state.set(track, volume, pwlVolume, pos, align, silent && track.isPauseIfSilent());
 		}
 		for (TrackRef tr : mTrackRefs.values()) {
 			if (!state.mTrackRefs.containsKey(tr.mTrack.getId())) {
@@ -121,10 +138,10 @@ public class AState {
 					pos += defaultPosAdvance;
 				if (scene.isPartial()) 
 					// copy existing
-					state.set(tr.mTrack, tr.mVolume, tr.mPwlVolume, pos, tr.mPaused);
+					state.set(tr.mTrack, tr.mVolume, tr.mPwlVolume, pos, tr.mAlign, tr.mPaused);
 				else 
-					// total -> silent
-					state.set(tr.mTrack, 0.0f, pos, tr.mTrack.isPauseIfSilent());
+					// total -> silent; copies Align - not sure if it should!
+					state.set(tr.mTrack, 0.0f, null, pos, tr.mAlign, tr.mTrack.isPauseIfSilent());
 			}
 		}
 		return state;
@@ -136,7 +153,7 @@ public class AState {
 			if (!tr.mPaused)
 				pos += posAdvance;
 				// copy existing
-			state.set(tr.mTrack, tr.mVolume, tr.mPwlVolume, pos, tr.mPaused);
+			state.set(tr.mTrack, tr.mVolume, tr.mPwlVolume, pos, tr.mAlign, tr.mPaused);
 		}
 		return state;
 	}
