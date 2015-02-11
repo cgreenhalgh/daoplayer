@@ -259,18 +259,17 @@ public class FileCache {
 				for (ATrack track : mTracks.values()) {
 					AState.TrackRef tr = srec.mState.get(track);
 					if (tr==null || tr.isPaused()) 
+						// TODO ok with align?
 						continue;
+					int [] align = tr.getAlign();
+					// frames, inclusive
+					int bufStart = 0, bufEnd = -1;
+
 					int tpos = tr.getPos();
+					int refPos = tpos;
 					float pwlVolume[] = tr.getPwlVolume();
 					int vol = 0;
-					if (pwlVolume!=null) {
-						float fromTrackTime = (float)engine.samplesToSeconds(tpos);
-						float toTrackTime = (float)engine.samplesToSeconds(tpos+blockLength);
-						if (!engine.pwlNonzero(fromTrackTime, toTrackTime, pwlVolume)) {
-							// silent
-							continue;
-						}
-					} else {
+					if (pwlVolume==null) {
 						// 12 bit shift
 						vol = (int)(tr.getVolume() * 0x1000);
 						if (vol<=0) {
@@ -278,46 +277,83 @@ public class FileCache {
 							continue;
 						}
 					}
-					for (ATrack.FileRef fr : track.mFileRefs) {
-						int spos = tpos, epos = tpos+blockLength-1;
-						if (fr.mTrackPos > epos || fr.mRepeats==0)
-							continue;
-						if (fr.mTrackPos > spos)
-							spos = fr.mTrackPos;
-						int repetition = 0;
-						AFile file = (AFile)fr.mFile;
-						int length = fr.mLength;
-						if (length==IAudio.ITrack.LENGTH_ALL)
-							repetition = 0;
-						else {
-							repetition = (spos - fr.mTrackPos)/length;
-							if (fr.mRepeats!=IAudio.ITrack.REPEATS_FOREVER) {
-								if (repetition >= fr.mRepeats)
+					int sceneTime = engine.secondsToSamples(srec.mSceneTime);
+					// each aligned sub-section
+					for (int ai=0; ai<=(align!=null ? align.length : 0) && bufStart<=blockLength-1; ai+=2, bufStart = bufEnd+1)
+					{
+						if (align!=null && align.length>=2) {
+							if (ai<align.length) {
+								// up to an alignment
+								if (align[ai]<=sceneTime+bufStart) {
+									// already past
+									refPos = align[ai+1]+sceneTime-align[ai];
+									//Log.d(TAG,"Align track at +"+bufStart+": "+sceneTime+" -> "+tr.getPos()+" (align "+align[ai]+"->"+align[ai+1]+")");
 									continue;
-								if (fr.mTrackPos+length*fr.mRepeats<epos)
-									epos = fr.mTrackPos+length*fr.mRepeats;
+								}
+								if (align[ai]>=sceneTime+blockLength)
+									// after this buffer
+									bufEnd = blockLength-1;
+								else
+									// coming up...
+									bufEnd = align[ai]-sceneTime;
+							} else {
+								// from last alignment
+								bufEnd = blockLength-1;						
 							}
+							tpos = refPos+bufStart;
 						}
-						// within file?
-						while (spos <= epos) {
-							int fpos = fr.mFilePos+(spos-fr.mTrackPos-repetition*length);
-							// fpos is position in file of spos in track
-							NeedRec nr = needRecs.get(file.getPath());
-							if (nr==null) {
-								nr = new NeedRec(file);
-								needRecs.put(file.getPath(), nr);
+						else
+							bufEnd = blockLength-1;
+						
+						if (pwlVolume!=null) {
+							float fromTrackTime = (float)engine.samplesToSeconds(tpos);
+							float toTrackTime = (float)engine.samplesToSeconds(tpos+bufEnd-bufStart);
+							if (!engine.pwlNonzero(fromTrackTime, toTrackTime, pwlVolume)) {
+								// silent
+								continue;
 							}
-							Interval ival = new Interval(fpos, fpos+epos-spos, getPriority(srec.mType));
-							nr.merge(ival);
-							// next repetition
+						} 
+						for (ATrack.FileRef fr : track.mFileRefs) {
+							int spos = tpos, epos = tpos+bufEnd-bufStart;
+							if (fr.mTrackPos > epos || fr.mRepeats==0)
+								continue;
+							if (fr.mTrackPos > spos)
+								spos = fr.mTrackPos;
+							int repetition = 0;
+							AFile file = (AFile)fr.mFile;
+							int length = fr.mLength;
 							if (length==IAudio.ITrack.LENGTH_ALL)
-								// can't repeat length all (for now, anyway)
-								break;
-							repetition++;
-							if (fr.mRepeats!=IAudio.ITrack.REPEATS_FOREVER && repetition >= fr.mRepeats)
-								break;
-							spos = fr.mTrackPos+repetition*length;
-							continue;
+								repetition = 0;
+							else {
+								repetition = (spos - fr.mTrackPos)/length;
+								if (fr.mRepeats!=IAudio.ITrack.REPEATS_FOREVER) {
+									if (repetition >= fr.mRepeats)
+										continue;
+									if (fr.mTrackPos+length*fr.mRepeats<epos)
+										epos = fr.mTrackPos+length*fr.mRepeats;
+								}
+							}
+							// within file?
+							while (spos <= epos) {
+								int fpos = fr.mFilePos+(spos-fr.mTrackPos-repetition*length);
+								// fpos is position in file of spos in track
+								NeedRec nr = needRecs.get(file.getPath());
+								if (nr==null) {
+									nr = new NeedRec(file);
+									needRecs.put(file.getPath(), nr);
+								}
+								Interval ival = new Interval(fpos, fpos+epos-spos, getPriority(srec.mType));
+								nr.merge(ival);
+								// next repetition
+								if (length==IAudio.ITrack.LENGTH_ALL)
+									// can't repeat length all (for now, anyway)
+									break;
+								repetition++;
+								if (fr.mRepeats!=IAudio.ITrack.REPEATS_FOREVER && repetition >= fr.mRepeats)
+									break;
+								spos = fr.mTrackPos+repetition*length;
+								continue;
+							}
 						}
 					}
 				}

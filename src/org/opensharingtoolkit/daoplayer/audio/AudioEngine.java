@@ -291,30 +291,17 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			for (ATrack track : mTracks.values()) {
 				AState.TrackRef tr = current.mState.get(track);
 				if (tr==null || tr.isPaused()) 
+					// TODO ok with align?
 					continue;
+				int [] align = tr.getAlign();
+				// frames, inclusive
+				int bufStart = 0, bufEnd = -1;
+
 				int tpos = tr.getPos();
 				// pwl volume?
 				float pwlVolume[] = tr.getPwlVolume();
 				int vol = 0;
-				if (pwlVolume!=null) {
-					float fromTrackTime = (float)samplesToSeconds(tpos);
-					float toTrackTime = (float)samplesToSeconds(tpos+buf.length/2-1);
-					if (!pwlNonzero(fromTrackTime, toTrackTime, pwlVolume)) {
-						// silent
-						if (debug)
-							Log.d(TAG,"Track "+tr.getTrack().getId()+" pwl silent "+fromTrackTime+"-"+toTrackTime+" for "+Arrays.toString(pwlVolume));
-						continue;
-					}
-					Float cvol = pwlConstant(fromTrackTime, toTrackTime, pwlVolume);
-					if (cvol!=null) {
-						pwlVolume = null;
-						vol = (int)(cvol * 0x1000);
-						if (vol<=0) {
-							// silent
-							continue;
-						}
-					}
-				} else {
+				if (pwlVolume==null) {
 					// 12 bit shift
 					vol = (int)(tr.getVolume() * 0x1000);
 					if (vol<=0) {
@@ -322,89 +309,138 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 						continue;
 					}
 				}
-				for (ATrack.FileRef fr : track.mFileRefs) {
-					int spos = tpos, epos = tpos+buf.length/2-1;
-					if (fr.mTrackPos > epos || fr.mRepeats==0)
-						continue;
-					if (fr.mTrackPos > spos)
-						spos = fr.mTrackPos;
-					int repetition = 0;
-					AFile file = (AFile)fr.mFile;
-					int length = fr.mLength;
-					if (length==IAudio.ITrack.LENGTH_ALL)
-						repetition = 0;
-					else {
-						repetition = (spos - fr.mTrackPos)/length;
-						if (fr.mRepeats!=IAudio.ITrack.REPEATS_FOREVER) {
-							if (repetition >= fr.mRepeats)
+				int sceneTime = secondsToSamples(current.mSceneTime);
+				// each aligned sub-section
+				for (int ai=0; ai<=(align!=null ? align.length : 0) && bufStart<=buf.length/2-1; ai+=2, bufStart = bufEnd+1)
+				{
+					if (align!=null && align.length>=2) {
+						if (ai<align.length) {
+							// up to an alignment
+							if (align[ai]<=sceneTime+bufStart) {
+								// already past
+								tr.setPosFromAlign(align[ai+1]+sceneTime-align[ai]);
+								Log.d(TAG,"Align track at +"+bufStart+": "+sceneTime+" -> "+tr.getPos()+" (align "+align[ai]+"->"+align[ai+1]+")");
 								continue;
-							if (fr.mTrackPos+length*fr.mRepeats<epos)
-								epos = fr.mTrackPos+length*fr.mRepeats;
+							}
+							if (align[ai]>=sceneTime+buf.length/2)
+								// after this buffer
+								bufEnd = buf.length/2-1;
+							else
+								// coming up...
+								bufEnd = align[ai]-sceneTime;
+						} else {
+							// from last alignment
+							bufEnd = buf.length/2-1;						
 						}
+						tpos = tr.getPos()+bufStart;
 					}
-					// within file?
-					FileCache.Block block = null;
-					while (spos <= epos) {
-						int fpos = fr.mFilePos+(spos-fr.mTrackPos-repetition*length);
-						int boffset = 2*(spos-tpos);
-						block = mFileCache.getBlock(file, fpos, block);
-						if (block==null) {
-							// past the end or not available - skip to next repetition
-							Log.d(TAG,"Null buffer @"+fpos+" into "+boffset);
-							if (length==IAudio.ITrack.LENGTH_ALL)
-								// can't repeat length all (for now, anyway)
-								break;
-							repetition++;
-							if (fr.mRepeats!=IAudio.ITrack.REPEATS_FOREVER && repetition >= fr.mRepeats)
-								break;
-							spos = fr.mTrackPos+repetition*length;
+					else
+						bufEnd = buf.length/2-1;
+					
+					if (pwlVolume!=null) {
+						float fromTrackTime = (float)samplesToSeconds(tpos);
+						float toTrackTime = (float)samplesToSeconds(tpos+bufEnd-bufStart);
+						if (!pwlNonzero(fromTrackTime, toTrackTime, pwlVolume)) {
+							// silent
+							if (debug)
+								Log.d(TAG,"Track "+tr.getTrack().getId()+" pwl silent "+fromTrackTime+"-"+toTrackTime+" for "+Arrays.toString(pwlVolume));
 							continue;
 						}
-						short b[] = block.mSamples;
-						int offset = fpos-block.mStartFrame;
-						int len = (epos-spos+1);
-						if (len + offset > b.length/block.mChannels)
-							len = b.length/block.mChannels - offset;
-						if (len==0) {
-							Log.e(TAG,"Try to copy 0 bytes! epos="+epos+" spos="+spos+" fpos="+fpos+" bpos="+block.mStartFrame+" bix="+block.mIndex+" length="+b.length);
-							break;
+						Float cvol = pwlConstant(fromTrackTime, toTrackTime, pwlVolume);
+						if (cvol!=null) {
+							pwlVolume = null;
+							vol = (int)(cvol * 0x1000);
+							if (vol<=0) {
+								// silent
+								continue;
+							}
 						}
-						if (debug)
-							Log.d(TAG,"Mix file buffer @"+block.mStartFrame+"+"+offset+" len="+len+" into "+boffset);
-						if (block.mChannels==1) {
-							if (pwlVolume!=null)
-								for (int i=0; i<len; i++) {
-									// 12 bit shift
-									vol = (int)(pwl((float)samplesToSeconds(spos+i), pwlVolume) * 0x1000);
-									int val = vol*b[offset+i];
-									buf[boffset+2*i] += val;
-									buf[boffset+2*i+1] += val;
-								}
-							else
-								for (int i=0; i<len; i++) {
-									int val = vol*b[offset+i];
-									buf[boffset+2*i] += val;
-									buf[boffset+2*i+1] += val;
-								}
-								
-						} else if (block.mChannels==2) {
-							offset *= 2;
-							int len2 = len * 2;
-							if (pwlVolume!=null)
-								for (int i=0; i+1<len2; i+=2) {
-									// 12 bit shift
-									vol = (int)(pwl((float)samplesToSeconds(spos+i/2), pwlVolume) * 0x1000);
-									buf[boffset+i] += vol*b[offset+i];
-									buf[boffset+i+1] += vol*b[offset+i+1];
-								}
-							else
-								for (int i=0; i<len2; i++) {
-									buf[boffset+i] += vol*b[offset+i];
-								}
-						} else {
-							// error?!
+					}
+					for (ATrack.FileRef fr : track.mFileRefs) {
+						// inclusive
+						int spos = tpos, epos = tpos+bufEnd-bufStart;
+						if (fr.mTrackPos > epos || fr.mRepeats==0)
+							continue;
+						if (fr.mTrackPos > spos)
+							spos = fr.mTrackPos;
+						int repetition = 0;
+						AFile file = (AFile)fr.mFile;
+						int length = fr.mLength;
+						if (length==IAudio.ITrack.LENGTH_ALL)
+							repetition = 0;
+						else {
+							repetition = (spos - fr.mTrackPos)/length;
+							if (fr.mRepeats!=IAudio.ITrack.REPEATS_FOREVER) {
+								if (repetition >= fr.mRepeats)
+									continue;
+								if (fr.mTrackPos+length*fr.mRepeats<epos)
+									epos = fr.mTrackPos+length*fr.mRepeats;
+							}
 						}
-						spos += len;
+						// within file?
+						FileCache.Block block = null;
+						while (spos <= epos) {
+							int fpos = fr.mFilePos+(spos-fr.mTrackPos-repetition*length);
+							int boffset = 2*(spos-tpos+bufStart);
+							block = mFileCache.getBlock(file, fpos, block);
+							if (block==null) {
+								// past the end or not available - skip to next repetition
+								Log.d(TAG,"Null buffer @"+fpos+" into "+boffset);
+								if (length==IAudio.ITrack.LENGTH_ALL)
+									// can't repeat length all (for now, anyway)
+									break;
+								repetition++;
+								if (fr.mRepeats!=IAudio.ITrack.REPEATS_FOREVER && repetition >= fr.mRepeats)
+									break;
+								spos = fr.mTrackPos+repetition*length;
+								continue;
+							}
+							short b[] = block.mSamples;
+							int offset = fpos-block.mStartFrame;
+							int len = (epos-spos+1);
+							if (len + offset > b.length/block.mChannels)
+								len = b.length/block.mChannels - offset;
+							if (len==0) {
+								Log.e(TAG,"Try to copy 0 bytes! epos="+epos+" spos="+spos+" fpos="+fpos+" bpos="+block.mStartFrame+" bix="+block.mIndex+" length="+b.length);
+								break;
+							}
+							if (debug)
+								Log.d(TAG,"Mix file buffer @"+block.mStartFrame+"+"+offset+" len="+len+" into "+boffset);
+							if (block.mChannels==1) {
+								if (pwlVolume!=null)
+									for (int i=0; i<len; i++) {
+										// 12 bit shift
+										vol = (int)(pwl((float)samplesToSeconds(spos+i), pwlVolume) * 0x1000);
+										int val = vol*b[offset+i];
+										buf[boffset+2*i] += val;
+										buf[boffset+2*i+1] += val;
+									}
+								else
+									for (int i=0; i<len; i++) {
+										int val = vol*b[offset+i];
+										buf[boffset+2*i] += val;
+										buf[boffset+2*i+1] += val;
+									}
+									
+							} else if (block.mChannels==2) {
+								offset *= 2;
+								int len2 = len * 2;
+								if (pwlVolume!=null)
+									for (int i=0; i+1<len2; i+=2) {
+										// 12 bit shift
+										vol = (int)(pwl((float)samplesToSeconds(spos+i/2), pwlVolume) * 0x1000);
+										buf[boffset+i] += vol*b[offset+i];
+										buf[boffset+i+1] += vol*b[offset+i+1];
+									}
+								else
+									for (int i=0; i<len2; i++) {
+										buf[boffset+i] += vol*b[offset+i];
+									}
+							} else {
+								// error?!
+							}
+							spos += len;
+						}
 					}
 				}
 			}

@@ -69,6 +69,10 @@ public class AState {
 			return "TrackRef [mTrack=" + mTrack.getId() + ", mVolume=" + mVolume
 					+ ", mPos=" + mPos + ", mPaused=" + mPaused + "]";
 		}
+		/** special case for AudioEngine align */
+		public void setPosFromAlign(int pos) {
+			mPos = pos;
+		}
 		
 	}
 	private HashMap<Integer,TrackRef> mTrackRefs= new HashMap<Integer,TrackRef>();

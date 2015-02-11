@@ -293,7 +293,7 @@ public class Composition {
 				if (val instanceof JSONArray) {
 					JSONArray aval = (JSONArray)val;
 					int ivals[] = new int[aval.length()];
-					for (int i=0; i<aval.length(); i+=2) {
+					for (int i=0; i<aval.length(); i++) {
 						ivals[i] = (int)mEngine.secondsToSamples((double)extractFloat(aval.get(i)));
 					}
 					di.align = ivals;
