@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1
+  },
+  "defaultScene": "hello",
+  "constants": {
+    "d1":"20"
+  },
+  "tracks": [
+    {
+      "name": "track1",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "meeting by the river snippet.mp3", 
+          "trackPos": 0,
+          "filePos": 0,
+          "repeats": -1
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "hello",
+      "partial": false,
+      "onload": "daoplayer.speak('hello', true);"
+    },
+    {
+      "name": "there",
+      "partial": false,
+      "onload": "daoplayer.speak('there', false);"
+    },
+    {
+      "name": "meeting by the river",
+      "partial": false,
+      "onload": "daoplayer.speak('meeting by the river, by the phil langran band', true);",
+      "tracks": [
+        {
+          "name": "track1",
+          "volume": 1,
+          "pos": 0
+        }
+      ]
+    },
+    {
+      "name": "activities",
+      "partial": false,
+      "onload": "daoplayer.speak('activities', true);",
+      "updatePeriod":1.0,
+      "onupdate": "daoplayer.speak(activity, true);"
+    }
+  ]
+}
+

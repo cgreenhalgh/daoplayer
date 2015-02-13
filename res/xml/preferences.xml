@@ -20,6 +20,12 @@
         android:key="pref_usegps"
         android:title="@string/pref_usegps_title" />
     
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:enabled="true"
+        android:key="pref_enablespeech"
+        android:title="@string/pref_enablespeech_title" />
+    
     <Preference 
         android:title="@string/pref_showlogs_title">
         <intent

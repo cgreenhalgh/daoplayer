@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
 
@@ -40,6 +41,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.TextToSpeech.OnInitListener;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
@@ -54,7 +57,7 @@ import android.widget.Toast;
  * @author pszcmg
  *
  */
-public class Service extends android.app.Service implements OnSharedPreferenceChangeListener, ILog {
+public class Service extends android.app.Service implements OnSharedPreferenceChangeListener, ILog, OnInitListener {
 
 	private static final String TAG = "daoplayer-service";
 	private static final int SERVICE_NOTIFICATION_ID = 1;
@@ -73,6 +76,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	public static final String EXTRA_TIME = "time";
 	public static final String EXTRA_ACCURACY = "accuracy";
 	private static final String PREF_USEGPS = "pref_usegps";
+	private static final String PREF_ENABLESPEECH = "pref_enablespeech";
+	private static final double DEFAULT_SPEECH_VOLUME = 1;
 	private AudioEngine mAudioEngine;
 	private boolean started = false;
 	private Composition mComposition = null;
@@ -81,6 +86,12 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private double mLastLat, mLastLng, mLastAccuracy;
 	private long mLastTime;
 	private boolean mGpsStarted = false;
+	private boolean mEnableSpeech = false;
+	private TextToSpeech mTextToSpeech = null;
+	private boolean mSpeechReady = false;
+	private boolean mSpeechFailed = false;
+	private Vector<String> mSpeechDelayed = new Vector<String>();
+	HashMap<String, String> mSpeechParameters = new HashMap<String,String>();
 	private UserModel mUserModel = new UserModel();
 	
 	class LogEntry {
@@ -250,6 +261,40 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		boolean usegps = spref.getBoolean(PREF_USEGPS, false);
 		if (usegps)
 			startGps();
+		mEnableSpeech = spref.getBoolean(PREF_ENABLESPEECH, false);
+		if (mEnableSpeech)
+			enableSpeech();
+	}
+
+	private void enableSpeech() {
+		if (mTextToSpeech==null && !mSpeechFailed) {
+			Log.d(TAG,"Enable speech...");
+			//mSpeechParameters.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_NOTIFICATION));
+			//mSpeechParameters.put(TextToSpeech.Engine.KEY_PARAM_VOLUME, String.valueOf(DEFAULT_SPEECH_VOLUME));
+			
+			mTextToSpeech = new TextToSpeech(this, this);			
+		}
+	}
+	/** text to speech */
+	@Override
+	public void onInit(int status) {
+		if(status==TextToSpeech.SUCCESS) {
+			switch(mTextToSpeech.setLanguage(Locale.ENGLISH)) {
+			case TextToSpeech.LANG_MISSING_DATA:
+			case TextToSpeech.LANG_NOT_SUPPORTED:
+				Log.e(TAG,"TextToSpeech language (ENGLISH) not availabe");
+			}
+			mSpeechReady = true;
+			synchronized(mSpeechDelayed) {
+				while (mSpeechDelayed.size()>0) {
+					String text = mSpeechDelayed.remove(0);
+					mTextToSpeech.speak(text, TextToSpeech.QUEUE_ADD, mSpeechParameters);
+				}
+			}
+		} else {
+			Log.e(TAG,"Speech onInit("+status+") = failed");
+			mSpeechFailed = true;
+		}
 	}
 
 	@Override
@@ -259,6 +304,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		onStop();
 		if (mWebView!=null)
 			mWebView.destroy();
+		if (mTextToSpeech!=null)
+			mTextToSpeech.shutdown();
 	}
 	
 	private void onStop() {
@@ -267,6 +314,12 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		Log.d(TAG,"onStop");
 		started = false;
 		log("STOP AUDIO");
+		if (mTextToSpeech!=null && mSpeechReady) {
+			synchronized(mSpeechDelayed) {
+				mSpeechDelayed.clear();
+			}
+			mTextToSpeech.stop();
+		}
 	
 		stopGps();
 		
@@ -458,6 +511,29 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			Log.d(TAG,"javascript:setLastWaypoint("+name+")");
 			mUserModel.setLastWaypoint(name);
 		}
+		@JavascriptInterface
+		public void speak(final String text, final boolean flush) {
+			Log.d(TAG,"Javascript: speak "+text+" (flush "+flush+")");			
+			// NOT a task main thread 
+			synchronized(mSpeechDelayed) {
+				if (mEnableSpeech) {
+					if (!mSpeechReady) {
+						if (flush)
+							mSpeechDelayed.clear();
+						mSpeechDelayed.add(text);
+					}
+					else 
+						mHandler.post(new Runnable() {
+							public void run() {
+								if (mTextToSpeech!=null && mSpeechReady && mEnableSpeech) {
+									Log.d(TAG,"really speak "+text+" (flush "+flush+")");
+									mTextToSpeech.speak(text, flush ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD, mSpeechParameters);
+								}
+							}
+						});	
+				}
+			}
+		}
 	}
 	private Map<Integer,MBox> mResults = new HashMap<Integer,MBox>();
 	private int mNextResulti = 0;
@@ -629,6 +705,18 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				startGps();
 			else if (!usegps)
 				stopGps();
+		}
+		else if (PREF_ENABLESPEECH.equals(key)) {
+			mEnableSpeech = spref.getBoolean(PREF_ENABLESPEECH, false);
+			Log.d(TAG,"service pref_enablespeech changed to "+mEnableSpeech);
+			if (started && mEnableSpeech)
+				enableSpeech();
+			else if (!mEnableSpeech && mTextToSpeech!=null && mSpeechReady) {
+				synchronized(mSpeechDelayed) {
+					mSpeechDelayed.clear();	
+				}
+				mTextToSpeech.stop();
+			}
 		}
 	}
 	private void startGps() {

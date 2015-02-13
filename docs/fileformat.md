@@ -136,6 +136,8 @@ and in the last waypoint only:
 
 `daoplayer.log(message)`: diagnostic output to player log view.
 
+`daoplayer.speak(text,flush)`: speak text using text to speech engine (if enabled).
+
 (future? - `daoplayer.status(message,description,type)` (todo): update single-line status view, `type` is `info`, `warning` or `error`.)
 
 `pwl(in, [in1,out1,in2,out2,...], default)`: piece-wise linear interpolation `in` to `out`, i.e. if `in` is less than `in1` then `out1`; if `in` is between `in1` and `in2` then a proportional value between `out1` and `out2`; ...; if `in` is greater than the last in value then last out value; etc. For example, to convert a distance in metres to a volume such that volume is 1 (full) up to 10 metres, then drops off linearly to 0 at 30 metres or more, use `pwl(distance,[10,1,30,0])`. (optional) `default` is returned if `in` is undefined or null.
