@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1
+  },
+  "defaultScene": "say activity",
+  "constants": {
+    "d1":"20"
+  },
+  "tracks": [
+    {
+      "name": "walk",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "walk.mp3", 
+          "trackPos": 0,
+          "filePos": 0,
+          "length": 1,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "stop",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "stop.mp3", 
+          "trackPos": 0,
+          "filePos": 0,
+          "length": 1,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "waiting",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "waiting_for_gps.mp3", 
+          "trackPos": 0,
+          "filePos": 0,
+          "length": 3,
+          "repeats": -1
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "say activity",
+      "partial": false,
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "walk",
+          "volume": "activity=='WALKING' ? 1 : 0",
+          "pos": 0
+        },
+        {
+          "name": "stop",
+          "volume": "activity=='STATIONARY' ? 1 : 0",
+          "pos": 0
+        },
+        {
+          "name": "waiting",
+          "volume": "activity=='NOGPS' ? 1 : 0",
+          "pos": 0
+        }
+      ]
+    }
+  ]
+}
+
