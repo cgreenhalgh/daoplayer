@@ -153,7 +153,7 @@ public class Composition {
 				if (jscene.has(ONLOAD))
 					ascene.setOnload(jscene.getString(ONLOAD));
 				if (jscene.has(ONUPDATE))
-					ascene.setOnload(jscene.getString(ONUPDATE));
+					ascene.setOnupdate(jscene.getString(ONUPDATE));
 				Map<String,String> waypoints = new HashMap<String,String>();
 				if (jscene.has(WAYPOINTS)) {
 					JSONObject jwaypoints = jscene.getJSONObject(WAYPOINTS);

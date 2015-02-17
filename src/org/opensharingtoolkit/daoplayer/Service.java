@@ -43,6 +43,7 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
+import android.speech.tts.TextToSpeech.OnUtteranceCompletedListener;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
@@ -57,7 +58,7 @@ import android.widget.Toast;
  * @author pszcmg
  *
  */
-public class Service extends android.app.Service implements OnSharedPreferenceChangeListener, ILog, OnInitListener {
+public class Service extends android.app.Service implements OnSharedPreferenceChangeListener, ILog, OnInitListener, OnUtteranceCompletedListener {
 
 	private static final String TAG = "daoplayer-service";
 	private static final int SERVICE_NOTIFICATION_ID = 1;
@@ -279,21 +280,33 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	@Override
 	public void onInit(int status) {
 		if(status==TextToSpeech.SUCCESS) {
+			mTextToSpeech.setOnUtteranceCompletedListener(this);
 			switch(mTextToSpeech.setLanguage(Locale.ENGLISH)) {
 			case TextToSpeech.LANG_MISSING_DATA:
 			case TextToSpeech.LANG_NOT_SUPPORTED:
-				Log.e(TAG,"TextToSpeech language (ENGLISH) not availabe");
-			}
-			mSpeechReady = true;
-			synchronized(mSpeechDelayed) {
-				while (mSpeechDelayed.size()>0) {
-					String text = mSpeechDelayed.remove(0);
-					mTextToSpeech.speak(text, TextToSpeech.QUEUE_ADD, mSpeechParameters);
+				Log.e(TAG,"TextToSpeech language (ENGLISH) not available");
+				mSpeechFailed = true;
+				Toast.makeText(this, R.string.toast_speech_language_failed, Toast.LENGTH_LONG).show();
+				break;
+			case TextToSpeech.LANG_AVAILABLE:
+			case TextToSpeech.LANG_COUNTRY_AVAILABLE:
+			case TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE:
+				mSpeechReady = true;
+				mSpeechParameters.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "STARTUP");
+				mTextToSpeech.playSilence(10, TextToSpeech.QUEUE_FLUSH, mSpeechParameters);
+				synchronized(mSpeechDelayed) {
+					while (mSpeechDelayed.size()>0) {
+						String text = mSpeechDelayed.remove(0);
+						mSpeechParameters.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, text);
+						mTextToSpeech.speak(text, TextToSpeech.QUEUE_ADD, mSpeechParameters);
+					}
 				}
+				Toast.makeText(this, R.string.toast_speech_ready, Toast.LENGTH_SHORT).show();
 			}
 		} else {
 			Log.e(TAG,"Speech onInit("+status+") = failed");
 			mSpeechFailed = true;
+			Toast.makeText(this, R.string.toast_speech_failed, Toast.LENGTH_LONG).show();
 		}
 	}
 
@@ -527,6 +540,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 							public void run() {
 								if (mTextToSpeech!=null && mSpeechReady && mEnableSpeech) {
 									Log.d(TAG,"really speak "+text+" (flush "+flush+")");
+									mSpeechParameters.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, text);
 									mTextToSpeech.speak(text, flush ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD, mSpeechParameters);
 								}
 							}
@@ -876,5 +890,9 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				return false;
 			}
 		return true;
+	}
+	@Override
+	public void onUtteranceCompleted(String utteranceId) {
+		Log.d(TAG,"onUtteranceCompleted("+utteranceId+")");		
 	}
 }
