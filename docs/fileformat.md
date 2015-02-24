@@ -21,6 +21,7 @@ Array of track Objects with:
 - `name` - name (string)
 - `pauseIfSilent` - (boolean, default false)
 - `files` - array of file refs (see below)
+- `sections` - array of sections (see below)
 
 File ref is Object with:
 - `path` - file path (string)
@@ -28,6 +29,18 @@ File ref is Object with:
 - `filePos` - start position in file, in second (float, default 0)
 - `length` - length of file to play (float, default -1 = all)
 - `repeats` - how many times to repeat (integer, default 1, -1 = forever; NB cannot repeat a file with length -1/unspecified)
+
+`section` is Object with:
+- `name` - name (string)
+- `trackPos` - start position in track, in seconds (float, default 0)
+- `length` - length of section (float, default is to start of next section, else -1 = end of track)
+- `startCost` - "cost" of starting with this section (float, default infinite)
+- `endCost` - "cost" of ending during this section (float, default infinite)
+- `next` - array of Next Sections (see below)
+
+Next section is Object with:
+- `name` - name of next section
+- `cost` - "cost" of this being the next section (float, default 0)
 
 ### `scenes`
 
@@ -101,6 +114,11 @@ If the `pos` of a track ref is a String then it is evaluated as a javascript exp
 `totalTime`: time in seconds since this composition was started (float).
 
 `trackTime`: time in seconds of current playout point within track (float). This is currently a slightly conservative estimate (i.e. part of a second into the future), and is only available to code within the context of a track ref, i.e. a dynamic volume or dynamic track position expression. 
+
+`currentSection`: currently playing section of current track; only available within a dynamic track position expression. Null if no current section, else an Object with fields:
+- `name`: name of current section (string)
+- `startTime`: track time in seconds when current section started (float)
+- `endTime`: track time in seconds when current section will end (float)
 
 `activity`: one of `NOGPS`, `STATIONARY`, `WALKING` (future?: `RUNNING`, `FASTD`)
 

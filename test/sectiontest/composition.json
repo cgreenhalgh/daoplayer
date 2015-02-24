@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1
+  },
+  "defaultScene": "currentScene test",
+  "tracks": [
+    {
+      "name": "track1",
+      "pauseIfSilent": false,
+      "sections": [
+        {
+          "name":"section one"
+        },
+        {
+          "name":"section two",
+          "trackPos": 5
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "currentScene test",
+      "partial": false,
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "track1",
+          "volume": 1,
+          "pos": "(currentSection!=null) ? currentSection.name : 0"
+        }
+      ]
+    }
+  ]
+}

@@ -9,4 +9,5 @@ package org.opensharingtoolkit.daoplayer;
  */
 public interface ILog {
 	public void log(String message);
+	public void logError(String message);
 }

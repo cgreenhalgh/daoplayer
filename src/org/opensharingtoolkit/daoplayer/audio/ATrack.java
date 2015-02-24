@@ -4,7 +4,9 @@
 package org.opensharingtoolkit.daoplayer.audio;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.TreeSet;
+import java.util.Vector;
 
 import org.opensharingtoolkit.daoplayer.IAudio;
 import org.opensharingtoolkit.daoplayer.IAudio.IFile;
@@ -53,6 +55,60 @@ public class ATrack implements IAudio.ITrack {
 		mFileRefs.add(new FileRef(trackPos, file, filePos, length, repeats));
 	}
 
+	static class NextSection {
+		String mName;
+		double mCost;
+		/**
+		 * @param mName
+		 * @param cost
+		 */
+		public NextSection(String mName, double cost) {
+			super();
+			this.mName = mName;
+			this.mCost = cost;
+		}
+		
+	}
+	
+	static class Section {
+		String mName;
+		int mTrackPos;
+		int mLength;
+		double mStartCost;
+		double mEndCost;
+		Vector<NextSection> mNext;
+		
+		/**
+		 * @param mName
+		 * @param mTrackPos
+		 * @param mLength
+		 * @param mStartCost
+		 * @param mEndCost
+		 */
+		public Section(String mName, int mTrackPos, int mLength,
+				double mStartCost, double mEndCost) {
+			super();
+			this.mName = mName;
+			this.mTrackPos = mTrackPos;
+			this.mLength = mLength;
+			this.mStartCost = mStartCost;
+			this.mEndCost = mEndCost;
+		}
+
+		public void addNext(String name, double cost) {
+			mNext.add(new NextSection(name, cost));
+		}
+	}
+	
+	HashMap<String,Section> mSections = new HashMap<String,Section>();
+
+	public synchronized void addSection(Section section) {
+		mSections.put(section.mName, section);
+	}
+	public synchronized HashMap<String,Section> getSections() {
+		return mSections;
+	}
+	
 	private int mId;
 	private static int sNextId = 0;
 	private float mVolume = 0.0f;

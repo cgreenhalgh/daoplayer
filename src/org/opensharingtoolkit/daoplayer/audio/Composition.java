@@ -22,6 +22,7 @@ import org.opensharingtoolkit.daoplayer.IAudio;
 import org.opensharingtoolkit.daoplayer.IAudio.IFile;
 import org.opensharingtoolkit.daoplayer.IAudio.IScene;
 import org.opensharingtoolkit.daoplayer.IAudio.ITrack;
+import org.opensharingtoolkit.daoplayer.audio.ATrack.Section;
 
 import android.util.Log;
 
@@ -35,11 +36,14 @@ public class Composition {
 
 	private static final String CONSTANTS = "constants";
 	private static final String CONTEXT = "context";	
+	private static final String COST = "cost";	
 	private static final String DEFAULT_SCENE = "defaultScene";
+	private static final String END_COST = "endCost";	
 	private static final String FILES = "files";
 	private static final String FILE_POS = "filePos";
 	private static final String LENGTH = "length";
 	private static final String NAME = "name";
+	private static final String NEXT = "next";	
 	private static final String ONLOAD = "onload";
 	private static final String ONUPDATE = "onupdate";
 	private static final String PARTIAL = "partial";
@@ -49,6 +53,8 @@ public class Composition {
 	private static final String PREPARE = "prepare";
 	private static final String REPEATS = "repeats";
 	private static final String SCENES = "scenes";
+	private static final String SECTIONS = "sections";
+	private static final String START_COST = "startCost";	
 	private static final String TRACKS = "tracks";
 	private static final String TRACK_POS = "trackPos";
 	private static final String UPDATE_PERIOD = "updatePeriod";
@@ -105,7 +111,7 @@ public class Composition {
 				JSONObject jtrack = jtracks.getJSONObject(ti);
 				String name = jtrack.has(NAME) ? jtrack.getString(NAME) : null;
 				boolean pauseIfSilent = jtrack.has(PAUSE_IF_SILENT) && jtrack.getBoolean(PAUSE_IF_SILENT);
-				ITrack atrack = mEngine.addTrack(pauseIfSilent);
+				ATrack atrack = (ATrack)mEngine.addTrack(pauseIfSilent);
 				if (name!=null)
 					mTracks.put(name, atrack);
 				else
@@ -125,6 +131,40 @@ public class Composition {
 						int length = jfile.has(LENGTH) ? (jfile.getInt(LENGTH)<0 ? jfile.getInt(LENGTH) : mEngine.secondsToSamples(jfile.getDouble(LENGTH))) : IAudio.ITrack.LENGTH_ALL;
 						int repeats = jfile.has(REPEATS) ? jfile.getInt(REPEATS) : 1;
 						atrack.addFileRef(trackPos, afile, filePos, length, repeats);
+					}
+				}
+				if (jtrack.has(SECTIONS)) {
+					JSONArray jsections = jtrack.getJSONArray(SECTIONS);
+					Section lastSection = null;
+					for (int fi=0; fi<jsections.length(); fi++) {
+						JSONObject jsection = jsections.getJSONObject(fi);
+						if (!jsection.has(NAME)) {
+							Log.w(TAG,"track "+ti+" references unnamed section "+fi);
+							continue;
+						}
+						String sname = jsection.getString(NAME);
+						int trackPos = jsection.has(TRACK_POS) ? mEngine.secondsToSamples(jsection.getDouble(TRACK_POS)) : 0;
+						if (lastSection!=null && lastSection.mLength == IAudio.ITrack.LENGTH_ALL)
+							lastSection.mLength = (trackPos > lastSection.mTrackPos) ? trackPos-lastSection.mTrackPos : 0;
+						int length = jsection.has(LENGTH) ? (jsection.getInt(LENGTH)<0 ? jsection.getInt(LENGTH) : mEngine.secondsToSamples(jsection.getDouble(LENGTH))) : IAudio.ITrack.LENGTH_ALL;
+						double startCost = jsection.has(START_COST) ? jsection.getDouble(START_COST) : Double.MAX_VALUE;
+						double endCost = jsection.has(END_COST) ? jsection.getDouble(END_COST) : Double.MAX_VALUE;
+						Section section = new Section(sname, trackPos, length, startCost, endCost);
+						if (jsection.has(NEXT)) {
+							JSONArray jnext = jsection.getJSONArray(NEXT);
+							for (int ni=0; ni<jnext.length(); ni++) {
+								JSONObject jnextSection = jnext.getJSONObject(ni);
+								if (!jnextSection.has(NAME)) {
+									Log.w(TAG,"track "+ti+" section "+sname+" has unnamed next section "+ni);
+									continue;
+								}
+								String nextName = jnextSection.getString(NAME);
+								double cost = jsection.has(COST) ? jsection.getDouble(COST) : 0;
+								section.addNext(nextName, cost);
+							}
+						}
+						atrack.addSection(section);
+						lastSection = section;
 					}
 				}
 			}
@@ -220,10 +260,8 @@ public class Composition {
 		sb.append(";\n");
 		sb.append("var distance=function(coord1,coord2){return window.distance(coord1,coord2 ? coord2 : position);};\n");
 		sb.append("var sceneTime=");
-		if (srec!=null)
-			sb.append(srec.mSceneTime+mEngine.samplesToSeconds(mEngine.getFutureOffset()));
-		else
-			sb.append("0");
+		double sceneTime = (srec==null) ? 0 : srec.mSceneTime+mEngine.samplesToSeconds(mEngine.getFutureOffset());
+		sb.append(sceneTime);
 		sb.append(";\n");
 		sb.append("var totalTime=");
 		if (srec!=null)
@@ -272,13 +310,38 @@ public class Composition {
 					sb.append(");\n");
 				}
 				if (dynPos!=null) {
+					// current section just based on trackTime
+					Section section = null;
+					ATrack atrack = (ATrack)tr.getTrack();
+					for (Section s : atrack.getSections().values()) {
+						if (trackPos>=s.mTrackPos && (s.mLength==IAudio.ITrack.LENGTH_ALL || trackPos-s.mTrackPos<s.mLength)) {
+							section = s;
+							Log.d(TAG,"Pos "+trackPos+" in section "+s.mName+" ("+s.mTrackPos+" + "+s.mLength+")");
+							break;
+						}
+						else
+							Log.d(TAG,"Pos "+trackPos+" not in section "+s.mName+" ("+s.mTrackPos+" + "+s.mLength+")");
+					}
+					double trackTime = mEngine.samplesToSeconds(trackPos);
 					sb.append("ps['");
 					sb.append(tr.getTrack().getId());
-					sb.append("']=(function(trackTime){return(");
+					sb.append("']=(function(trackTime,currentSection){return(");
 					sb.append(dynPos);
 					sb.append(");})(");
-					sb.append(mEngine.samplesToSeconds(trackPos));
-					sb.append(");\n");					
+					sb.append(trackTime);
+					sb.append(",");
+					if (section==null)
+						sb.append("null");
+					else {
+						sb.append("{name:");
+						sb.append(escapeJavascriptString(section.mName));
+						sb.append(",startTime:");
+						sb.append(sceneTime+mEngine.samplesToSeconds(section.mTrackPos)-trackTime);
+						sb.append(",endTime:");
+						sb.append(sceneTime+mEngine.samplesToSeconds(section.mTrackPos+section.mLength)-trackTime);
+						sb.append("}");
+					}
+					sb.append(");\n");
 				}
 			}			
 		}
@@ -341,8 +404,16 @@ public class Composition {
 		}
 		catch (Exception e) {
 			Log.w(TAG,"error parsing load script result "+res+": "+e);
+			mEngine.getLog().logError("Script returned error: "+res+", from "+sb.toString());
 		}
 		return dynInfos;
+	}
+	private String escapeJavascriptString(String mName) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("'");
+		sb.append(mName.replace("\\", "\\\\").replace("'", "\\'"));
+		sb.append("'");
+		return sb.toString();
 	}
 	private float extractFloat(Object val) {
 		if (val instanceof Number) {
@@ -354,12 +425,12 @@ public class Composition {
 				return fval;
 			}
 			catch (NumberFormatException nfe) {
-				Log.w(TAG,"Script returned non-number "+val);
+				mEngine.getLog().logError("Script returned non-number "+val);
 				return 0;
 			}				
 		}
 		else {
-			Log.w(TAG,"Script returned non-number/string "+val);
+			mEngine.getLog().logError("Script returned non-number/string "+val);
 			return 0;			
 		}
 	}

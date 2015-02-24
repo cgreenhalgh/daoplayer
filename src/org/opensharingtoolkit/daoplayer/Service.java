@@ -46,6 +46,7 @@ import android.speech.tts.TextToSpeech.OnInitListener;
 import android.speech.tts.TextToSpeech.OnUtteranceCompletedListener;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
 import android.webkit.WebChromeClient;
@@ -81,6 +82,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private static final double DEFAULT_SPEECH_VOLUME = 1;
 	private AudioEngine mAudioEngine;
 	private boolean started = false;
+	private boolean logGps = false;
 	private Composition mComposition = null;
 	private String mScene = null;
 	private WebView mWebView;
@@ -95,7 +97,9 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	HashMap<String, String> mSpeechParameters = new HashMap<String,String>();
 	private UserModel mUserModel = new UserModel();
 	
+	static enum LogEntryType { LOG_ERROR, LOG_INFO };
 	class LogEntry {
+		LogEntryType type;
 		long time;
 		String message;
 	}
@@ -112,6 +116,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			synchronized (mLog) {
 				for (LogEntry ent : mLog) {
 					if (ent.time>=fromTime && ent.time<toTime) {
+						if(ent.type==LogEntryType.LOG_ERROR)
+							sb.append("ERROR: ");
 						sb.append(ent.message);
 						sb.append("\n");
 					}
@@ -121,13 +127,21 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		}
 	}
 	public void log(String message) {
+		log(LogEntryType.LOG_INFO, message);
+	}
+	public void log(LogEntryType type, String message) {
 		long now = System.currentTimeMillis();
+		Log.d(TAG,"Log "+type+": "+message);
 		synchronized(mLog) {
 			LogEntry ent = new LogEntry();
+			ent.type = type;
 			ent.time = now;
 			ent.message = message;
 			mLog.add(ent);
 		}
+	}
+	public void logError(String message) {
+		log(LogEntryType.LOG_ERROR, message);
 	}
 	private IBinder mBinder = new LocalBinder();
 	@Override
@@ -189,12 +203,17 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 					Log.w(TAG,"onJsAlert: ("+url+") "+message+" ("+result+")");
 					return super.onJsAlert(view, url, message, result);
 				}
+				@Override
+				public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+					log(consoleMessage.messageLevel()+" ("+consoleMessage.sourceId()+":"+consoleMessage.lineNumber()+"): "+consoleMessage.message());
+					return super.onConsoleMessage(consoleMessage);
+				}
 	        });
 			mWebView.setWebViewClient(new WebViewClient() {
 	        	public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
 	        		// this picks up local errors aswell
 	        		Log.d(TAG,"onReceivedError errorCode="+errorCode+", description="+description+", failingUrl="+failingUrl); 
-	        		Toast.makeText(Service.this, "Oh no! " + description, Toast.LENGTH_SHORT).show();
+	        		logError("WebView error: " + errorCode+": "+description+" for "+failingUrl);
 	        	}
 				@Override
 				public void onPageFinished(WebView view, String url) {
@@ -285,8 +304,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			case TextToSpeech.LANG_MISSING_DATA:
 			case TextToSpeech.LANG_NOT_SUPPORTED:
 				Log.e(TAG,"TextToSpeech language (ENGLISH) not available");
+				logError("TextToSpeech language (ENGLISH) not available");
 				mSpeechFailed = true;
-				Toast.makeText(this, R.string.toast_speech_language_failed, Toast.LENGTH_LONG).show();
 				break;
 			case TextToSpeech.LANG_AVAILABLE:
 			case TextToSpeech.LANG_COUNTRY_AVAILABLE:
@@ -302,6 +321,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 					}
 				}
 				Toast.makeText(this, R.string.toast_speech_ready, Toast.LENGTH_SHORT).show();
+				log("TextToSpeech ready");
 			}
 		} else {
 			Log.e(TAG,"Speech onInit("+status+") = failed");
@@ -420,7 +440,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			mLastAccuracy = intent.getDoubleExtra(EXTRA_ACCURACY, 0.0);
 			mLastTime = intent.getLongExtra(EXTRA_TIME, System.currentTimeMillis());
 			Log.d(TAG,"Service setLatLng "+mLastLat+","+mLastLng+" acc="+mLastAccuracy+" at "+mLastTime);
-			log("SET POSITION "+mLastLat+","+mLastLng+" acc="+mLastAccuracy+" at "+mLastTime);
+			if (logGps)
+				log("SET POSITION "+mLastLat+","+mLastLng+" acc="+mLastAccuracy+" at "+mLastTime);
 			/*if (mWebViewLoaded) {
 				StringBuilder sb = new StringBuilder();
 				sb.append("window.position={lat:");
@@ -452,6 +473,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		} catch (Exception e) {
 			Log.w(TAG,"Error reading "+DEFAULT_COMPOSITION+": "+e, e);
 			Toast.makeText(this, "Error reading composition: "+e.getMessage(), Toast.LENGTH_SHORT).show();
+			logError("Error reading "+DEFAULT_COMPOSITION+": "+e);
 			return;
 		}
 		mUserModel.setContext(comp.getContext());
@@ -459,10 +481,10 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		if (defaultScene!=null) {
 			setScene(defaultScene);
 			Log.i(TAG,"Read "+DEFAULT_COMPOSITION+"; playing scene "+defaultScene);
-			Toast.makeText(this, "Read; playing scene "+defaultScene, Toast.LENGTH_SHORT).show();
+			log("Read; playing scene "+defaultScene);
 		} else {
 			Log.i(TAG,"Read "+DEFAULT_COMPOSITION+"; no default scene");
-			Toast.makeText(this, "Read but no default scene", Toast.LENGTH_SHORT).show();			
+			logError("Read but no default scene");			
 		}
 	}
 	private boolean mWebViewLoaded = false;
@@ -596,7 +618,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			removeMBox(ix);
 			if (result==null) {
 				Log.d(TAG,"Script timeout: "+sb.toString());
-				log("Timeout (Error) in script: "+sb.toString());
+				logError("Timeout (Error) in script: "+sb.toString());
 				return null;
 			}
 			if (result instanceof String)
@@ -756,7 +778,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				}
 				Float asnrs [] = snrs.toArray(new Float[snrs.size()]);
 				Arrays.sort(asnrs);
-				log("Gps status: Fixed="+inFix+" Total="+total+" "+(asnrs.length>0 ? " SNRs="+asnrs[asnrs.length-1]+(asnrs.length>3 ? "/"+asnrs[asnrs.length-4] : "") : ""));
+				if (logGps)
+					log("Gps status: Fixed="+inFix+" Total="+total+" "+(asnrs.length>0 ? " SNRs="+asnrs[asnrs.length-1]+(asnrs.length>3 ? "/"+asnrs[asnrs.length-4] : "") : ""));
 			}
 		});
 	}
@@ -767,7 +790,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			// Called when a new location is found by the network location provider.
 			//makeUseOfNewLocation(location);
 			Log.d(TAG,"New gps location: "+location);
-			log("New gps location "+location.getLatitude()+","+location.getLongitude()+" acc="+location.getAccuracy()+" at "+location.getTime());
+			if (logGps)
+				log("New gps location "+location.getLatitude()+","+location.getLongitude()+" acc="+location.getAccuracy()+" at "+location.getTime());
 			Intent i = new Intent(Service.ACTION_SET_LATLNG);
 			i.putExtra(EXTRA_LAT, location.getLatitude());
 			i.putExtra(EXTRA_LNG, location.getLongitude());

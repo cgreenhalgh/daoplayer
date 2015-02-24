@@ -572,4 +572,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	public double samplesToSeconds(int trackPos) {
 		return trackPos*1.0/DEFAULT_SAMPLE_RATE;
 	}
+	public ILog getLog() {
+		return mLog;
+	}
 }
