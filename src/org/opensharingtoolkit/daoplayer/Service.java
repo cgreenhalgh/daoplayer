@@ -883,7 +883,19 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			findBlock(block2, blocks);
 		}
 	}
+	void logSamples(FileCache.Block block2) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("block @"+block2.getStartFrame()+", "+block2.getChannels()+"chan: ");
+		short as[] = block2.getSamples();
+		for (int i=0; i<10 && i<as.length; i++) {
+			sb.append(as[i]);
+			sb.append(" ");
+		}
+		sb.append("...");
+		Log.d(TAG,sb.toString());
+	}
 	void findBlock(FileCache.Block block2, Vector<FileCache.Block> blocks) {
+		logSamples(block2);
 		short as[] = block2.getSamples();
 		for (int i=0; i<blocks.size(); i++ )
 		{

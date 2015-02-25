@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1
+  },
+  "defaultScene": "test16all wav",
+  "constants": {
+    "d1":"20"
+  },
+  "tracks": [
+    {
+      "name": "test16all wav",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "count16-all.wav", 
+          "trackPos": 0,
+          "length": 16
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "test16all wav",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "test16all wav",
+          "pos": 0,
+          "volume": 1
+        }
+      ]
+    },
+    {
+      "name": "test16all wav odd",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "test16all wav",
+          "pos": "[0,0,1,2,2,4,3,6,4,8,5,10,6,12,7,14,8,16]",
+          "volume": 1
+        }
+      ]
+    },
+    {
+      "name": "test16all wav even desc",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "test16all wav",
+          "pos": "[0,7,1,5,2,3,3,1,4,15,5,13,6,11,7,9,8,16]",
+          "volume": 1
+        }
+      ]
+    }
+  ]
+}
+

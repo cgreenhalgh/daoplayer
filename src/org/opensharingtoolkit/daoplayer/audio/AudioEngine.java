@@ -33,7 +33,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	private long mWrittenFramePosition = 0, mWrittenTime = 0;
 	private Vector<StateRec> mStateQueue = new Vector<StateRec>();
 	private FileCache mFileCache;
-	private boolean debug = false;
+	private boolean debug = true;
 	
 	static enum StateType { STATE_FUTURE, STATE_NEXT, STATE_IN_PROGRESS, STATE_WRITTEN, STATE_DISCARDED };
 	public static class StateRec {
@@ -319,7 +319,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 							if (align[ai]<=sceneTime+bufStart) {
 								// already past
 								tr.setPosFromAlign(align[ai+1]+sceneTime-align[ai]);
-								Log.d(TAG,"Align track at +"+bufStart+": "+sceneTime+" -> "+tr.getPos()+" (align "+align[ai]+"->"+align[ai+1]+")");
+								//Log.d(TAG,"Align track at +"+bufStart+": "+sceneTime+" -> "+tr.getPos()+" (align "+align[ai]+"->"+align[ai+1]+")");
 								continue;
 							}
 							if (align[ai]>=sceneTime+buf.length/2)
@@ -327,7 +327,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 								bufEnd = buf.length/2-1;
 							else
 								// coming up...
-								bufEnd = align[ai]-sceneTime;
+								bufEnd = align[ai]-sceneTime-1;
 						} else {
 							// from last alignment
 							bufEnd = buf.length/2-1;						
@@ -385,7 +385,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 							block = mFileCache.getBlock(file, fpos, block);
 							if (block==null) {
 								// past the end or not available - skip to next repetition
-								Log.d(TAG,"Null buffer @"+fpos+" into "+boffset);
+								Log.d(TAG,"Null buffer @"+fpos+" into "+boffset+", want "+(epos-spos+1));
 								if (length==IAudio.ITrack.LENGTH_ALL)
 									// can't repeat length all (for now, anyway)
 									break;

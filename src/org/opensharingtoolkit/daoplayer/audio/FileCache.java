@@ -29,7 +29,7 @@ import android.util.Log;
  * @author pszcmg
  */
 public class FileCache {
-	static boolean debug = false;
+	static boolean debug = true;
 	
 	public static class Block {
 		short mSamples[];

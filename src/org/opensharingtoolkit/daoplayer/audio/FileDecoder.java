@@ -39,7 +39,7 @@ public class FileDecoder {
 	int mChannels = 2;
 	private int mRate;
 	private Context mContext;
-	private boolean debug = false;
+	private boolean debug = true;
 	private MediaExtractor mExtractor;
 	private MediaCodec mCodec;
 	private ByteBuffer [] mCodecInputBuffers;

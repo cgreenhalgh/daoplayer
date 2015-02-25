@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1
+  },
+  "defaultScene": "test16 wav",
+  "constants": {
+    "d1":"20"
+  },
+  "tracks": [
+    {
+      "name": "test16 wav",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "count16-1.wav", 
+          "trackPos": 0,
+          "length": 1
+        },
+        { 
+          "path": "count16-2.wav", 
+          "trackPos": 1,
+          "length": 1
+        },
+        { 
+          "path": "count16-3.wav", 
+          "trackPos": 2,
+          "length": 1
+        },
+        { 
+          "path": "count16-4.wav", 
+          "trackPos": 3,
+          "length": 1
+        },
+        { 
+          "path": "count16-5.wav", 
+          "trackPos": 4,
+          "length": 1
+        },
+        { 
+          "path": "count16-6.wav", 
+          "trackPos": 5,
+          "length": 1
+        },
+        { 
+          "path": "count16-7.wav", 
+          "trackPos": 6,
+          "length": 1
+        },
+        { 
+          "path": "count16-8.wav", 
+          "trackPos": 7,
+          "length": 1
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "test16 wav",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "test16 wav",
+          "pos": 0,
+          "volume": 1
+        }
+      ]
+    },
+    {
+      "name": "test16all wav odd",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "test16 wav",
+          "pos": "[0,0,1,2,2,4,3,6,4,8,5,10,6,12,7,14,8,16]",
+          "volume": 1
+        }
+      ]
+    },
+    {
+      "name": "test16all wav even desc",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "test16 wav",
+          "pos": "[0,7,1,5,2,3,3,1,4,15,5,13,6,11,7,9,8,16]",
+          "volume": 1
+        }
+      ]
+    }
+  ]
+}
+
