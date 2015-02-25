@@ -22,6 +22,7 @@ import org.opensharingtoolkit.daoplayer.IAudio;
 import org.opensharingtoolkit.daoplayer.IAudio.IFile;
 import org.opensharingtoolkit.daoplayer.IAudio.IScene;
 import org.opensharingtoolkit.daoplayer.IAudio.ITrack;
+import org.opensharingtoolkit.daoplayer.ILog;
 import org.opensharingtoolkit.daoplayer.audio.ATrack.Section;
 
 import android.util.Log;
@@ -90,7 +91,7 @@ public class Composition {
 		br.close();
 		return sb.toString();
 	}
-	public void read(File file) throws IOException, JSONException {
+	public void read(File file, ILog log) throws IOException, JSONException {
 		Log.d(TAG,"read composition from "+file);
 		File parent = file.getParentFile();
 		String data = readFully(file);
@@ -121,7 +122,7 @@ public class Composition {
 					for (int fi=0; fi<jfiles.length(); fi++) {
 						JSONObject jfile = jfiles.getJSONObject(fi);
 						if (!jfile.has(PATH)) {
-							Log.w(TAG,"track "+ti+" references unspecified file "+fi);
+							log.logError("track "+ti+" references unspecified file "+fi);
 							continue;
 						}
 						String fpath = jfile.getString(PATH);
@@ -139,7 +140,7 @@ public class Composition {
 					for (int fi=0; fi<jsections.length(); fi++) {
 						JSONObject jsection = jsections.getJSONObject(fi);
 						if (!jsection.has(NAME)) {
-							Log.w(TAG,"track "+ti+" references unnamed section "+fi);
+							log.logError("track "+ti+" references unnamed section "+fi);
 							continue;
 						}
 						String sname = jsection.getString(NAME);
@@ -155,7 +156,7 @@ public class Composition {
 							for (int ni=0; ni<jnext.length(); ni++) {
 								JSONObject jnextSection = jnext.getJSONObject(ni);
 								if (!jnextSection.has(NAME)) {
-									Log.w(TAG,"track "+ti+" section "+sname+" has unnamed next section "+ni);
+									log.logError("track "+ti+" section "+sname+" has unnamed next section "+ni);
 									continue;
 								}
 								String nextName = jnextSection.getString(NAME);
@@ -182,7 +183,7 @@ public class Composition {
 				if (name!=null)
 					mScenes.put(name, ascene);
 				else 
-					Log.w(TAG,"Unnamed scene "+si);
+					log.logError("Unnamed scene "+si);
 				if (jscene.has(CONSTANTS)) {
 					DynConstants cons = new DynConstants();
 					cons.parse(jscene.getJSONObject(CONSTANTS));
@@ -212,7 +213,7 @@ public class Composition {
 						String trackName = jtrack.getString(NAME);
 						ITrack atrack = mTracks.get(trackName);
 						if (atrack==null) {
-							Log.w(TAG,"Scene "+name+" refers to unknown track "+trackName);
+							log.logError("Scene "+name+" refers to unknown track "+trackName);
 						} else {
 							Log.d(TAG,"Scene "+name+" uses track "+atrack.getId()+" as "+trackName);
 							Integer pos = jtrack.has(POS) && jtrack.get(POS) instanceof Number ? mEngine.secondsToSamples(jtrack.getDouble(POS)) : null;
@@ -226,7 +227,7 @@ public class Composition {
 				}
 			}
 		}
-		Log.i(TAG,"Read composition "+file);
+		log.log("Read composition "+file);
 	}
 	
 	/**

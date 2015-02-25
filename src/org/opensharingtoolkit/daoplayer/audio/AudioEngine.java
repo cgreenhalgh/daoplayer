@@ -23,6 +23,8 @@ import android.util.Log;
  *
  */
 public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
+	// 1/4 second, stereo 16bit
+	private static final int MIN_BUFFER_SIZE = 2*2*(44100/4);
 	private static int AUDIO_CHANNELS = AudioFormat.CHANNEL_OUT_STEREO;
 	private static int N_CHANNELS = 2; // stereo :-)
 	private Context mContext;
@@ -34,6 +36,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	private Vector<StateRec> mStateQueue = new Vector<StateRec>();
 	private FileCache mFileCache;
 	private boolean debug = true;
+	private boolean waitForFileCache = false;
 	
 	static enum StateType { STATE_FUTURE, STATE_NEXT, STATE_IN_PROGRESS, STATE_WRITTEN, STATE_DISCARDED };
 	public static class StateRec {
@@ -134,6 +137,12 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		int nrate = AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC);
 		Log.d(TAG,"native(music) rate="+nrate);
 		int bsize = AudioTrack.getMinBufferSize(nrate, AUDIO_CHANNELS, AudioFormat.ENCODING_PCM_16BIT);
+		if (bsize<MIN_BUFFER_SIZE) {
+			Log.d(TAG,"Using larger buffer size ("+MIN_BUFFER_SIZE+" vs "+bsize+")");
+			bsize = MIN_BUFFER_SIZE;
+		}
+		else
+			Log.d(TAG,"Using min buffer size "+bsize);
 		Log.d(TAG,"native(music) rate="+nrate+", minBufferSize="+bsize+" ("+(AUDIO_CHANNELS==AudioFormat.CHANNEL_OUT_STEREO ? "stereo" : "mono")+", 16bit pcm)");
 		mLog.log("native(music) rate="+nrate+", minBufferSize="+bsize+" ("+(AUDIO_CHANNELS==AudioFormat.CHANNEL_OUT_STEREO ? "stereo" : "mono")+", 16bit pcm)");
 		// samsung google nexus, android 4.3.1: 144 frames/buffer; native rate 44100; min buffer 6912 bytes (1728 frames, 39ms)
@@ -243,6 +252,15 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		private void fillBuffer(int[] buf) {
 			for (int i=0; i<buf.length; i++)
 				buf[i] = 0;
+			
+			if (waitForFileCache) {
+				if (!mFileCache.isIdle()) {
+					Log.d(TAG,"Waiting for file cache");
+					return;
+				}
+				Log.d(TAG,"File cache ready");
+				waitForFileCache = false;
+			}
 			// take next state
 			StateRec current = null, last = null, future = null;
 			synchronized(AudioEngine.this) {
@@ -576,5 +594,13 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	}
 	public ILog getLog() {
 		return mLog;
+	}
+	// signal to warm up after a new composition has been loaded
+	public void init(Context context) {
+		// all files...
+		if (mFileCache==null)
+			mFileCache = new FileCache(context);
+		mFileCache.init(mTracks);
+		waitForFileCache = true;
 	}
 }

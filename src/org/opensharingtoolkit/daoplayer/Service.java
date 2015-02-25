@@ -272,6 +272,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		if (mAudioEngine==null) {
 			mAudioEngine = new AudioEngine(this);
 			loadComposition();
+			mAudioEngine.init(this);
 		}
 		else if (mComposition!=null && mScene!=null)
 			updateScene();
@@ -378,6 +379,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 					mAudioEngine.stop();
 				mAudioEngine.reset();
 				loadComposition();
+				mAudioEngine.init(this);
 				if (start)
 					mAudioEngine.start(this);
 			}
@@ -469,7 +471,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		File filesDir = Compat.getExternalFilesDir(this);
 		Composition comp = mComposition = new Composition(mAudioEngine, mUserModel);
 		try {
-			comp.read(new File(filesDir, DEFAULT_COMPOSITION));
+			comp.read(new File(filesDir, DEFAULT_COMPOSITION), this);
 		} catch (Exception e) {
 			Log.w(TAG,"Error reading "+DEFAULT_COMPOSITION+": "+e, e);
 			Toast.makeText(this, "Error reading composition: "+e.getMessage(), Toast.LENGTH_SHORT).show();

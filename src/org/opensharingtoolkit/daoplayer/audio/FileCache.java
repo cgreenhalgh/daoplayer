@@ -362,7 +362,9 @@ public class FileCache {
 			}
 		}
 		// Throw this over the the background thread!!
-		
+		update(needRecs);
+	}
+	private synchronized void update(HashMap<String, NeedRec> needRecs) {
 		// old tasks
 		for (FileNeedTask task : mTasks) {
 			task.cancel(false);
@@ -387,6 +389,7 @@ public class FileCache {
 			mExecutor.execute(task);
 		}
 	}
+
 	/** handle needed stuff from a File */
 	static class FileNeedTask extends FutureTask<Boolean> {
 		FileNeedTask(final NeedRec nrec, final File file, final int priority) {
@@ -465,6 +468,8 @@ public class FileCache {
 							break;
 						}
 						synchronized (file.mBlocks) {
+							if (debug)
+								Log.d(TAG,"Got block "+bpos+" (+"+b.mSamples.length/b.mChannels+") for "+file.mPath);
 							file.mBlocks.put(b.mStartFrame, b);
 						}
 						bpos += b.mSamples.length/b.mChannels;
@@ -474,4 +479,29 @@ public class FileCache {
 			}
 		}
 	};
+	/** warm up for files... */
+	public void init(HashMap<Integer, ATrack> mTracks) {
+		HashMap<String,NeedRec> needRecs = new HashMap<String,NeedRec>();
+		for (ATrack atrack : mTracks.values()) {
+			for (ATrack.FileRef fr : atrack.mFileRefs) {
+				AFile file = (AFile)fr.mFile;
+				NeedRec nr = needRecs.get(file.getPath());
+				if (nr==null) {
+					nr = new NeedRec(file);
+					needRecs.put(file.getPath(), nr);
+				}
+				Interval ival = new Interval(0,1, getPriority(StateType.STATE_NEXT));
+				nr.merge(ival);
+			}
+		}
+		update(needRecs);
+	}
+	/** all done ? */
+	public synchronized boolean isIdle() {
+		for (FileNeedTask task : mTasks) {
+			if (!task.isDone() && !task.isCancelled())
+				return false;
+		}
+		return true;
+	}
 }
