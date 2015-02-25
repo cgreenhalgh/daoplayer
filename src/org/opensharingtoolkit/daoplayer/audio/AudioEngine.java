@@ -297,7 +297,6 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 				// frames, inclusive
 				int bufStart = 0, bufEnd = -1;
 
-				int tpos = tr.getPos();
 				// pwl volume?
 				float pwlVolume[] = tr.getPwlVolume();
 				int vol = 0;
@@ -313,6 +312,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 				// each aligned sub-section
 				for (int ai=0; ai<=(align!=null ? align.length : 0) && bufStart<=buf.length/2-1; ai+=2, bufStart = bufEnd+1)
 				{
+					int tpos = tr.getPos()+bufStart;
 					if (align!=null && align.length>=2) {
 						if (ai<align.length) {
 							// up to an alignment
@@ -325,28 +325,30 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 							if (align[ai]>=sceneTime+buf.length/2)
 								// after this buffer
 								bufEnd = buf.length/2-1;
-							else
+							else {
 								// coming up...
 								bufEnd = align[ai]-sceneTime-1;
+								// for next time!
+								tr.setPosFromAlign(align[ai+1]+sceneTime-align[ai]);
+							}
 						} else {
 							// from last alignment
 							bufEnd = buf.length/2-1;						
 						}
-						tpos = tr.getPos()+bufStart;
 					}
 					else
 						bufEnd = buf.length/2-1;
 					
 					if (pwlVolume!=null) {
-						float fromTrackTime = (float)samplesToSeconds(tpos);
-						float toTrackTime = (float)samplesToSeconds(tpos+bufEnd-bufStart);
-						if (!pwlNonzero(fromTrackTime, toTrackTime, pwlVolume)) {
+						float fromSceneTime = (float)samplesToSeconds(sceneTime+bufStart);
+						float toSceneTime = (float)samplesToSeconds(sceneTime+bufEnd);
+						if (!AudioEngine.pwlNonzero(fromSceneTime, toSceneTime, pwlVolume)) {
 							// silent
 							if (debug)
-								Log.d(TAG,"Track "+tr.getTrack().getId()+" pwl silent "+fromTrackTime+"-"+toTrackTime+" for "+Arrays.toString(pwlVolume));
+								Log.d(TAG,"Track "+tr.getTrack().getId()+" pwl silent "+fromSceneTime+"-"+toSceneTime+" for "+Arrays.toString(pwlVolume));
 							continue;
 						}
-						Float cvol = pwlConstant(fromTrackTime, toTrackTime, pwlVolume);
+						Float cvol = pwlConstant(fromSceneTime, toSceneTime, pwlVolume);
 						if (cvol!=null) {
 							pwlVolume = null;
 							vol = (int)(cvol * 0x1000);

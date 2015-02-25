@@ -265,8 +265,7 @@ public class FileCache {
 					// frames, inclusive
 					int bufStart = 0, bufEnd = -1;
 
-					int tpos = tr.getPos();
-					int refPos = tpos;
+					int refPos = tr.getPos();
 					float pwlVolume[] = tr.getPwlVolume();
 					int vol = 0;
 					if (pwlVolume==null) {
@@ -281,6 +280,7 @@ public class FileCache {
 					// each aligned sub-section
 					for (int ai=0; ai<=(align!=null ? align.length : 0) && bufStart<=blockLength-1; ai+=2, bufStart = bufEnd+1)
 					{
+						int tpos = refPos+bufStart;
 						if (align!=null && align.length>=2) {
 							if (ai<align.length) {
 								// up to an alignment
@@ -293,22 +293,24 @@ public class FileCache {
 								if (align[ai]>=sceneTime+blockLength)
 									// after this buffer
 									bufEnd = blockLength-1;
-								else
+								else {
 									// coming up...
-									bufEnd = align[ai]-sceneTime;
+									bufEnd = align[ai]-sceneTime-1;
+									// for next time
+									refPos = align[ai+1]+sceneTime-align[ai];
+								}
 							} else {
 								// from last alignment
 								bufEnd = blockLength-1;						
 							}
-							tpos = refPos+bufStart;
 						}
 						else
 							bufEnd = blockLength-1;
 						
 						if (pwlVolume!=null) {
-							float fromTrackTime = (float)engine.samplesToSeconds(tpos);
-							float toTrackTime = (float)engine.samplesToSeconds(tpos+bufEnd-bufStart);
-							if (!engine.pwlNonzero(fromTrackTime, toTrackTime, pwlVolume)) {
+							float fromSceneTime = (float)engine.samplesToSeconds(sceneTime+bufStart);
+							float toSceneTime = (float)engine.samplesToSeconds(sceneTime+bufEnd);
+							if (!AudioEngine.pwlNonzero(fromSceneTime, toSceneTime, pwlVolume)) {
 								// silent
 								continue;
 							}
