@@ -889,7 +889,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		StringBuilder sb = new StringBuilder();
 		sb.append("block @"+block2.getStartFrame()+", "+block2.getChannels()+"chan: ");
 		short as[] = block2.getSamples();
-		for (int i=0; i<10 && i<as.length; i++) {
+		for (int i=0; i<1000 && i<as.length; i++) {
 			sb.append(as[i]);
 			sb.append(" ");
 		}

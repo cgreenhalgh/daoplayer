@@ -35,7 +35,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	private long mWrittenFramePosition = 0, mWrittenTime = 0;
 	private Vector<StateRec> mStateQueue = new Vector<StateRec>();
 	private FileCache mFileCache;
-	private boolean debug = true;
+	private boolean debug = false;
 	private boolean waitForFileCache = false;
 	
 	static enum StateType { STATE_FUTURE, STATE_NEXT, STATE_IN_PROGRESS, STATE_WRITTEN, STATE_DISCARDED };

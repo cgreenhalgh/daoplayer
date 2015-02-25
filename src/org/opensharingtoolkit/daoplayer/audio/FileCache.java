@@ -6,6 +6,7 @@ package org.opensharingtoolkit.daoplayer.audio;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.TreeMap;
@@ -29,7 +30,7 @@ import android.util.Log;
  * @author pszcmg
  */
 public class FileCache {
-	static boolean debug = true;
+	static boolean debug = false;
 	
 	public static class Block {
 		short mSamples[];
@@ -37,6 +38,7 @@ public class FileCache {
 		int mStartFrame; // Note frame number
 		// internal
 		int mIndex;
+		long mLastRequestedTime;
 		/**
 		 * @return the mSamples
 		 */
@@ -72,6 +74,8 @@ public class FileCache {
 		}
 	}
 	private static final String TAG = "daoplayer-filecache";
+	private static final long CACHE_RETAIN_TIME_MS = 2000;
+	private static final int CACHE_RATAIN_SAMPLES = (2*44100);
 	private Map<String,File> mFiles = new HashMap<String,File>();
 	private Vector<FileNeedTask> mTasks = new Vector<FileNeedTask>();
 	private ExecutorService mExecutor;
@@ -99,9 +103,11 @@ public class FileCache {
 			TreeMap.Entry<Integer,Block> ent = file.mBlocks.floorEntry(frame);
 			if (ent!=null) {
 				Block b = ent.getValue();
-				if (b.mStartFrame<=frame && b.mStartFrame+b.mSamples.length/b.mChannels > frame)
+				if (b.mStartFrame<=frame && b.mStartFrame+b.mSamples.length/b.mChannels > frame) {
 					// found in cache!
+					b.mLastRequestedTime = System.currentTimeMillis();
 					return b;
+				}
 			}
 		}
 		return null;
@@ -388,6 +394,20 @@ public class FileCache {
 			mTasks.add(task);
 			mExecutor.execute(task);
 		}
+		// eject old
+		long now = System.currentTimeMillis();
+		long old = now-CACHE_RETAIN_TIME_MS;
+		for (File file : mFiles.values()) {
+			Iterator<TreeMap.Entry<Integer,Block>> iter = file.mBlocks.tailMap(CACHE_RATAIN_SAMPLES).entrySet().iterator();
+			while(iter.hasNext()) {
+				TreeMap.Entry<Integer,Block> entry = iter.next();
+				if (entry.getValue().mLastRequestedTime < old && entry.getValue().mStartFrame>=CACHE_RATAIN_SAMPLES) {
+					if (debug)
+						Log.d(TAG,"Eject block "+entry.getValue().mStartFrame+"("+entry.getValue().mSamples.length+") from cache for "+file.mPath);
+					iter.remove();
+				}
+			}
+		}
 	}
 
 	/** handle needed stuff from a File */
@@ -421,7 +441,9 @@ public class FileCache {
 				// gaps? from/length
 				TreeMap<Integer,Interval> gaps = new TreeMap<Integer,Interval>();
 				gaps.put(needed.mFromInclusive, new Interval(needed.mFromInclusive, needed.mToExclusive, needed.mPriority));
+				long now = System.currentTimeMillis();
 				for (Block b : blocks) {
+					b.mLastRequestedTime = now;
 					int length = b.mSamples.length/b.mChannels;
 					int startFrame = b.mStartFrame;
 					TreeMap.Entry<Integer,Interval> from = gaps.floorEntry(b.mStartFrame);
@@ -467,6 +489,7 @@ public class FileCache {
 								Log.d(TAG,"Could not get block "+bpos+" for "+file.mPath);
 							break;
 						}
+						b.mLastRequestedTime = now;
 						synchronized (file.mBlocks) {
 							if (debug)
 								Log.d(TAG,"Got block "+bpos+" (+"+b.mSamples.length/b.mChannels+") for "+file.mPath);
