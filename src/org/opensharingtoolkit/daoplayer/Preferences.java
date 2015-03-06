@@ -26,8 +26,8 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
 		checkService();
 		setServiceAction("pref_reload", Service.ACTION_RELOAD);
 		setServiceAction("pref_defaultscene", Service.ACTION_DEFAULT_SCENE);
-		setServiceAction("pref_nextscene", Service.ACTION_NEXT_SCENE);
-		setServiceAction("pref_prevscene", Service.ACTION_PREV_SCENE);
+		//setServiceAction("pref_nextscene", Service.ACTION_NEXT_SCENE);
+		//setServiceAction("pref_prevscene", Service.ACTION_PREV_SCENE);
 		setServiceAction("pref_clearlogs", Service.ACTION_CLEAR_LOGS);
 		setServiceAction("pref_runtest", Service.ACTION_RUN_TEST);
 	}

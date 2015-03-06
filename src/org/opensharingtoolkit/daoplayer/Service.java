@@ -6,6 +6,7 @@ package org.opensharingtoolkit.daoplayer;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Locale;
@@ -126,10 +127,17 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			}
 			return sb.toString();
 		}
+		public Collection<String> getScenes() {
+			synchronized(Service.this) {
+				if (mComposition!=null)
+					return mComposition.getScenes();
+			}
+			return null;
+		}
 		public String getStatus() {
 			JSONObject jstatus = new JSONObject();
 			try {
-				synchronized (this) {
+				synchronized (Service.this) {
 					if (Service.this.mAudioEngine!=null) {
 						jstatus.put("audioEngine",  mAudioEngine.getStatus());
 					}

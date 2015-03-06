@@ -50,9 +50,16 @@
         android:key="pref_reload" />
 
     <Preference 
+        android:title="@string/pref_showsceneselect_title">
+        <intent
+            android:targetPackage="org.opensharingtoolkit.daoplayer"
+            android:targetClass="org.opensharingtoolkit.daoplayer.ui.SceneSelectActivity" />
+    </Preference>
+
+    <Preference 
         android:title="@string/pref_defaultscene_title" 
         android:key="pref_defaultscene" />
-    
+    <!-- 
     <Preference 
         android:title="@string/pref_nextscene_title" 
         android:key="pref_nextscene" />
@@ -60,7 +67,7 @@
     <Preference 
         android:title="@string/pref_prevscene_title" 
         android:key="pref_prevscene" />
-    
+     -->
     <Preference 
         android:title="@string/pref_runtest_title"
         android:key="pref_runtest" />

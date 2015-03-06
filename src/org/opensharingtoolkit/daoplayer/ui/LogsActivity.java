@@ -24,13 +24,11 @@ import android.widget.TextView;
  * @author pszcmg
  *
  */
-public class LogsActivity extends Activity {
+public class LogsActivity extends BoundActivity {
 
 	private static final long POLL_INTERVAL_MS = 1000;
 	protected TextView mLog;
-	protected boolean mBound = false;
 	protected long mLastLogTime = 0;
-	protected Service.LocalBinder mLocal;
 	/* (non-Javadoc)
 	 * @see android.app.Activity#onCreate(android.os.Bundle)
 	 */
@@ -41,26 +39,6 @@ public class LogsActivity extends Activity {
 	       setContentView(R.layout.activity_logs);
 	       mLog = (TextView)findViewById(R.id.logs_log);
 	       mLog.setMovementMethod(new ScrollingMovementMethod());
-	}
-	/* (non-Javadoc)
-	 * @see android.app.Activity#onStart()
-	 */
-	@Override
-	protected void onStart() {
-		super.onStart();
-		Intent i = new Intent(this, Service.class);
-		bindService(i, mConnection, Context.BIND_AUTO_CREATE);
-	}
-	/* (non-Javadoc)
-	 * @see android.app.Activity#onStop()
-	 */
-	@Override
-	protected void onStop() {
-		super.onStop();
-		if (mBound){
-			unbindService(mConnection);
-			mBound = false;
-		}
 	}
 	
 	/* (non-Javadoc)
@@ -97,17 +75,7 @@ public class LogsActivity extends Activity {
 			mLastLogTime = now;
 		}
 	}
-	private ServiceConnection mConnection = new ServiceConnection() {
-		@Override
-		public void onServiceConnected(ComponentName name, IBinder service) {
-			mBound = true;
-			mLocal = (Service.LocalBinder)service;
-			updateLogs();
-		}
-
-		@Override
-		public void onServiceDisconnected(ComponentName name) {
-			mBound = false;
-		}
-	};
+	protected void onBind() {
+		updateLogs();
+	}
 }

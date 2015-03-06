@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -379,8 +380,10 @@ public class Composition {
 						sb.append(escapeJavascriptString(section.mName));
 						sb.append(",startTime:");
 						sb.append(newSceneTime+mEngine.samplesToSeconds(section.mTrackPos)-trackTime);
-						sb.append(",endTime:");
-						sb.append(newSceneTime+mEngine.samplesToSeconds(section.mTrackPos+section.mLength)-trackTime);
+						if (section.mLength!=IAudio.ITrack.LENGTH_ALL) {
+							sb.append(",endTime:");
+							sb.append(newSceneTime+mEngine.samplesToSeconds(section.mTrackPos+section.mLength)-trackTime);
+						}
 						sb.append("}");
 					}
 					sb.append(");\n");
@@ -642,6 +645,13 @@ public class Composition {
 				ix = mScenesInOrder.size() - 1;
 			return mScenesInOrder.get(ix);
 		}			
+	}
+	/** return copy of scene names in order */
+	public Collection<String> getScenes() {
+		Vector<String> scenes = new Vector<String>();
+		if (mScenesInOrder!=null)
+			scenes.addAll(mScenesInOrder);
+		return scenes;
 	}
 	public String getTestTrack(String name) {
 		DynScene scene = mScenes.get(name);

@@ -125,7 +125,7 @@ Note that volume and pos functions are always called on scene load, but only cal
 `currentSection`: currently playing section of current track; only available within a dynamic track position expression. Null if no current section, else an Object with fields:
 - `name`: name of current section (string)
 - `startTime`: track time in seconds when current section started (float)
-- `endTime`: track time in seconds when current section will end (float)
+- `endTime`: track time in seconds when current section will end (float), if the section has a length/end time
 
 `activity`: one of `NOGPS`, `STATIONARY`, `WALKING` (future?: `RUNNING`, `FASTD`)
 
