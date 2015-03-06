@@ -8,11 +8,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.opensharingtoolkit.daoplayer.audio.AudioEngine;
@@ -21,6 +23,7 @@ import org.opensharingtoolkit.daoplayer.audio.FileCache;
 import org.opensharingtoolkit.daoplayer.audio.FileDecoder;
 import org.opensharingtoolkit.daoplayer.audio.IScriptEngine;
 import org.opensharingtoolkit.daoplayer.audio.UserModel;
+import org.opensharingtoolkit.daoplayer.logging.Recorder;
 import org.opensharingtoolkit.daoplayer.ui.BrowserActivity;
 
 import android.annotation.SuppressLint;
@@ -98,6 +101,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private Vector<String> mSpeechDelayed = new Vector<String>();
 	HashMap<String, String> mSpeechParameters = new HashMap<String,String>();
 	private UserModel mUserModel = new UserModel();
+	protected Recorder mRecorder = new Recorder(this, "daoplayer.service");
 	
 	static enum LogEntryType { LOG_ERROR, LOG_INFO };
 	class LogEntry {
@@ -173,6 +177,14 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	public void log(LogEntryType type, String message) {
 		long now = System.currentTimeMillis();
 		Log.d(TAG,"Log "+type+": "+message);
+		switch(type) {
+		case LOG_ERROR:
+			mRecorder.e("log.error", message);
+			break;
+		case LOG_INFO:
+			mRecorder.e("log.info", message);
+			break;
+		}
 		synchronized(mLog) {
 			LogEntry ent = new LogEntry();
 			ent.type = type;
@@ -415,10 +427,12 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		Log.d(TAG,"handleCommand "+intent.getAction());
 		if (ACTION_RELOAD.equals(intent.getAction())) {
 			if (mAudioEngine!=null) {
+				log("RELOAD");
 				boolean start = started;
 				if (started)
 					mAudioEngine.stop();
 				mAudioEngine.reset();
+				mRecorder.startNewFile("RELOAD", null);
 				loadComposition();
 				mAudioEngine.init(this);
 				if (start)
@@ -485,6 +499,17 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			Log.d(TAG,"Service setLatLng "+mLastLat+","+mLastLng+" acc="+mLastAccuracy+" at "+mLastTime);
 			if (logGps)
 				log("SET POSITION "+mLastLat+","+mLastLng+" acc="+mLastAccuracy+" at "+mLastTime);
+			try {
+				JSONObject info = new JSONObject();
+				info.put("lat", mLastLat);
+				info.put("lng", mLastLng);
+				info.put("accuracy", mLastAccuracy);
+				info.put("time", mLastTime);
+				mRecorder.i("set.latlng", info);
+			}
+			catch (JSONException e) {
+				Log.w(TAG,"Error logging position", e);
+			}
 			/*if (mWebViewLoaded) {
 				StringBuilder sb = new StringBuilder();
 				sb.append("window.position={lat:");
@@ -798,6 +823,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			}
 		}
 	}
+	private HashSet<Integer> mSatUsedInFix = new HashSet<Integer>();
 	private void startGps() {
 		if (mGpsStarted)
 			return;
@@ -812,17 +838,46 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				status = locationManager.getGpsStatus(status);
 				int inFix = 0;
 				int total = 0;
+				boolean changeUsedInFix = false;
+				HashSet<Integer> satNotUsedInFix = new HashSet<Integer>();
+				satNotUsedInFix.addAll(mSatUsedInFix);
 				Vector<Float> snrs = new Vector<Float>();
 				for (GpsSatellite sat : status.getSatellites()) {
-					if (sat.usedInFix())
+					if (sat.usedInFix()) {
 						inFix++;
+						if (!mSatUsedInFix.contains(sat.getPrn())) {
+							changeUsedInFix = true;
+							mSatUsedInFix.add(sat.getPrn());
+						} else {
+							satNotUsedInFix.remove(sat.getPrn());
+						}
+					} 
 					total++;
 					snrs.add(sat.getSnr());
+				}
+				if (!satNotUsedInFix.isEmpty()) {
+					mSatUsedInFix.removeAll(satNotUsedInFix);
+					changeUsedInFix = true;
 				}
 				Float asnrs [] = snrs.toArray(new Float[snrs.size()]);
 				Arrays.sort(asnrs);
 				if (logGps)
 					log("Gps status: Fixed="+inFix+" Total="+total+" "+(asnrs.length>0 ? " SNRs="+asnrs[asnrs.length-1]+(asnrs.length>3 ? "/"+asnrs[asnrs.length-4] : "") : ""));
+				try {
+					JSONObject info = new JSONObject();
+					info.put("changeUsedInFix", changeUsedInFix);
+					info.put("fixed", inFix);
+					info.put("total", total);
+					JSONArray jsnrs = new JSONArray();
+					info.put("snrs", jsnrs);
+					for (int i=0; i<asnrs.length; i++)
+						jsnrs.put(asnrs[i]);
+					mRecorder.i("on.gpsStatus", info);
+				}
+				catch (JSONException e) {
+					Log.w(TAG,"Error logging on.location", e);
+				}
+
 			}
 		});
 	}
@@ -835,6 +890,25 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			Log.d(TAG,"New gps location: "+location);
 			if (logGps)
 				log("New gps location "+location.getLatitude()+","+location.getLongitude()+" acc="+location.getAccuracy()+" at "+location.getTime());
+			try {
+				JSONObject info = new JSONObject();
+				info.put("lat", location.getLatitude());
+				info.put("lng", location.getLongitude());
+				if (location.hasAccuracy())
+					info.put("accuracy", location.getAccuracy());
+				if (location.hasAltitude())
+					info.put("altitude", location.getAltitude());
+				if (location.hasBearing())
+					info.put("bearing", location.getBearing());
+				if (location.hasSpeed())
+					info.put("speed", location.getSpeed());
+				info.put("time", location.getTime());
+				info.put("elapsedRealtimeNanos", location.getElapsedRealtimeNanos());
+				mRecorder.i("on.location", info);
+			}
+			catch (JSONException e) {
+				Log.w(TAG,"Error logging on.location", e);
+			}
 			Intent i = new Intent(Service.ACTION_SET_LATLNG);
 			i.putExtra(EXTRA_LAT, location.getLatitude());
 			i.putExtra(EXTRA_LNG, location.getLongitude());
@@ -973,5 +1047,9 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	@Override
 	public void onUtteranceCompleted(String utteranceId) {
 		Log.d(TAG,"onUtteranceCompleted("+utteranceId+")");		
+	}
+	@Override
+	public Recorder getRecorder() {
+		return mRecorder;
 	}
 }

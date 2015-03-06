@@ -542,7 +542,6 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			track = null;
 		}		
 	}
-
 	@Override
 	public void reset() {
 		mFiles = new HashMap<String,AFile>();

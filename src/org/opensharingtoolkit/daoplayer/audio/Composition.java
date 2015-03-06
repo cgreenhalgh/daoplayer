@@ -275,6 +275,12 @@ public class Composition {
 	private Map<Integer,DynInfo> getDynInfo(IScriptEngine scriptEngine, DynScene scene, boolean loadFlag, String position, long time) {
 		AudioEngine.StateRec srec = mEngine.getNextState();
 		AState astate = (srec!=null ? srec.getState() : null);
+		JSONObject loginfo = new JSONObject();
+		try {
+			loginfo.put("loadFlag",loadFlag);
+		} catch (JSONException e2) {
+			Log.w(TAG,"Error marshalling loadFlag", e2);
+		}
 		StringBuilder sb = new StringBuilder();
 		// "built-in"
 		sb.append("var pwl=window.pwl;\n");
@@ -286,14 +292,30 @@ public class Composition {
 		double oldSceneTime = ((srec==null) ? 0 : srec.mSceneTime+mEngine.samplesToSeconds(mEngine.getFutureOffset()));
 		double newSceneTime = loadFlag ? 0 : oldSceneTime;
 		sb.append(newSceneTime);
+		try {
+			loginfo.put("sceneTime", newSceneTime);
+		} catch (JSONException e2) {
+			Log.w(TAG,"Error marshalling sceneTime", e2);
+		}
 		sb.append(";\n");
 		sb.append("var totalTime=");
-		if (srec!=null)
-			sb.append(srec.mTotalTime+mEngine.samplesToSeconds(mEngine.getFutureOffset()));
-		else
-			sb.append("0");
+		double totalTime = (srec!=null) ? srec.mTotalTime+mEngine.samplesToSeconds(mEngine.getFutureOffset()) : 0;
+		sb.append(totalTime);
+		try {
+			loginfo.put("totalTime", totalTime);
+		} catch (JSONException e2) {
+			Log.w(TAG,"Error marshalling totalTime", e2);
+		}
 		sb.append(";\n");
-		mUserModel.toJavascript(sb, scene.getWaypoints());
+		StringBuilder umsb = new StringBuilder();
+		mUserModel.toJavascript(umsb, scene.getWaypoints());
+		String ums = umsb.toString();
+		sb.append(ums);
+		try {
+			loginfo.put("userModel", ums);
+		} catch (JSONException e1) {
+			Log.d(TAG,"Error marshalling userModel", e1);
+		}
 		// constants: composition, scene
 		mConstants.toJavascript(sb);
 		if (scene.getConstants()!=null)
@@ -392,6 +414,11 @@ public class Composition {
 		}
 		sb.append("return JSON.stringify({vs:vs,ps:ps});");
 		String res = scriptEngine.runScript(sb.toString());
+		try {
+			loginfo.put("res", res);
+		} catch (JSONException e1) {
+			Log.w(TAG,"Error marshalling res", e1);
+		}
 		Log.d(TAG,"run script: "+res+"="+sb.toString());
 		Map<Integer,DynInfo> dynInfos = new HashMap<Integer,DynInfo>();
 		try {
@@ -501,6 +528,7 @@ public class Composition {
 			Log.w(TAG,"error parsing load script result "+res+": "+e, e);
 			mEngine.getLog().logError("Script returned error: "+res+", from "+sb.toString());
 		}
+		mEngine.getLog().getRecorder().i("update", loginfo);
 		return dynInfos;
 	}
 	private String escapeJavascriptString(String mName) {

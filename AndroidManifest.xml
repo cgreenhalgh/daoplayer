@@ -7,6 +7,7 @@
         android:minSdkVersion="17"
         android:targetSdkVersion="18" />
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
@@ -26,7 +27,8 @@
             </intent-filter>
         </activity>
         <service android:enabled="true" android:name="Service"></service>
-
+        <service android:enabled="true" android:name=".logging.LoggingService"></service>
+        
         <activity android:launchMode="standard" 
             android:name="ZipHandlerActivity"
             android:taskAffinity="org.opensharingtoolkit.daoplayer"
