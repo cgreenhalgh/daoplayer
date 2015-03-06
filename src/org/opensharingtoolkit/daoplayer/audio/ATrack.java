@@ -110,6 +110,7 @@ public class ATrack implements IAudio.ITrack {
 	}
 	
 	private int mId;
+	private String mName;
 	private static int sNextId = 0;
 	private float mVolume = 0.0f;
 	private int mPosition = 0;
@@ -157,5 +158,12 @@ public class ATrack implements IAudio.ITrack {
 
 	public boolean isDynamic() {
 		return mDynamic;
+	}
+
+	public void setName(String name) {
+		mName = name;
+	}
+	public String getName() {
+		return mName;
 	}
 }

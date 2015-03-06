@@ -51,6 +51,10 @@
             android:name=".ui.LogsActivity"
             android:label="@string/logs_title" >
         </activity>
+        <activity android:launchMode="singleTop" 
+            android:name=".ui.StatusActivity"
+            android:label="@string/status_title" >
+        </activity>
         <activity 
             android:name=".ui.BrowserActivity"
             android:launchMode="singleTop" >   

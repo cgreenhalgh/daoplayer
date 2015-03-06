@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.opensharingtoolkit.daoplayer.audio.AudioEngine;
 import org.opensharingtoolkit.daoplayer.audio.Composition;
 import org.opensharingtoolkit.daoplayer.audio.FileCache;
@@ -124,6 +125,38 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				}
 			}
 			return sb.toString();
+		}
+		public String getStatus() {
+			JSONObject jstatus = new JSONObject();
+			try {
+				synchronized (this) {
+					if (Service.this.mAudioEngine!=null) {
+						jstatus.put("audioEngine",  mAudioEngine.getStatus());
+					}
+					String scene = Service.this.mScene;
+					jstatus.put("scene", scene);
+					Map<String,String> waypoints = null;
+					if (Service.this.mComposition!=null) {
+						waypoints = mComposition.getWaypoints(scene);
+					}					
+					if (Service.this.mUserModel!=null) {
+						StringBuilder sb = new StringBuilder();
+						mUserModel.toJavascript(sb, waypoints);
+						jstatus.put("userModel", sb.toString());
+					}
+					jstatus.put("speechReady", mSpeechReady);
+					jstatus.put("speechFailed", mSpeechFailed);
+					jstatus.put("started", started);
+				}
+			} catch (JSONException e) {
+				Log.w(TAG,"Error getting status", e);
+			}
+			try {
+				return jstatus.toString(4);
+			} catch (JSONException e) {
+				Log.w(TAG,"Error returning status", e);
+				return "\"Error returning status\"";
+			}
 		}
 	}
 	public void log(String message) {

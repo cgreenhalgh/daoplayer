@@ -173,6 +173,8 @@ public class UserModel {
 			waypointInfos = mWaypointInfos;
 		}
 		// waypoints
+		if (waypointInfos==null) 
+			return;
 		sb.append("var waypoints={\n");
 		WaypointInfo nearest = null;
 		String nearestName = null;

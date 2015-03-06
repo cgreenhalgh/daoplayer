@@ -4,6 +4,7 @@
     <string name="pref_runservice_title">Run audio service</string>
     <string name="pref_showgui_title">Show User Interface</string>
     <string name="pref_showlogs_title">Show Logs</string>
+    <string name="pref_showstatus_title">Show Status</string>
     <string name="pref_usegps_title">Use GPS for position</string>
     <string name="pref_reload_title">Reload composition</string>
     <string name="pref_defaultscene_title">Load Default Scene</string>
@@ -21,6 +22,7 @@
     <string name="zip_log_title">Diagnostic output</string>
     <string name="webui_default_url">file:///android_asset/index.html</string>
     <string name="logs_title">DAO Composition Logs</string>
+    <string name="status_title">DAO Status</string>
     <string name="pref_clearlogs_title">Clear logs</string>
     <string name="toast_speech_failed">Sorry, text-to-speech is not available</string>
     <string name="toast_speech_language_failed">Sorry, text-to-speech language is not available</string>

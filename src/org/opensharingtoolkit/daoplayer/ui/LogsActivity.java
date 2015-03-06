@@ -27,10 +27,10 @@ import android.widget.TextView;
 public class LogsActivity extends Activity {
 
 	private static final long POLL_INTERVAL_MS = 1000;
-	private TextView mLog;
-	private boolean mBound = false;
-	private long mLastLogTime = 0;
-	private Service.LocalBinder mLocal;
+	protected TextView mLog;
+	protected boolean mBound = false;
+	protected long mLastLogTime = 0;
+	protected Service.LocalBinder mLocal;
 	/* (non-Javadoc)
 	 * @see android.app.Activity#onCreate(android.os.Bundle)
 	 */
@@ -89,7 +89,7 @@ public class LogsActivity extends Activity {
 			mHandler.postDelayed(mUpdateLogs, POLL_INTERVAL_MS);
 		}
 	};
-	private void updateLogs() {
+	protected void updateLogs() {
 		if (mBound) {
 			long now = System.currentTimeMillis()-500;
 			String logs = mLocal.getLogs(mLastLogTime, now);

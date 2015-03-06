@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.opensharingtoolkit.daoplayer.IAudio;
 import org.opensharingtoolkit.daoplayer.ILog;
 
@@ -475,6 +478,57 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			}
 		}
 		return null;
+	}
+	public JSONObject getStatus() {
+		JSONObject jstatus = new JSONObject();
+		StateRec srec = getNextState();
+		try {
+			double sceneTime = srec.getSceneTime();
+			jstatus.put("sceneTime", sceneTime);
+			AState astate = null;
+			if (srec!=null) {
+				jstatus.put("type", srec.getType()!=null ? srec.getType().name() : null);
+				jstatus.put("totalTime", srec.getTotalTime());
+				astate = srec.getState();
+			}
+			JSONArray jtracks = new JSONArray();
+			jstatus.put("tracks", jtracks);
+			for (ATrack track : mTracks.values()) {
+				JSONObject jtrack = new JSONObject();
+				jtracks.put(jtrack);
+				jtrack.put("id", track.getId());
+				jtrack.put("name", track.getName());
+				jtrack.put("currentPosition", track.getPosition());
+				AState.TrackRef tref = astate!=null ? astate.get(track) : null;
+				if (tref!=null) {
+					float pwl[] = tref.getPwlVolume();
+					float volume = tref.getVolume();
+					if (pwl!=null) {
+						jtrack.put("staticVol", volume);
+						JSONArray jpwl = new JSONArray();
+						jtrack.put("pwlVolume", jpwl);
+						for (int i=0; i<pwl.length; i++)
+							jpwl.put(pwl[i]);
+						float vol = pwl((float)sceneTime, pwl);
+						jtrack.put("vol", vol);
+					}
+					else
+						jtrack.put("vol",  volume);
+					int align[] = tref.getAlign();
+					jtrack.put("staticPos", samplesToSeconds(tref.getPos()));
+					if (align!=null) {
+						JSONArray jalign = new JSONArray();
+						jtrack.put("align", jalign);
+						for (int i=0; i<align.length; i++)
+							jalign.put(samplesToSeconds(align[i]));
+					}
+					jtrack.put("paused", tref.isPaused());
+				}
+			}
+		} catch (JSONException e) {
+			Log.w(TAG,"Error doing getStatus", e);
+		}
+		return jstatus;
 	}
 	public int getFutureOffset() {
 		return mSamplesPerBlock;

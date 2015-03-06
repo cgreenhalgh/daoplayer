@@ -34,6 +34,13 @@
     </Preference>
 
     <Preference 
+        android:title="@string/pref_showstatus_title">
+        <intent
+            android:targetPackage="org.opensharingtoolkit.daoplayer"
+            android:targetClass="org.opensharingtoolkit.daoplayer.ui.StatusActivity" />
+    </Preference>
+
+    <Preference 
         android:title="@string/pref_clearlogs_title" 
         android:key="pref_clearlogs" />
 

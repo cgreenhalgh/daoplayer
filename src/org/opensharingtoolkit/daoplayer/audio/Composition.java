@@ -117,6 +117,7 @@ public class Composition {
 				String name = jtrack.has(NAME) ? jtrack.getString(NAME) : null;
 				boolean pauseIfSilent = jtrack.has(PAUSE_IF_SILENT) && jtrack.getBoolean(PAUSE_IF_SILENT);
 				ATrack atrack = (ATrack)mEngine.addTrack(pauseIfSilent);
+				atrack.setName(name);
 				if (name!=null)
 					mTracks.put(name, atrack);
 				else
@@ -657,5 +658,13 @@ public class Composition {
 				return fr.mFile.getPath();
 		}
 		return null;
+	}
+	public synchronized Map<String,String> getWaypoints(String sceneName) {
+		DynScene scene = mScenes.get(sceneName);
+		if (scene==null) {
+			Log.w(TAG, "getWaypoints: scene unknown "+sceneName);
+			return null;			
+		}
+		return scene.getWaypoints();		
 	}
 }
