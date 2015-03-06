@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1
+  },
+  "defaultScene": "testsections",
+  "tracks": [
+    {
+      "name": "test16",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "count16-all.wav", 
+          "trackPos": 0,
+          "length": 16
+        }
+      ],
+      "sections": [
+        { "name": "one", "trackPos": 0 },
+        { "name": "two", "trackPos": 1 },
+        { "name": "three", "trackPos": 2 },
+        { "name": "four", "trackPos": 3 },
+        { "name": "five", "trackPos": 4 },
+        { "name": "six", "trackPos": 5 },
+        { "name": "seven", "trackPos": 6 },
+        { "name": "eight", "trackPos": 7 },
+        { "name": "nine", "trackPos": 8 },
+        { "name": "ten", "trackPos": 9 },
+        { "name": "eleven", "trackPos": 10 },
+        { "name": "twelve", "trackPos": 11 },
+        { "name": "thirteen", "trackPos": 12 },
+        { "name": "fourteen", "trackPos": 13 },
+        { "name": "fifteen", "trackPos": 14 },
+        { "name": "sixteen", "trackPos": 15 },
+        { "name": "end", "trackPos": 16 }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "testsections",
+      "partial": false,
+      "updatePeroid": 1,
+      "tracks": [
+        {
+          "name": "test16",
+          "pos": "['sixteen','fifteen','fourteen','thirteen','twelve','eleven','ten','nine','eight','seven','six','five','four','three','two','one','end']",
+          "volume": 1,
+          "update": false          
+        }
+      ]
+    }
+  ]
+}
+

@@ -58,7 +58,9 @@ public class Composition {
 	private static final String START_COST = "startCost";	
 	private static final String TRACKS = "tracks";
 	private static final String TRACK_POS = "trackPos";
+	private static final String UPDATE = "update";
 	private static final String UPDATE_PERIOD = "updatePeriod";
+	private static final String VARS = "vars";
 	private static final String VOLUME = "volume";
 	private static final String WAYPOINTS = "waypoints";
 
@@ -109,6 +111,8 @@ public class Composition {
 		if (jcomp.has(TRACKS)) {
 			JSONArray jtracks = jcomp.getJSONArray(TRACKS);
 			for (int ti=0; ti<jtracks.length(); ti++) {
+				if (jtracks.isNull(ti))
+					continue;
 				JSONObject jtrack = jtracks.getJSONObject(ti);
 				String name = jtrack.has(NAME) ? jtrack.getString(NAME) : null;
 				boolean pauseIfSilent = jtrack.has(PAUSE_IF_SILENT) && jtrack.getBoolean(PAUSE_IF_SILENT);
@@ -120,6 +124,8 @@ public class Composition {
 				if (jtrack.has(FILES)) {
 					JSONArray jfiles = jtrack.getJSONArray(FILES);
 					for (int fi=0; fi<jfiles.length(); fi++) {
+						if (jfiles.isNull(fi))
+							continue;
 						JSONObject jfile = jfiles.getJSONObject(fi);
 						if (!jfile.has(PATH)) {
 							log.logError("track "+ti+" references unspecified file "+fi);
@@ -138,6 +144,8 @@ public class Composition {
 					JSONArray jsections = jtrack.getJSONArray(SECTIONS);
 					Section lastSection = null;
 					for (int fi=0; fi<jsections.length(); fi++) {
+						if (jsections.isNull(fi))
+							continue;
 						JSONObject jsection = jsections.getJSONObject(fi);
 						if (!jsection.has(NAME)) {
 							log.logError("track "+ti+" references unnamed section "+fi);
@@ -154,6 +162,8 @@ public class Composition {
 						if (jsection.has(NEXT)) {
 							JSONArray jnext = jsection.getJSONArray(NEXT);
 							for (int ni=0; ni<jnext.length(); ni++) {
+								if (jnext.isNull(ni))
+									continue;
 								JSONObject jnextSection = jnext.getJSONObject(ni);
 								if (!jnextSection.has(NAME)) {
 									log.logError("track "+ti+" section "+sname+" has unnamed next section "+ni);
@@ -175,6 +185,8 @@ public class Composition {
 		if (jcomp.has(SCENES)) {
 			JSONArray jscenes = jcomp.getJSONArray(SCENES);
 			for (int si=0; si<jscenes.length(); si++) {
+				if (jscenes.isNull(si))
+					continue;
 				JSONObject jscene = jscenes.getJSONObject(si);
 				String name = jscene.has(NAME) ? jscene.getString(NAME) : null;
 				mScenesInOrder.add(name);
@@ -188,6 +200,11 @@ public class Composition {
 					DynConstants cons = new DynConstants();
 					cons.parse(jscene.getJSONObject(CONSTANTS));
 					ascene.setConstants(cons);
+				}
+				if (jscene.has(VARS)) {
+					DynConstants vars = new DynConstants();
+					vars.parse(jscene.getJSONObject(VARS));
+					ascene.setVars(vars);
 				}
 				if (jscene.has(UPDATE_PERIOD))
 					ascene.setUpdatePeriod(jscene.getDouble(UPDATE_PERIOD));
@@ -209,6 +226,8 @@ public class Composition {
 				if (jscene.has(TRACKS)) {
 					JSONArray jtracks = jscene.getJSONArray(TRACKS);
 					for (int ti=0; ti<jtracks.length(); ti++) {
+						if (jtracks.isNull(ti))
+							continue;
 						JSONObject jtrack = jtracks.getJSONObject(ti);
 						String trackName = jtrack.getString(NAME);
 						ITrack atrack = mTracks.get(trackName);
@@ -221,7 +240,8 @@ public class Composition {
 							Float volume = jtrack.has(VOLUME) && jtrack.get(VOLUME) instanceof Number ? (float)jtrack.getDouble(VOLUME) : null;
 							String dynVolume = jtrack.has(VOLUME) && jtrack.get(VOLUME) instanceof String ? jtrack.getString(VOLUME) : null;
 							Boolean prepare = jtrack.has(PREPARE) && jtrack.get(PREPARE) instanceof Boolean ? jtrack.getBoolean(PREPARE) : null;
-							ascene.set(atrack, volume, dynVolume, pos, dynPos, prepare);
+							boolean update = jtrack.has(UPDATE) && jtrack.get(UPDATE) instanceof Boolean ? jtrack.getBoolean(UPDATE) : true;
+							ascene.set(atrack, volume, dynVolume, pos, dynPos, prepare, update);
 						}
 					}
 				}
@@ -261,8 +281,9 @@ public class Composition {
 		sb.append(";\n");
 		sb.append("var distance=function(coord1,coord2){return window.distance(coord1,coord2 ? coord2 : position);};\n");
 		sb.append("var sceneTime=");
-		double sceneTime = (srec==null) ? 0 : srec.mSceneTime+mEngine.samplesToSeconds(mEngine.getFutureOffset());
-		sb.append(sceneTime);
+		double oldSceneTime = ((srec==null) ? 0 : srec.mSceneTime+mEngine.samplesToSeconds(mEngine.getFutureOffset()));
+		double newSceneTime = loadFlag ? 0 : oldSceneTime;
+		sb.append(newSceneTime);
 		sb.append(";\n");
 		sb.append("var totalTime=");
 		if (srec!=null)
@@ -275,6 +296,8 @@ public class Composition {
 		mConstants.toJavascript(sb);
 		if (scene.getConstants()!=null)
 			scene.getConstants().toJavascript(sb);
+		if (scene.getVars()!=null)
+			scene.getVars().toJavascript(sb);
 		if (loadFlag && scene.getOnload()!=null) {
 			sb.append(scene.getOnload());
 			sb.append(";\n");
@@ -288,26 +311,42 @@ public class Composition {
 			String dynVolume = tr.getDynVolume();
 			String dynPos = tr.getDynPos();
 			if (dynVolume!=null || dynPos!=null) {
+				AState.TrackRef atr = (astate!=null) ? astate.get(tr.getTrack()) : null;
+				if (!loadFlag && tr.getUpdate()==Boolean.FALSE)
+					continue;
 				int trackPos = 0;
+				float currentVolume = 0; /* default?! */
 				if (loadFlag && tr.getPos()!=null)
 					trackPos = tr.getPos();
 				else if (loadFlag && !scene.isPartial())
 					trackPos = 0;
-				else if (astate!=null) {
-					AState.TrackRef atr = astate.get(tr.getTrack());
+				else {
 					if (atr!=null) {
 						trackPos = atr.getPos();
 						if (!atr.isPaused())
 							trackPos += mEngine.getFutureOffset();
 					}
 				}
+				// for volume we want the old volume. This may be undefined on
+				// first load of a composition.
+				if (atr!=null) {
+					float pwlVolume[] = atr.getPwlVolume();
+					if (pwlVolume!=null)
+						currentVolume = AudioEngine.pwl((float)oldSceneTime, pwlVolume);
+					else
+						currentVolume = atr.getVolume();
+				}
+				else
+					Log.d(TAG, "Could not find track "+tr.getTrack().getId()+" for currentVolume (load="+loadFlag+")");
 				if (dynVolume!=null) {
 					sb.append("vs['");
 					sb.append(tr.getTrack().getId());
-					sb.append("']=(function(trackTime){return(");
+					sb.append("']=(function(trackTime,trackVolume){return(");
 					sb.append(dynVolume);
 					sb.append(");})(");
 					sb.append(mEngine.samplesToSeconds(trackPos));
+					sb.append(",");
+					sb.append(currentVolume);
 					sb.append(");\n");
 				}
 				if (dynPos!=null) {
@@ -334,12 +373,13 @@ public class Composition {
 					if (section==null)
 						sb.append("null");
 					else {
+						// TODO old scene?? new for now...
 						sb.append("{name:");
 						sb.append(escapeJavascriptString(section.mName));
 						sb.append(",startTime:");
-						sb.append(sceneTime+mEngine.samplesToSeconds(section.mTrackPos)-trackTime);
+						sb.append(newSceneTime+mEngine.samplesToSeconds(section.mTrackPos)-trackTime);
 						sb.append(",endTime:");
-						sb.append(sceneTime+mEngine.samplesToSeconds(section.mTrackPos+section.mLength)-trackTime);
+						sb.append(newSceneTime+mEngine.samplesToSeconds(section.mTrackPos+section.mLength)-trackTime);
 						sb.append("}");
 					}
 					sb.append(");\n");
@@ -369,9 +409,14 @@ public class Composition {
 							fvals[i+1] = clipVolume(extractFloat(aval.get(i+1)));
 					}
 					di.pwlVolume = fvals;
-				} else {
+				} else if (val instanceof Number || (val instanceof String && !"".equals(val))){
 					float fval = clipVolume(extractFloat(val));
 					di.volume = fval;
+				} else if (val==null || "".equals(val)) {
+					// null
+				} else {
+					mEngine.getLog().logError("Volume script returned non-number/string "+val);
+					di.volume = 0.0f;		
 				}
 			}
 			JSONObject ps = jres.getJSONObject("ps");
@@ -387,24 +432,69 @@ public class Composition {
 				Object val = ps.get(key);
 				if (val instanceof JSONArray) {
 					JSONArray aval = (JSONArray)val;
-					int ivals[] = new int[aval.length()];
+					// map strings to track section names; scene time(s) default to sceneTime (first) or end of current section
+					int outlen = 0;
 					for (int i=0; i<aval.length(); i++) {
-						ivals[i] = (int)mEngine.secondsToSamples((double)extractFloat(aval.get(i)));
+						if (aval.get(i) instanceof String) {
+							if ((outlen % 2)==0)
+								// infer position
+								outlen += 2;
+							else
+								outlen++;
+						}
+					}
+					int ivals[] = new int[outlen];
+					int nextSceneTime = mEngine.secondsToSamples(newSceneTime);
+					for (int i=0, j=0; i<aval.length(); i++, j++) {
+						if (aval.get(i) instanceof String) {
+							if ((j % 2)==0) {
+								// infer scene time
+								ivals[j++] = nextSceneTime;
+							}
+							// map section to track time
+							String sname = aval.getString(i);
+							ITrack track = scene.getTrack(id);
+							if (track==null || !(track instanceof ATrack)) {
+								mEngine.getLog().logError("Pos script returned section name '"+sname+"' for unknown track "+id);
+								continue;
+							}
+							ATrack atrack = (ATrack)track;
+							Map<String,Section> sections = atrack.getSections();
+							Section section = (sections!=null) ? sections.get(sname)  : null;
+							if (section==null) {
+								mEngine.getLog().logError("Pos script returned unknown section name '"+sname+"' for track "+id);
+								continue;
+							}
+							// start of section
+							ivals[j] = section.mTrackPos;
+							// adjust next scene time for length
+							nextSceneTime += section.mLength;
+						} else if (aval.isNull(i) && (j % 2)==0) {
+							// special case null time
+							ivals[j] = nextSceneTime;
+						} else {
+							int ival = (int)mEngine.secondsToSamples((double)extractFloat(aval.get(i)));
+							ivals[j] = ival;
+							if ((j % 2)==0)
+								nextSceneTime = ival;
+						}
 					}
 					di.align = ivals;
-				} else if (val!=null) {
+				} else if (val instanceof Number || (val instanceof String && !"".equals(val))){
 					float fval = extractFloat(val);
 					//Log.d(TAG,"dynPos single value "+fval+"-> array");
 					di.align = new int[2];
 					di.align[0] = (int)mEngine.secondsToSamples(srec!=null ? srec.mSceneTime : 0);
 					di.align[1] = (int)mEngine.secondsToSamples((double)fval);
+				} else if (val==null || "".equals(val)) {
+					// null
 				} else {
-					//Log.d(TAG,"dynPos null");
+					mEngine.getLog().logError("Pos script returned non-number/string "+val);
 				}
 			}
 		}
 		catch (Exception e) {
-			Log.w(TAG,"error parsing load script result "+res+": "+e);
+			Log.w(TAG,"error parsing load script result "+res+": "+e, e);
 			mEngine.getLog().logError("Script returned error: "+res+", from "+sb.toString());
 		}
 		return dynInfos;

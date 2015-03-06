@@ -49,6 +49,7 @@ Array of scene objects with:
 - `partial` - scene is partial, i.e. unspecified track stay at current levels (boolean, default false)
 - `tracks` - array of track refs (see below)
 - `constants` - optional set of Javascript constants for the whole composition - see below
+- `vars` - optional set of Javascript variables, reinitialised on each update and shared by all script running on that update (e.g. onupdate, dynamic volume & position) - see below
 - `onload` - Javascript code to execute (after onany) when this scene is loaded (string, see dynamic scenes, below).
 - `onupdate` - Javascript code to execute (after onany) when this scene is updated, e.g. when time or position changes (string, see dynamic scenes, below).
 - `updatePeriod` - regular period in seconds after which the scene should be updated (float, default undefined => never, see dynamic scenes, below). E.g. `3.0` implies update the scene every 3 seconds.
@@ -58,7 +59,8 @@ Track ref is object with:
 - `name` - name of track
 - `volume` - volume to play (float or string, 1.0 is "full", default unchanged). 
 - `pos` - play position in track, in seconds (float, unspecified => "current"), or (planned!) function returning an array of alternating `sceneTime`,`trackPos` values.
-- `prepare` - audio engine should prepare to play track, even if volume is currently 0 (boolean, default false)
+- `prepare` - audio engine should prepare to play track, even if volume is currently 0 (boolean, default false) (Note: currently not used)
+- `update` - whether to re-evaluate `volume` and `pos` on each scene update (boolean, default true)
 
 ### `context`
 
@@ -81,7 +83,7 @@ Route (todo) is object with
 (future: `oneway` - one way flag (boolean, default false, i.e. two-way))
 (future: `via` - array of intermediate waypoint name(s), which are along the route but there you cannot join the route)
 
-### `constants`
+### `constants` and `vars`
 
 Map (i.e. name-value pairs) of Javascript constants to define before any `onload`, `onupdate` or dynamic volume script is executed. 
 
@@ -93,13 +95,16 @@ If the volume of a track ref is a string then it is evaluated as a Javascript ex
 
 Any dynamic (i.e. Javascript) track ref volumes are evaluated when the scene is loaded, and also each time the scene is "updated", i.e. if the user's position changes or the scene timer goes off.
 
-Any constants at the whole composition or current scene level are defined before any other scripts are executed.
+Any constants at the whole composition or current scene level are defined before any other scripts are executed. Any scene variables are defined (with their initial values) before any other scripts are executed.
 
 If the scene has Javascript code specified in `onload` or `onupdate` then this is executed first, as appropriate (i.e. `onload` if the scene is being loaded and `onupdate` if it has already been loaded and is being updated).
 
-If a volume function returns an array then this is assumed to define a piece-wise linear-interpolated function of `sceneTime` (in seconds). For example, a smooth fade in over three seconds at the start of the scene would be `[0,0,3.0,1.0]`.
+If a volume function returns an array then this is assumed to define a piece-wise linear-interpolated function of `sceneTime` (in seconds). For example, a smooth fade in over three seconds at the start of the scene would be `[0,0,3.0,1.0]`. A return value of `null` implies unchanged.
 
 If the `pos` of a track ref is a String then it is evaluated as a javascript expression. Expected return should be an array of alternating `sceneTime`,`trackPos` (time) values. As each scene time is reached the track position jumps to the specified track time.
+ A return value of `null` implies unchanged.
+
+Note that volume and pos functions are always called on scene load, but only called on scene update if the scene track ref property `update` is not false. 
 
 ### Standard variables
 
@@ -114,6 +119,8 @@ If the `pos` of a track ref is a String then it is evaluated as a javascript exp
 `totalTime`: time in seconds since this composition was started (float).
 
 `trackTime`: time in seconds of current playout point within track (float). This is currently a slightly conservative estimate (i.e. part of a second into the future), and is only available to code within the context of a track ref, i.e. a dynamic volume or dynamic track position expression. 
+
+`trackVolume`: volume of current track at the current playout point (float). Only available to code within the context of a dynamic volume function. 
 
 `currentSection`: currently playing section of current track; only available within a dynamic track position expression. Null if no current section, else an Object with fields:
 - `name`: name of current section (string)

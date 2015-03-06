@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1
+  },
+  "defaultScene": "testfade",
+  "tracks": [
+    {
+      "name": "test16",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "count16-all.wav", 
+          "trackPos": 0,
+          "length": 16
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "testfade",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "test16",
+          "pos": 0, 
+          "volume": "[sceneTime,trackVolume,sceneTime+1,1]",
+          "update": false          
+        }
+      ]
+    },
+    {
+      "name": "testfade out",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "test16",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,0]",
+          "update": false          
+        }
+      ]
+    }
+  ]
+}
+

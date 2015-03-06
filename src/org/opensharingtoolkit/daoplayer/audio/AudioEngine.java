@@ -430,7 +430,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 								if (pwlVolume!=null)
 									for (int i=0; i<len; i++) {
 										// 12 bit shift
-										vol = (int)(pwl((float)samplesToSeconds(spos+i), pwlVolume) * 0x1000);
+										vol = (int)(pwl((float)samplesToSeconds(sceneTime+bufStart+spos-tpos+i), pwlVolume) * 0x1000);
 										int val = vol*b[offset+i];
 										buf[boffset+2*i] += val;
 										buf[boffset+2*i+1] += val;

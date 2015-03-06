@@ -119,7 +119,7 @@ public class AState {
 			}
 			boolean silent = volume<=0;
 			if (pwlVolume!=null)
-				// TODO silent if dynamic?!
+				// TODO silent if dynamic?! This would mean entirely silent. Note: need sceneTime
 				silent = false;
 			boolean wasPaused = (tr.mVolume<=0 && tr.mPwlVolume==null) && track.isPauseIfSilent();
 			int pos = tr.mPos;
@@ -139,6 +139,7 @@ public class AState {
 			if (!state.mTrackRefs.containsKey(tr.mTrack.getId())) {
 				int pos = tr.mPos;
 				if (!tr.mPaused)
+					// TODO part-silent - would advance less than full amount. Note: need sceneTime
 					pos += defaultPosAdvance;
 				if (scene.isPartial()) 
 					// copy existing

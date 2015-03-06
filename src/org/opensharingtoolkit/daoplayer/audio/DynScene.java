@@ -21,6 +21,7 @@ public class DynScene implements IAudio.IScene {
 	private String mOnload;
 	private String mOnupdate;
 	private DynConstants mConstants;
+	private DynConstants mVars;
 	private Double mUpdatePeriod;
 	private Map<String,String> mWaypoints;
 	
@@ -36,7 +37,8 @@ public class DynScene implements IAudio.IScene {
 		private Integer mPos;
 		private String mDynPos;
 		private Boolean mPrepare;
-		public TrackRef(ITrack mTrack, Float mVolume, String mDynVolume, Integer mPos, String dynPos, Boolean mPrepare) {
+		private Boolean mUpdate;
+		public TrackRef(ITrack mTrack, Float mVolume, String mDynVolume, Integer mPos, String dynPos, Boolean mPrepare, Boolean update) {
 			super();
 			this.mTrack = mTrack;
 			this.mVolume = mVolume;
@@ -44,6 +46,7 @@ public class DynScene implements IAudio.IScene {
 			this.mPos = mPos;
 			this.mDynPos = dynPos;
 			this.mPrepare = mPrepare;
+			this.mUpdate = update;
 		}
 		public ITrack getTrack() {
 			return mTrack;
@@ -63,6 +66,9 @@ public class DynScene implements IAudio.IScene {
 		public Boolean getPrepare() {
 			return mPrepare;
 		}
+		public Boolean getUpdate() {
+			return mUpdate;
+		}
 		
 	}
 	
@@ -70,6 +76,12 @@ public class DynScene implements IAudio.IScene {
 	
 	Collection<TrackRef> getTrackRefs() {
 		return mTrackRefs.values();
+	}
+	ITrack getTrack(int id) {
+		TrackRef tr = mTrackRefs.get(id);
+		if (tr!=null)
+			return tr.getTrack();
+		return null;
 	}
 	
 	public boolean isPartial() {
@@ -106,11 +118,11 @@ public class DynScene implements IAudio.IScene {
 
 	@Override
 	public void set(ITrack track, Float volume, Integer pos, Boolean prepare) {
-		set(track, volume, null, pos, null, prepare);
+		set(track, volume, null, pos, null, prepare, null);
 	}
 
-	public void set(ITrack track, Float volume, String dynVolume, Integer pos, String dynPos, Boolean prepare) {
-		TrackRef tref = new TrackRef(track, volume, dynVolume, pos, dynPos, prepare);
+	public void set(ITrack track, Float volume, String dynVolume, Integer pos, String dynPos, Boolean prepare, Boolean update) {
+		TrackRef tref = new TrackRef(track, volume, dynVolume, pos, dynPos, prepare, update);
 		mTrackRefs.put(track.getId(), tref);		
 	}
 
@@ -147,6 +159,20 @@ public class DynScene implements IAudio.IScene {
 	}
 
 	/**
+	 * @return the mVars
+	 */
+	public DynConstants getVars() {
+		return mVars;
+	}
+
+	/**
+	 * @param mVars the mVars to set
+	 */
+	public void setVars(DynConstants vars) {
+		this.mVars = vars;
+	}
+
+	/**
 	 * @return the mUpdatePeriod
 	 */
 	public Double getUpdatePeriod() {
@@ -173,5 +199,5 @@ public class DynScene implements IAudio.IScene {
 	public void setWaypoints(Map<String, String> mWaypoints) {
 		this.mWaypoints = mWaypoints;
 	}
-	
+
 }
