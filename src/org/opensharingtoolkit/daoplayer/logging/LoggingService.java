@@ -159,23 +159,25 @@ public class LoggingService extends IntentService {
 						mOutput.close();
 						mOutput = null;
 						mLogFile = null;
+					} else {
+						byte bs[] = line.getBytes("UTF-8");
+						mOutput.write(bs);
+						mOutput.write((byte)'\n');
+						// TODO delay flush?
+						mOutput.flush();
+						// OK
+						int count = bs.length+1;
+						mLogFileLength += count;
+						mLogFileTotal += count;
+						break done;
 					}
-					byte bs[] = line.getBytes("UTF-8");
-					mOutput.write(bs);
-					mOutput.write((byte)'\n');
-					// TODO delay flush?
-					mOutput.flush();
-					// OK
-					int count = bs.length+1;
-					mLogFileLength += count;
-					mLogFileTotal += count;
-					break done;
 				} catch (Exception e) {
 					Log.w(TAG,"Error writing entry: "+e);
 					// ok, tear it down and try again...
 					mPendingError = e.toString();
 					try {
-						mOutput.close();
+						if (mOutput!=null)
+							mOutput.close();
 					} catch (Exception e2) { /* ignore */ }
 					mOutput = null;
 					mLogFile = null;
@@ -185,6 +187,7 @@ public class LoggingService extends IntentService {
 			// Log dir OK?
 			if (mLogDir!=null && mLogDir.exists()) {
 				// create new Log file
+				startNewFile = false;
 				String filename = sdf.format(now)+".log";
 				mLogFile = new File(mLogDir, filename);
 				Log.i(TAG,"Create new log file "+mLogFile);
