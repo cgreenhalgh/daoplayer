@@ -22,6 +22,7 @@ Array of track Objects with:
 - `pauseIfSilent` - (boolean, default false)
 - `files` - array of file refs (see below)
 - `sections` - array of sections (see below)
+- `unitTime` - duration in sections of a "unit" of the song when dynamically choosing sections. Usually one bar, but may be one beat or a small number of beats or bars. Defaults to shortest section length.
 
 File ref is Object with:
 - `path` - file path (string)
@@ -34,13 +35,15 @@ File ref is Object with:
 - `name` - name (string)
 - `trackPos` - start position in track, in seconds (float, default 0)
 - `length` - length of section (float, default is to start of next section, else -1 = end of track)
-- `startCost` - "cost" of starting with this section (float, default infinite)
-- `endCost` - "cost" of ending during this section (float, default infinite)
+- `startCost` - "cost" of starting with this section (float, default very large, but smaller for first section)
+- `endCost` - "cost" of ending during this section (float, default very large, but smaller for last section)
 - `next` - array of Next Sections (see below)
 
 Next section is Object with:
 - `name` - name of next section
 - `cost` - "cost" of this being the next section (float, default 0)
+
+The next section cost for unspecified sections is assumed to be very large (infinite?), but smaller for the next section(!).
 
 ### `scenes`
 
@@ -130,7 +133,7 @@ Note that volume and pos functions are always called on scene load, but only cal
 `activity`: one of `NOGPS`, `STATIONARY`, `WALKING` (future?: `RUNNING`, `FASTD`)
 
 `waypoints` (todo): map from local name of waypoint to objects, each with:
-- `name` - global name of waypoint
+- `name` - global name of waypoint -->
 - `lat`, `lng` of waypoint - see waypoint
 - `distance` - direct distance from waypoint, metres (float)
 - `near` - near to waypoint? (boolean), i.e. accordinng to waypoint `nearDistance`

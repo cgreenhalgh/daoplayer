@@ -116,6 +116,7 @@ public class ATrack implements IAudio.ITrack {
 	private int mPosition = 0;
 	private boolean mPauseIfSilent = true;
 	private boolean mDynamic = false;
+	private int mUnitTime;
 	
 	public ATrack(boolean pauseIfSilent) {
 		mPauseIfSilent = pauseIfSilent;
@@ -165,5 +166,11 @@ public class ATrack implements IAudio.ITrack {
 	}
 	public String getName() {
 		return mName;
+	}
+	public void setUnitTime(int unitTime) {
+		mUnitTime = unitTime;
+	}
+	public int getUnitTime() {
+		return mUnitTime;
 	}
 }

@@ -59,12 +59,21 @@ public class Composition {
 	private static final String START_COST = "startCost";	
 	private static final String TRACKS = "tracks";
 	private static final String TRACK_POS = "trackPos";
+	private static final String UNIT_TIME = "unitTime";
 	private static final String UPDATE = "update";
 	private static final String UPDATE_PERIOD = "updatePeriod";
 	private static final String VARS = "vars";
 	private static final String VOLUME = "volume";
 	private static final String WAYPOINTS = "waypoints";
 
+	private static final double DEFAULT_END_COST = 100000000;
+	// larger than DEFAULT_FIRST_SECTION_START_COST to prefer starting at the beginning to ending at the end!
+	private static final double DEFAULT_LAST_SECTION_END_COST = 10000000;
+	private static final double DEFAULT_NEXT_COST = 100000000;
+	private static final double DEFAULT_NEXT_SECTION_NEXT_COST = 1000000;
+	private static final double DEFAULT_START_COST = 100000000;
+	private static final double DEFAULT_FIRST_SECTION_START_COST = 1000000;
+	
 	private AudioEngine mEngine;
 	private String mDefaultScene;
 	private DynConstants mConstants = new DynConstants();
@@ -142,6 +151,7 @@ public class Composition {
 						atrack.addFileRef(trackPos, afile, filePos, length, repeats);
 					}
 				}
+				int minSectionLength = 0;
 				if (jtrack.has(SECTIONS)) {
 					JSONArray jsections = jtrack.getJSONArray(SECTIONS);
 					Section lastSection = null;
@@ -158,8 +168,10 @@ public class Composition {
 						if (lastSection!=null && lastSection.mLength == IAudio.ITrack.LENGTH_ALL)
 							lastSection.mLength = (trackPos > lastSection.mTrackPos) ? trackPos-lastSection.mTrackPos : 0;
 						int length = jsection.has(LENGTH) ? (jsection.getInt(LENGTH)<0 ? jsection.getInt(LENGTH) : mEngine.secondsToSamples(jsection.getDouble(LENGTH))) : IAudio.ITrack.LENGTH_ALL;
-						double startCost = jsection.has(START_COST) ? jsection.getDouble(START_COST) : Double.MAX_VALUE;
-						double endCost = jsection.has(END_COST) ? jsection.getDouble(END_COST) : Double.MAX_VALUE;
+						if (length>0 && (minSectionLength==0 || length<minSectionLength))
+							minSectionLength = length;
+						double startCost = jsection.has(START_COST) ? jsection.getDouble(START_COST) : (fi==0 ? DEFAULT_FIRST_SECTION_START_COST : DEFAULT_START_COST);
+						double endCost = jsection.has(END_COST) ? jsection.getDouble(END_COST) : (fi+1==jsections.length() ? DEFAULT_LAST_SECTION_END_COST : DEFAULT_END_COST);
 						Section section = new Section(sname, trackPos, length, startCost, endCost);
 						if (jsection.has(NEXT)) {
 							JSONArray jnext = jsection.getJSONArray(NEXT);
@@ -176,10 +188,22 @@ public class Composition {
 								section.addNext(nextName, cost);
 							}
 						}
+						if (lastSection!=null) {
+							boolean found = false;
+							for (ATrack.NextSection next : lastSection.mNext)
+								if (next.mName.equals(sname))
+									found = true;
+							if (!found)
+								lastSection.addNext(sname, DEFAULT_NEXT_SECTION_NEXT_COST);
+						}
 						atrack.addSection(section);
 						lastSection = section;
 					}
 				}
+				if (jtrack.has(UNIT_TIME))
+					atrack.setUnitTime(mEngine.secondsToSamples(jtrack.getDouble(UNIT_TIME)));
+				else
+					atrack.setUnitTime(minSectionLength);
 			}
 		}
 		mScenes = new HashMap<String, DynScene>();
