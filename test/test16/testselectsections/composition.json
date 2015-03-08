@@ -23,12 +23,12 @@
           "next": [ {"name":"nine","cost":0}, {"name":"thirteen","cost":10} ] 
         },
         { "name": "nine", "trackPos": 8, 
-          "next": [ {"thirteen":"nine","cost":0}, {"name":"nine","cost":2} ] 
+          "next": [ {"name":"thirteen","cost":0}, {"name":"nine","cost":2} ] 
         },
         { "name": "thirteen", "trackPos": 12,
           "next": [ {"name":"end","cost":0}, {"name":"nine","cost":100} ] 
         },
-        { "name": "end", "trackPos": 16, "endCost": 0
+        { "name": "end", "trackPos": 16, "length": 4, "endCost": 0
         }
       ],
       "unitTime": 2,
@@ -39,7 +39,7 @@
     {
       "name": "testselectsections",
       "partial": false,
-      "updatePeroid": 1,
+      "updatePeriod": 1,
       "tracks": [
         {
           "name": "test16",
@@ -51,7 +51,7 @@
     {
       "name": "testselectsections short",
       "partial": false,
-      "updatePeroid": 1,
+      "updatePeriod": 1,
       "tracks": [
         {
           "name": "test16",
@@ -63,7 +63,7 @@
     {
       "name": "testselectsections long",
       "partial": false,
-      "updatePeroid": 1,
+      "updatePeriod": 1,
       "tracks": [
         {
           "name": "test16",

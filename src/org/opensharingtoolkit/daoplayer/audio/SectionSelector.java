@@ -3,10 +3,14 @@
  */
 package org.opensharingtoolkit.daoplayer.audio;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
+import org.opensharingtoolkit.daoplayer.IAudio.ITrack;
 import org.opensharingtoolkit.daoplayer.ILog;
 import org.opensharingtoolkit.daoplayer.audio.ATrack.Section;
 
@@ -161,15 +165,15 @@ public class SectionSelector {
 	/**
 	 * @param currentSectionName Name of currently playing section; null if start
 	 * @param currentSectionTime Time (samples) in currently playing section
-	 * @param targetTime Time (samples) until end
+	 * @param targetDuration Time (samples) until end
 	 * @return
 	 */
-	public String[] selectSections(String currentSectionName, int currentSectionTime, int targetTime) {
+	public Object[] selectSections(String currentSectionName, int currentSectionTime, int sceneTime, int targetDuration) {
 		if (mUnitTime<=0 || mSubsections.length==0) {
 			Log.w(TAG,"selectSections for track without unitTime/sections");
 			return null;
 		}
-		int targetUnits = (targetTime+mUnitTime/2)/mUnitTime;
+		int targetUnits = (targetDuration+mUnitTime/2)/mUnitTime;
 		if (targetUnits>=mNumTimesteps) {
 			mLog.logError("selectSections called for "+targetUnits+" time units; max is "+mNumTimesteps);
 			targetUnits = mNumTimesteps;
@@ -179,13 +183,13 @@ public class SectionSelector {
 			return new String[0];
 		}
 		int si;
-		Vector<String> sections = new Vector<String>();
+		Vector<Object> sections = new Vector<Object>();
 		if (currentSectionName!=null) {
 			// named section - find it
 			Integer rsi = mSectionIndexes.get(currentSectionName);
 			if (rsi==null) {
 				mLog.logError("selectSections called with unknown currentSectionName "+currentSectionName+"; trying start");
-				return selectSections(null, 0, targetTime);
+				return selectSections(null, 0, sceneTime, targetDuration);
 			}
 			si = rsi;
 			int currentUnits = (currentSectionTime+mUnitTime/2)/mUnitTime;
@@ -193,6 +197,12 @@ public class SectionSelector {
 				si++;
 			if (currentUnits!=mSubsections[si].unit) {
 				mLog.logError("selectSections with current section "+currentSectionName+" at "+currentUnits+" units is after end of section");
+			}
+			// insert end of current section scene time
+			ATrack.Section currentSection = mTrack.getSections().get(currentSectionName);
+			if (currentSection!=null) {
+				if (currentSection.mLength!=ITrack.LENGTH_ALL && currentSectionTime<currentSection.mLength)
+					sections.add(sceneTime+currentSection.mLength-currentSectionTime);
 			}
 		} else {
 			// any section - find lowest cost+startCost
@@ -225,6 +235,61 @@ public class SectionSelector {
 			if (mSubsections[si].unit==0)
 				sections.add(mSubsections[si].section.mName);
 		}
-		return sections.toArray(new String[sections.size()]);
+		return sections.toArray();
+	}
+	void dump(android.content.Context context) {
+		try {
+			File cacheDir = context.getExternalCacheDir();
+			if (cacheDir==null) {
+				Log.w(TAG,"No external cache dir");
+				return;
+			}
+			File file = new File(cacheDir, mTrack.getName()+"-selectors.csv");
+			FileWriter fw = new FileWriter(file);
+			fw.append("section,startCost,endCost");
+			Collection<ATrack.Section> sections = mTrack.mSections.values();
+			for (ATrack.Section s : sections) {
+				fw.append(","+s.mName);
+			}
+			fw.append("\n");
+			for (ATrack.Section s : sections) {
+				fw.append(s.mName);
+				fw.append(","+s.mStartCost);
+				fw.append(","+s.mEndCost);
+				Vector<ATrack.NextSection> nss = s.mNext;
+				for (ATrack.Section s2 : sections) {
+					fw.append(",");
+					for (ATrack.NextSection ns : nss) {
+						if (ns.mName.equals(s2.mName))
+							fw.append(""+ns.mCost);
+					}
+				}
+				fw.append("\n");
+			}
+			fw.append("\n");
+			fw.append("i,section,unit");
+			for (int ti=0; ti<mNumTimesteps; ti++) {
+				fw.append(",c"+ti);
+				fw.append(",n"+ti);
+			}
+			fw.append("\n");
+			for (int si=0; si<mNumSubsections; si++) {
+				fw.append(""+si);
+				fw.append(","+mSubsections[si].section.mName);
+				fw.append(","+mSubsections[si].unit);
+				for (int ti=0; ti<mNumTimesteps; ti++) {
+					fw.append(",");
+					if (mTimesteps[ti].costs[si]!=Double.MAX_VALUE)
+						fw.append(""+mTimesteps[ti].costs[si]);
+					fw.append(","+mTimesteps[ti].nextSubsections[si]);
+				}
+				fw.append("\n");
+			}
+			fw.close();
+			Log.d(TAG,"Dumped SectionSelector to "+file);
+		}
+		catch (Exception e) {
+			Log.w(TAG,"Error dumping SectionSelector", e);
+		}
 	}
 }

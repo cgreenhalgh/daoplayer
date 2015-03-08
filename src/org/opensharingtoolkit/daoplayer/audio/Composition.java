@@ -104,7 +104,7 @@ public class Composition {
 		br.close();
 		return sb.toString();
 	}
-	public void read(File file, ILog log) throws IOException, JSONException {
+	public void read(File file, ILog log, android.content.Context androidContext) throws IOException, JSONException {
 		Log.d(TAG,"read composition from "+file);
 		File parent = file.getParentFile();
 		String data = readFully(file);
@@ -188,7 +188,7 @@ public class Composition {
 									continue;
 								}
 								String nextName = jnextSection.getString(NAME);
-								double cost = jsection.has(COST) ? jsection.getDouble(COST) : 0;
+								double cost = jnextSection.has(COST) ? jnextSection.getDouble(COST) : 0;
 								section.addNext(nextName, cost);
 							}
 						}
@@ -216,6 +216,8 @@ public class Composition {
 				Log.d(TAG,"Create SectionSelector for "+atrack.getName());
 				SectionSelector selector = new SectionSelector(atrack, atrack.getMaxDuration(), mEngine.getLog());
 				selector.prepare();
+				// debug
+				selector.dump(androidContext);
 				mSectionSelectors.put(atrack.getName(), selector);
 			}
 		}
@@ -532,6 +534,8 @@ public class Composition {
 							else
 								outlen++;
 						}
+						else
+							outlen++;
 					}
 					int ivals[] = new int[outlen];
 					int nextSceneTime = mEngine.secondsToSamples(newSceneTime);
@@ -765,13 +769,13 @@ public class Composition {
 		return scene.getWaypoints();		
 	}
 	private Map<String,SectionSelector> mSectionSelectors = new HashMap<String,SectionSelector>();
-	public String[] selectSections(String trackName, String currentSectionName,
-			int currentSectionTime, int targetDuration) {
+	public Object[] selectSections(String trackName, String currentSectionName,
+			int currentSectionTime, int sceneTime, int targetDuration) {
 		SectionSelector selector = mSectionSelectors.get(trackName);
 		if (selector==null) {
 			mEngine.getLog().logError("selectSections called for unknown track "+trackName);
 			return null;
 		}
-		return selector.selectSections(currentSectionName, currentSectionTime, targetDuration);
+		return selector.selectSections(currentSectionName, currentSectionTime, sceneTime, targetDuration);
 	}
 }

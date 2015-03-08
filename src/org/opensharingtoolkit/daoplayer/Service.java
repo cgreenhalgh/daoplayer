@@ -289,9 +289,9 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 					"<html><head><title>Service</title><script type='text/javascript'>\n"+
 					"daoplayer.selectSections = function(trackName,currentSection,sceneTime,targetDuration) {\n"+
 						"if (currentSection!=null)\n"+
-							"return JSON.parse(daoplayer.selectSectionsInternal(trackName,currentSection.name,sceneTime-currentSection.startTime,targetDuration));\n"+
+							"return JSON.parse(daoplayer.selectSectionsInternal(trackName,currentSection.name,sceneTime-currentSection.startTime,sceneTime,targetDuration));\n"+
 						"else\n"+
-							"return JSON.parse(daoplayer.selectSectionsInternal(trackName,null,0.0,targetDuration));\n"+
+							"return JSON.parse(daoplayer.selectSectionsInternal(trackName,null,0.0,sceneTime,targetDuration));\n"+
 					"}\n"+
 					"daoplayer.log('daoplayer.hello');\n"+
 					//"setInterval(function(){ daoplayer.log('daoplayer.tick'); }, 1000);"+
@@ -544,7 +544,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		File filesDir = Compat.getExternalFilesDir(this);
 		Composition comp = mComposition = new Composition(mAudioEngine, mUserModel);
 		try {
-			comp.read(new File(filesDir, DEFAULT_COMPOSITION), this);
+			comp.read(new File(filesDir, DEFAULT_COMPOSITION), this, this);
 		} catch (Exception e) {
 			Log.w(TAG,"Error reading "+DEFAULT_COMPOSITION+": "+e, e);
 			Toast.makeText(this, "Error reading composition: "+e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -646,15 +646,19 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			}
 		}
 		@JavascriptInterface
-		public String selectSectionsInternal(String trackName, String currentSectionName, double currentSectionTimeSeconds, double targetDurationSeconds) {
-			Log.d(TAG,"selectSectionsInterval("+trackName+","+currentSectionName+","+currentSectionTimeSeconds+","+targetDurationSeconds+")");
+		public String selectSectionsInternal(String trackName, String currentSectionName, double currentSectionTimeSeconds, double sceneTimeSeconds, double targetDurationSeconds) {
+			Log.d(TAG,"selectSectionsInterval("+trackName+","+currentSectionName+","+currentSectionTimeSeconds+","+sceneTimeSeconds+","+targetDurationSeconds+")");
 			int currentSectionTime = mAudioEngine.secondsToSamples(currentSectionTimeSeconds);
 			int targetDuration = mAudioEngine.secondsToSamples(targetDurationSeconds);
+			int sceneTime = mAudioEngine.secondsToSamples(sceneTimeSeconds);
 			Composition composition = mComposition;
 			if (composition!=null) {
-				String sections[] = null;
+				Object sections[] = null;
 				try {
-					sections = composition.selectSections(trackName, currentSectionName, currentSectionTime, targetDuration);
+					sections = composition.selectSections(trackName, currentSectionName, currentSectionTime, sceneTime, targetDuration);
+					if (sections.length>0 && sections[0] instanceof Integer) {
+						sections[0] = mAudioEngine.samplesToSeconds((Integer)sections[0]);
+					}
 				} catch (Exception e) {
 					Log.w(TAG,"Error doing selectSections: "+e, e);
 				}

@@ -106,7 +106,7 @@ If the scene has Javascript code specified in `onload` or `onupdate` then this i
 If a volume function returns an array then this is assumed to define a piece-wise linear-interpolated function of `sceneTime` (in seconds). For example, a smooth fade in over three seconds at the start of the scene would be `[0,0,3.0,1.0]`. A return value of `null` implies unchanged.
 
 If the `pos` of a track ref is a String then it is evaluated as a javascript expression. Expected return should be an array of alternating `sceneTime`,`trackPos` (time) values. As each scene time is reached the track position jumps to the specified track time.
- A return value of `null` implies unchanged.
+ A return value of `null` implies unchanged. If a string is returned in the array then it is assumed to be the name of a track section to play. If a string appears where a sceneTime is expected then the sceneTime is calculated as the end of the last section.
 
 Note that volume and pos functions are always called on scene load, but only called on scene update if the scene track ref property `update` is not false. 
 
@@ -175,5 +175,5 @@ and in the last waypoint only:
 
 Note: selectSections is a work in progress!
 
-`daoplayer.selectSections(trackName,currentSectionName,currentSectionTime,targetDuration)`: return an array of names of sections of the specified track `trackName` to play in order to take approximately the `targetDuration` (seconds). If `currentSectionName` is `null` then the sequence will be from the track (a valid starting section). If not null, `currentSectionName` specifies the current/starting point (typically this is the variable `currentSection.name`) and `currentSectionTime` is the elapsed time in that sections, typically `sceneTime-currentSection.startTime`) 
+`daoplayer.selectSections(trackName,currentSectionName,currentSectionTime,targetDuration)`: return a value suitable to be returned from dynamic position, i.e. an array of names of sections of the specified track `trackName` to play in order to take approximately the `targetDuration` (seconds). If the current section has not finished then the first value in the array is the end time of the current section. If `currentSectionName` is `null` then the sequence will be from the track (a valid starting section). If not null, `currentSectionName` specifies the current/starting point (typically this is the variable `currentSection.name`) and `currentSectionTime` is the elapsed time in that sections, typically `sceneTime-currentSection.startTime`) 
 
