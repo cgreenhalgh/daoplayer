@@ -483,10 +483,11 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		JSONObject jstatus = new JSONObject();
 		StateRec srec = getNextState();
 		try {
-			double sceneTime = srec.getSceneTime();
-			jstatus.put("sceneTime", sceneTime);
 			AState astate = null;
+			double sceneTime = 0;
 			if (srec!=null) {
+				sceneTime = srec.getSceneTime();
+				jstatus.put("sceneTime", sceneTime);
 				jstatus.put("type", srec.getType()!=null ? srec.getType().name() : null);
 				jstatus.put("totalTime", srec.getTotalTime());
 				astate = srec.getState();
@@ -525,7 +526,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 					jtrack.put("paused", tref.isPaused());
 				}
 			}
-		} catch (JSONException e) {
+		} catch (Exception e) {
 			Log.w(TAG,"Error doing getStatus", e);
 		}
 		return jstatus;

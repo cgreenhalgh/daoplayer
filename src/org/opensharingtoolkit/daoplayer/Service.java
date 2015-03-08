@@ -17,6 +17,7 @@ import java.util.Vector;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONStringer;
 import org.opensharingtoolkit.daoplayer.audio.AudioEngine;
 import org.opensharingtoolkit.daoplayer.audio.Composition;
 import org.opensharingtoolkit.daoplayer.audio.FileCache;
@@ -286,6 +287,12 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			Log.d(TAG,"Test service webview daoplayer...");
 			mWebView.loadDataWithBaseURL("file:///android_asset/service.js",
 					"<html><head><title>Service</title><script type='text/javascript'>\n"+
+					"daoplayer.selectSections = function(trackName,currentSection,sceneTime,targetDuration) {\n"+
+						"if (currentSection!=null)\n"+
+							"return JSON.parse(daoplayer.selectSectionsInternal(trackName,currentSection.name,sceneTime-currentSection.startTime,targetDuration));\n"+
+						"else\n"+
+							"return JSON.parse(daoplayer.selectSectionsInternal(trackName,null,0.0,targetDuration));\n"+
+					"}\n"+
 					"daoplayer.log('daoplayer.hello');\n"+
 					//"setInterval(function(){ daoplayer.log('daoplayer.tick'); }, 1000);"+
 					// see http://www.movable-type.co.uk/scripts/latlong.html
@@ -637,6 +644,37 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 						});	
 				}
 			}
+		}
+		@JavascriptInterface
+		public String selectSectionsInternal(String trackName, String currentSectionName, double currentSectionTimeSeconds, double targetDurationSeconds) {
+			Log.d(TAG,"selectSectionsInterval("+trackName+","+currentSectionName+","+currentSectionTimeSeconds+","+targetDurationSeconds+")");
+			int currentSectionTime = mAudioEngine.secondsToSamples(currentSectionTimeSeconds);
+			int targetDuration = mAudioEngine.secondsToSamples(targetDurationSeconds);
+			Composition composition = mComposition;
+			if (composition!=null) {
+				String sections[] = null;
+				try {
+					sections = composition.selectSections(trackName, currentSectionName, currentSectionTime, targetDuration);
+				} catch (Exception e) {
+					Log.w(TAG,"Error doing selectSections: "+e, e);
+				}
+				if (sections==null)
+					return "null";
+				JSONStringer js = new JSONStringer();
+				try {
+					js.array();
+					for (int i=0;i<sections.length; i++)
+						js.value(sections[i]);
+					js.endArray();
+				} catch (JSONException e) {
+					Log.w(TAG,"Error marshalling selectSections return value", e);
+				}
+				String rval = js.toString();
+				Log.d(TAG,"selectSections -> "+rval);
+				return rval;
+			}
+			else
+				return "null";
 		}
 	}
 	private Map<Integer,MBox> mResults = new HashMap<Integer,MBox>();

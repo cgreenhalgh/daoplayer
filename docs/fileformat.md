@@ -23,6 +23,7 @@ Array of track Objects with:
 - `files` - array of file refs (see below)
 - `sections` - array of sections (see below)
 - `unitTime` - duration in sections of a "unit" of the song when dynamically choosing sections. Usually one bar, but may be one beat or a small number of beats or bars. Defaults to shortest section length.
+- `maxDuration` - greatest duration to which this track might be extended when dynamically choosing sections (seconds, default twice time to last section).
 
 File ref is Object with:
 - `path` - file path (string)
@@ -125,10 +126,12 @@ Note that volume and pos functions are always called on scene load, but only cal
 
 `trackVolume`: volume of current track at the current playout point (float). Only available to code within the context of a dynamic volume function. 
 
+`trackId`: internal ID of current track. Only available to code within the context of a dynamic position function.
+
 `currentSection`: currently playing section of current track; only available within a dynamic track position expression. Null if no current section, else an Object with fields:
 - `name`: name of current section (string)
-- `startTime`: track time in seconds when current section started (float)
-- `endTime`: track time in seconds when current section will end (float), if the section has a length/end time
+- `startTime`: scene time in seconds when current section started (float)
+- `endTime`: scene time in seconds when current section will end (float), if the section has a length/end time
 
 `activity`: one of `NOGPS`, `STATIONARY`, `WALKING` (future?: `RUNNING`, `FASTD`)
 
@@ -169,4 +172,8 @@ and in the last waypoint only:
 (future? - `daoplayer.status(message,description,type)` (todo): update single-line status view, `type` is `info`, `warning` or `error`.)
 
 `pwl(in, [in1,out1,in2,out2,...], default)`: piece-wise linear interpolation `in` to `out`, i.e. if `in` is less than `in1` then `out1`; if `in` is between `in1` and `in2` then a proportional value between `out1` and `out2`; ...; if `in` is greater than the last in value then last out value; etc. For example, to convert a distance in metres to a volume such that volume is 1 (full) up to 10 metres, then drops off linearly to 0 at 30 metres or more, use `pwl(distance,[10,1,30,0])`. (optional) `default` is returned if `in` is undefined or null.
+
+Note: selectSections is a work in progress!
+
+`daoplayer.selectSections(trackName,currentSectionName,currentSectionTime,targetDuration)`: return an array of names of sections of the specified track `trackName` to play in order to take approximately the `targetDuration` (seconds). If `currentSectionName` is `null` then the sequence will be from the track (a valid starting section). If not null, `currentSectionName` specifies the current/starting point (typically this is the variable `currentSection.name`) and `currentSectionTime` is the elapsed time in that sections, typically `sceneTime-currentSection.startTime`) 
 

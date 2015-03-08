@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1
+  },
+  "defaultScene": "testselectsections",
+  "tracks": [
+    {
+      "name": "test16",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "count16-all.wav", 
+          "trackPos": 0,
+          "length": 16
+        }
+      ],
+      "sections": [
+        { "name": "one", "trackPos": 0, "startCost": 0,
+          "next": [ {"name":"five","cost":0}, {"name":"nine","cost":10}, {"name":"thirteen","cost":20} ] 
+        },
+        { "name": "five", "trackPos": 4, 
+          "next": [ {"name":"nine","cost":0}, {"name":"thirteen","cost":10} ] 
+        },
+        { "name": "nine", "trackPos": 8, 
+          "next": [ {"thirteen":"nine","cost":0}, {"name":"nine","cost":2} ] 
+        },
+        { "name": "thirteen", "trackPos": 12,
+          "next": [ {"name":"end","cost":0}, {"name":"nine","cost":100} ] 
+        },
+        { "name": "end", "trackPos": 16, "endCost": 0
+        }
+      ],
+      "unitTime": 2,
+      "maxDuration": 32
+    }
+  ],
+  "scenes": [
+    {
+      "name": "testselectsections",
+      "partial": false,
+      "updatePeroid": 1,
+      "tracks": [
+        {
+          "name": "test16",
+          "pos":"daoplayer.selectSections('test16',currentSection,sceneTime,16-sceneTime)",
+          "volume": 1          
+        }
+      ]
+    },
+    {
+      "name": "testselectsections short",
+      "partial": false,
+      "updatePeroid": 1,
+      "tracks": [
+        {
+          "name": "test16",
+          "pos":"daoplayer.selectSections('test16',currentSection,sceneTime,8-sceneTime)",
+          "volume": 1          
+        }
+      ]
+    },
+    {
+      "name": "testselectsections long",
+      "partial": false,
+      "updatePeroid": 1,
+      "tracks": [
+        {
+          "name": "test16",
+          "pos":"daoplayer.selectSections('test16',currentSection,sceneTime,24-sceneTime)",
+          "volume": 1          
+        }
+      ]
+    },
+    {
+      "name": "testselectsections stop",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "test16",
+          "pos":0,
+          "volume":0          
+        }
+      ]
+    }
+  ]
+}
+

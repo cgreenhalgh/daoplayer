@@ -98,7 +98,7 @@ public class SectionSelector {
 		mNumSubsections = subsections.size();
 		mSubsections = subsections.toArray(new Subsection[mNumSubsections]);
 		mNumTimesteps = mMaxLength/mUnitTime;
-		mTimesteps = new Timestep[mNumSubsections];
+		mTimesteps = new Timestep[mNumTimesteps];
 		// initial timestep, i.e. last subsection
 		Timestep timestep = new Timestep(mNumSubsections);
 		mTimesteps[0] = timestep;
@@ -199,12 +199,12 @@ public class SectionSelector {
 			si = -1;
 			Timestep timestep = mTimesteps[targetUnits-1];
 			double bestcost = Double.MAX_VALUE;
-			for (si=0; si<mNumSubsections; si++) {
-				if (timestep.costs[si]!=Double.MAX_VALUE && mSubsections[si].section.mStartCost!=Double.MAX_VALUE) {
-					double cost = timestep.costs[si]+mSubsections[si].section.mStartCost;
+			for (int si2=0; si2<mNumSubsections; si2++) {
+				if (timestep.costs[si2]!=Double.MAX_VALUE && mSubsections[si2].section.mStartCost!=Double.MAX_VALUE) {
+					double cost = timestep.costs[si2]+mSubsections[si2].section.mStartCost;
 					if (cost<bestcost) {
 						bestcost = cost;
-						si = si;
+						si = si2;
 					}
 				}
 			}

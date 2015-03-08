@@ -76,7 +76,7 @@ public class ATrack implements IAudio.ITrack {
 		int mLength;
 		double mStartCost;
 		double mEndCost;
-		Vector<NextSection> mNext;
+		Vector<NextSection> mNext = new Vector<NextSection>();
 		
 		/**
 		 * @param mName
@@ -117,6 +117,7 @@ public class ATrack implements IAudio.ITrack {
 	private boolean mPauseIfSilent = true;
 	private boolean mDynamic = false;
 	private int mUnitTime;
+	private int mMaxDuration;
 	
 	public ATrack(boolean pauseIfSilent) {
 		mPauseIfSilent = pauseIfSilent;
@@ -172,5 +173,11 @@ public class ATrack implements IAudio.ITrack {
 	}
 	public int getUnitTime() {
 		return mUnitTime;
+	}
+	public void setMaxDuration(int maxDuration) {
+		mMaxDuration = maxDuration;
+	}
+	public int getMaxDuration() {
+		return mMaxDuration;
 	}
 }

@@ -44,6 +44,7 @@ public class Composition {
 	private static final String FILES = "files";
 	private static final String FILE_POS = "filePos";
 	private static final String LENGTH = "length";
+	private static final String MAX_DURATION = "maxDuration";
 	private static final String NAME = "name";
 	private static final String NEXT = "next";	
 	private static final String ONLOAD = "onload";
@@ -152,6 +153,7 @@ public class Composition {
 					}
 				}
 				int minSectionLength = 0;
+				int maxDuration = 0;
 				if (jtrack.has(SECTIONS)) {
 					JSONArray jsections = jtrack.getJSONArray(SECTIONS);
 					Section lastSection = null;
@@ -165,6 +167,8 @@ public class Composition {
 						}
 						String sname = jsection.getString(NAME);
 						int trackPos = jsection.has(TRACK_POS) ? mEngine.secondsToSamples(jsection.getDouble(TRACK_POS)) : 0;
+						if (trackPos*2>maxDuration)
+							maxDuration = trackPos*2;
 						if (lastSection!=null && lastSection.mLength == IAudio.ITrack.LENGTH_ALL)
 							lastSection.mLength = (trackPos > lastSection.mTrackPos) ? trackPos-lastSection.mTrackPos : 0;
 						int length = jsection.has(LENGTH) ? (jsection.getInt(LENGTH)<0 ? jsection.getInt(LENGTH) : mEngine.secondsToSamples(jsection.getDouble(LENGTH))) : IAudio.ITrack.LENGTH_ALL;
@@ -190,9 +194,10 @@ public class Composition {
 						}
 						if (lastSection!=null) {
 							boolean found = false;
-							for (ATrack.NextSection next : lastSection.mNext)
-								if (next.mName.equals(sname))
-									found = true;
+							if (lastSection.mNext!=null)
+								for (ATrack.NextSection next : lastSection.mNext)
+									if (next.mName.equals(sname))
+										found = true;
 							if (!found)
 								lastSection.addNext(sname, DEFAULT_NEXT_SECTION_NEXT_COST);
 						}
@@ -204,6 +209,14 @@ public class Composition {
 					atrack.setUnitTime(mEngine.secondsToSamples(jtrack.getDouble(UNIT_TIME)));
 				else
 					atrack.setUnitTime(minSectionLength);
+				if (jtrack.has(MAX_DURATION))
+					atrack.setMaxDuration(mEngine.secondsToSamples(jtrack.getDouble(MAX_DURATION)));
+				else
+					atrack.setMaxDuration(maxDuration);
+				Log.d(TAG,"Create SectionSelector for "+atrack.getName());
+				SectionSelector selector = new SectionSelector(atrack, atrack.getMaxDuration(), mEngine.getLog());
+				selector.prepare();
+				mSectionSelectors.put(atrack.getName(), selector);
 			}
 		}
 		mScenes = new HashMap<String, DynScene>();
@@ -366,13 +379,33 @@ public class Composition {
 				float currentVolume = 0; /* default?! */
 				if (loadFlag && tr.getPos()!=null)
 					trackPos = tr.getPos();
-				else if (loadFlag && !scene.isPartial())
-					trackPos = 0;
+				// partial default is current
 				else {
+					// extrapolate...
 					if (atr!=null) {
 						trackPos = atr.getPos();
 						if (!atr.isPaused())
 							trackPos += mEngine.getFutureOffset();
+						int align[] = atr.getAlign();
+						if (align!=null) {
+							int sceneTime = mEngine.secondsToSamples(oldSceneTime);
+							// each aligned sub-section
+							for (int ai=0; ai<=(align!=null ? align.length : 0); ai+=2)
+							{
+								if (align!=null && align.length>=2) {
+									if (ai<align.length) {
+										// up to an alignment
+										if (align[ai]<=sceneTime) {
+											// already past
+											trackPos = align[ai+1]+sceneTime-align[ai];
+											//Log.d(TAG,"Align track at +"+bufStart+": "+sceneTime+" -> "+tr.getPos()+" (align "+align[ai]+"->"+align[ai+1]+")");
+											continue;
+										}
+									}
+								}
+								break;
+							}
+						}
 					}
 				}
 				// for volume we want the old volume. This may be undefined on
@@ -413,18 +446,20 @@ public class Composition {
 					double trackTime = mEngine.samplesToSeconds(trackPos);
 					sb.append("ps['");
 					sb.append(tr.getTrack().getId());
-					sb.append("']=(function(trackTime,currentSection){return(");
+					sb.append("']=(function(trackId,trackTime,currentSection){return(");
 					sb.append(dynPos);
 					sb.append(");})(");
+					sb.append(tr.getTrack().getId());
+					sb.append(",");
 					sb.append(trackTime);
 					sb.append(",");
 					if (section==null)
 						sb.append("null");
 					else {
-						// TODO old scene?? new for now...
 						sb.append("{name:");
 						sb.append(escapeJavascriptString(section.mName));
 						sb.append(",startTime:");
+						// typically negative if new scene
 						sb.append(newSceneTime+mEngine.samplesToSeconds(section.mTrackPos)-trackTime);
 						if (section.mLength!=IAudio.ITrack.LENGTH_ALL) {
 							sb.append(",endTime:");
@@ -728,5 +763,15 @@ public class Composition {
 			return null;			
 		}
 		return scene.getWaypoints();		
+	}
+	private Map<String,SectionSelector> mSectionSelectors = new HashMap<String,SectionSelector>();
+	public String[] selectSections(String trackName, String currentSectionName,
+			int currentSectionTime, int targetDuration) {
+		SectionSelector selector = mSectionSelectors.get(trackName);
+		if (selector==null) {
+			mEngine.getLog().logError("selectSections called for unknown track "+trackName);
+			return null;
+		}
+		return selector.selectSections(currentSectionName, currentSectionTime, targetDuration);
 	}
 }
