@@ -396,8 +396,8 @@ public class Composition {
 							{
 								if (align!=null && align.length>=2) {
 									if (ai<align.length) {
-										// up to an alignment
-										if (align[ai]<=sceneTime) {
+										// up to an alignment (but not the "new" alignment so currentSection will be last played)
+										if (align[ai]<sceneTime) {
 											// already past
 											trackPos = align[ai+1]+sceneTime-align[ai];
 											//Log.d(TAG,"Align track at +"+bufStart+": "+sceneTime+" -> "+tr.getPos()+" (align "+align[ai]+"->"+align[ai+1]+")");
@@ -437,13 +437,14 @@ public class Composition {
 					Section section = null;
 					ATrack atrack = (ATrack)tr.getTrack();
 					for (Section s : atrack.getSections().values()) {
-						if (trackPos>=s.mTrackPos && (s.mLength==IAudio.ITrack.LENGTH_ALL || trackPos-s.mTrackPos<s.mLength)) {
+						// NB last thing we played
+						if (trackPos-1>=s.mTrackPos && (s.mLength==IAudio.ITrack.LENGTH_ALL || trackPos-1-s.mTrackPos<s.mLength)) {
 							section = s;
-							Log.d(TAG,"Pos "+trackPos+" in section "+s.mName+" ("+s.mTrackPos+" + "+s.mLength+")");
+							//Log.d(TAG,"Pos "+trackPos+" in section "+s.mName+" ("+s.mTrackPos+" + "+s.mLength+")");
 							break;
 						}
-						else
-							Log.d(TAG,"Pos "+trackPos+" not in section "+s.mName+" ("+s.mTrackPos+" + "+s.mLength+")");
+						//else
+						//	Log.d(TAG,"Pos "+trackPos+" not in section "+s.mName+" ("+s.mTrackPos+" + "+s.mLength+")");
 					}
 					double trackTime = mEngine.samplesToSeconds(trackPos);
 					sb.append("ps['");

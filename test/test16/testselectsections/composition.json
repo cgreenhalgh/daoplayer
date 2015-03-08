@@ -43,7 +43,7 @@
       "tracks": [
         {
           "name": "test16",
-          "pos":"daoplayer.selectSections('test16',currentSection,sceneTime,16-sceneTime)",
+          "pos":"daoplayer.selectSections('test16',currentSection,sceneTime,17-sceneTime)",
           "volume": 1          
         }
       ]
@@ -55,7 +55,7 @@
       "tracks": [
         {
           "name": "test16",
-          "pos":"daoplayer.selectSections('test16',currentSection,sceneTime,8-sceneTime)",
+          "pos":"daoplayer.selectSections('test16',currentSection,sceneTime,9-sceneTime)",
           "volume": 1          
         }
       ]
@@ -67,7 +67,7 @@
       "tracks": [
         {
           "name": "test16",
-          "pos":"daoplayer.selectSections('test16',currentSection,sceneTime,24-sceneTime)",
+          "pos":"daoplayer.selectSections('test16',currentSection,sceneTime,25-sceneTime)",
           "volume": 1          
         }
       ]

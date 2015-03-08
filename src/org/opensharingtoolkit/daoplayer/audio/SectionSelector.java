@@ -173,16 +173,7 @@ public class SectionSelector {
 			Log.w(TAG,"selectSections for track without unitTime/sections");
 			return null;
 		}
-		int targetUnits = (targetDuration+mUnitTime/2)/mUnitTime;
-		if (targetUnits>=mNumTimesteps) {
-			mLog.logError("selectSections called for "+targetUnits+" time units; max is "+mNumTimesteps);
-			targetUnits = mNumTimesteps;
-		} 
-		if (targetUnits<=0) {
-			mLog.logError("selectSections called for 0 time units");
-			return new String[0];
-		}
-		int si;
+		int si=0;
 		Vector<Object> sections = new Vector<Object>();
 		if (currentSectionName!=null) {
 			// named section - find it
@@ -192,25 +183,36 @@ public class SectionSelector {
 				return selectSections(null, 0, sceneTime, targetDuration);
 			}
 			si = rsi;
-			int currentUnits = (currentSectionTime+mUnitTime/2)/mUnitTime;
-			while(si+1<mNumSubsections && mSubsections[si+1].section==mSubsections[si].section && mSubsections[si].unit<currentUnits)
-				si++;
-			if (currentUnits!=mSubsections[si].unit) {
-				mLog.logError("selectSections with current section "+currentSectionName+" at "+currentUnits+" units is after end of section");
-			}
 			// insert end of current section scene time
-			ATrack.Section currentSection = mTrack.getSections().get(currentSectionName);
+			ATrack.Section currentSection = null;
+			currentSection = mTrack.getSections().get(currentSectionName);
+			// adjust targetTime for when we started this section (unit is 0 from rsi)
 			if (currentSection!=null) {
-				if (currentSection.mLength!=ITrack.LENGTH_ALL && currentSectionTime<currentSection.mLength)
-					sections.add(sceneTime+currentSection.mLength-currentSectionTime);
+				if (currentSection.mLength!=ITrack.LENGTH_ALL && currentSectionTime<currentSection.mLength) {
+					sections.add(sceneTime-currentSectionTime);
+					sections.add(currentSectionName);
+					//sections.add(sceneTime+currentSection.mLength-currentSectionTime);
+					// reduce targetDuration by remaining time
+					targetDuration += currentSectionTime;
+				}
 			}
-		} else {
-			// any section - find lowest cost+startCost
+		}
+		int targetUnits = targetDuration/mUnitTime;
+		if (targetUnits>=mNumTimesteps) {
+			mLog.logError("selectSections called for "+targetUnits+" time units; max is "+(mNumTimesteps-1));
+			targetUnits = mNumTimesteps-1;
+		} 
+		if (targetUnits<0) {
+			mLog.logError("selectSections called for "+targetUnits+" time units");
+			return new String[0];
+		}
+		if (currentSectionName==null) {
+			// any section (first unit) - find lowest cost+startCost
 			si = -1;
-			Timestep timestep = mTimesteps[targetUnits-1];
+			Timestep timestep = mTimesteps[targetUnits];
 			double bestcost = Double.MAX_VALUE;
 			for (int si2=0; si2<mNumSubsections; si2++) {
-				if (timestep.costs[si2]!=Double.MAX_VALUE && mSubsections[si2].section.mStartCost!=Double.MAX_VALUE) {
+				if (mSubsections[si2].unit==0 && timestep.costs[si2]!=Double.MAX_VALUE && mSubsections[si2].section.mStartCost!=Double.MAX_VALUE) {
 					double cost = timestep.costs[si2]+mSubsections[si2].section.mStartCost;
 					if (cost<bestcost) {
 						bestcost = cost;
@@ -225,7 +227,7 @@ public class SectionSelector {
 			sections.add(mSubsections[si].section.mName);
 		}
 		// sequence from si
-		for (int ti=targetUnits-1; ti>0; ti--) {
+		for (int ti=targetUnits; ti>0; ti--) {
 			Timestep timestep = mTimesteps[ti];
 			si = timestep.nextSubsections[si];
 			if (si<0) {
