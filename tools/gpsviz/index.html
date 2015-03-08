@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<!-- http://bl.ocks.org/mbostock/7341714 -->
+<style>
+
+.chart rect {
+  fill: steelblue;
+}
+.chart line {
+  stroke: steelblue;
+}
+
+.chart text {
+  fill: white;
+  font: 10px sans-serif;
+  text-anchor: end;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+    fill: black;
+}
+</style>
+<svg class="chart"></svg>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+
+var width = 600,
+    height = 600,
+    padding = 20;
+
+var xScale = d3.scale.linear()
+    .range([20, width]);
+
+var yScale = d3.scale.linear()
+    .range([0, height-padding]);
+
+console.log("yscale "+6928961.115321899+"="+yScale(6928961.115321899));
+
+var chart = d3.select(".chart")
+    .attr("width", width)
+    .attr("height", height);
+
+d3.tsv("walk.tsv", type, function(error, data) {
+  xScale.domain(d3.extent(data, function(d) { return d.time; }));
+  yScale.domain(d3.extent(data, function(d) { return d.y; }));
+//[d3.min(data, function(d) { return d.y-d.accuracy; }), d3.max(data, function(d) { return d.y+d.accuracy; })]);
+console.log("yscale "+6928961.115321899+"="+yScale(6928961.115321899));
+
+  var bar = chart.selectAll("g")
+      .data(data)
+    .enter().append("g")	
+      .attr("transform", function(d, i) { return "translate(" + xScale(d.time) + "," + 0 + ")"; });
+
+  bar.append("line")
+      .attr("x1", 0)
+      .attr("x2", 0)
+      .attr("y1", function(d) { return yScale(d.y-d.accuracy/2); })
+      .attr("y2", function(d) { return yScale(d.y+0.5*d.accuracy); })
+//      .attr("height", function(d) { console.log(""+(d.y-d.accuracy/2)+" - "+(d.y+d.accuracy/2)+" = "+yScale(d.y+d.accuracy/2)+" - "+yScale(d.y-d.accuracy/2)+" = "+(yScale(d.y+d.accuracy/2)-yScale(d.y-d.accuracy/2))); return yScale(d.y+d.accuracy/2)-yScale(d.y-d.accuracy/2); });
+
+  var xAxis = d3.svg.axis()
+                  .scale(x)
+                  .orient("bottom");
+  chart.append("g")
+      .attr("class", "axis")
+      .attr("transform", "translate(0," + (height-padding) + ")")
+      .call(xAxis);
+
+  var yAxis = d3.svg.axis()
+                  .scale(y)
+                  .orient("left");
+  chart.append("g")
+      .attr("class", "axis")
+      .attr("transform", "translate("+padding+",0)")
+      .call(yAxis);
+
+});
+
+function type(d) {
+  d.value = +d.value; // coerce to number
+  return d;
+}
+
+</script>
