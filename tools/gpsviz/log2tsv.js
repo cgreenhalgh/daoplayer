@@ -37,6 +37,24 @@ function merc_y(lat) {
 function merc(x,y) {
     return [merc_x(x),merc_y(y)];
 }
+// cludgy way to check how big a metre is in merc x,y at a lat,lng
+function merc_metre(lat,lon) {
+    var r_major = 6378137.000;
+    var r_minor = 6356752.3142;
+    var angle = Math.PI/2/r_major;
+    if (lat > 89.5 || lat < -89.5)
+        return Number.NaN;
+    if (lat < 0)
+        angle = -angle;
+    // straight-line approx. on surface of elipsoid 
+    var dsx = r_major*(Math.sin(deg_rad(lat+angle))-Math.sin(deg_rad(lat)));
+    var dsy = r_minor*(Math.cos(deg_rad(lat+angle))-Math.cos(deg_rad(lat)));
+    var d = Math.sqrt(dsx*dsx+dsy*dsy);
+    var dmy = merc_y(lat+angle)-merc_y(lat);
+    if (dmy<0)
+        dmy = -dmy;
+    return d/dmy;
+}
 
 var logfilename = process.argv[2];
 var outfilename = process.argv[3];
@@ -45,16 +63,26 @@ var logfile = fs.readFileSync(logfilename,{encoding:"utf-8"});
 var lines = logfile.split("\n");
 var outfile = fs.openSync(outfilename,"w",{encoding:"utf-8"});
 fs.writeSync(outfile,"time\tevent\tlat\tlng\tx\ty\taccuracy\n");
+var ref = null;
+var metre = 1;
+var refx, refy;
 for(var i=0; i<lines.length; i++) {
   try {
     var rec = JSON.parse(lines[i]);
     var date = new Date(rec.datetime);
     var event = rec.event;
     if (event=='on.location') {
+      // first as ref
+      if (ref==null) {
+        ref = rec;
+        meter = merc_metre(rec.info.lat,rec.info.lng);
+        refx = merc_x(rec.info.lng);
+        refy = merc_y(rec.info.lat);
+      }
       // lng, lat, accuracy
       // mercator projection
-      var x = merc_x(rec.info.lng);
-      var y = merc_y(rec.info.lat);
+      var x = merc_x(rec.info.lng)-refx;
+      var y = merc_y(rec.info.lat)-refy;
       fs.writeSync(outfile,date.getTime()+"\tgps\t"+rec.info.lat+"\t"+rec.info.lng+"\t"+x+"\t"+y+"\t"+rec.info.accuracy+"\n");
     } else if(event=='on.gpsStatus') {
       //if (rec.info.changeUsedInFix)
