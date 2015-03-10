@@ -28,6 +28,7 @@ public class Context {
 	//private static final String ONEWAY = "oneway";
 	private static final String NAME = "name";
 	private static final String NEAR_DISTANCE = "nearDistance";
+	private static final String ORIGIN = "origin";
 	private static final String ROUTES = "routes";
 	private static final String TO = "to";
 	//private static final String VIA = "via";
@@ -47,6 +48,7 @@ public class Context {
 		private double lng;
 		private double nearDistance;
 		private HashSet<String> aliases;
+		private boolean origin;
 		/**
 		 * @param name
 		 * @param lat
@@ -55,13 +57,14 @@ public class Context {
 		 * @param aliases
 		 */
 		public Waypoint(String name, double lat, double lng,
-				double nearDistance, HashSet<String> aliases) {
+				double nearDistance, HashSet<String> aliases, boolean origin) {
 			super();
 			this.name = name;
 			this.lat = lat;
 			this.lng = lng;
 			this.nearDistance = nearDistance;
 			this.aliases = aliases;
+			this.origin = origin;
 		}
 		/**
 		 * @return the name
@@ -92,6 +95,12 @@ public class Context {
 		 */
 		public HashSet<String> getAliases() {
 			return aliases;
+		}
+		/**
+		 * @return the origin
+		 */
+		public boolean isOrigin() {
+			return origin;
 		}
 		
 	}
@@ -151,7 +160,7 @@ public class Context {
 		
 	}
 
-	static Context parse(JSONObject jcontext) throws JSONException {
+	static public Context parse(JSONObject jcontext) throws JSONException {
 		Context context = new Context();
 		if (jcontext.has(WAYPOINTS)) {
 			JSONArray jwaypoints = jcontext.getJSONArray(WAYPOINTS);
@@ -174,7 +183,8 @@ public class Context {
 						context.mWaypointAliases.put(alias, name);
 					}
 				}
-				Waypoint waypoint = new Waypoint(name, lat, lng, nearDistance, aliases);
+				boolean origin = jwaypoint.has(ORIGIN) ? jwaypoint.getBoolean(ORIGIN) : false;
+				Waypoint waypoint = new Waypoint(name, lat, lng, nearDistance, aliases, origin);
 				context.mWaypoints.put(name,  waypoint);
 			}
 		}

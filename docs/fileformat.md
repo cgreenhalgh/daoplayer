@@ -78,6 +78,7 @@ Waypoint (todo) is object with:
 - `lat` - latitude, degrees (float)
 - `lng` - longitude, degrees (float)
 - `nearDistance` - how far from waypoint is 'near', metres (float, default provisionally 15m, may change)
+- `origin` - whether to use waypoint as coordinate system origin, boolean (default false)
 (future: polyline or other geometry)
 
 Route (todo) is object with

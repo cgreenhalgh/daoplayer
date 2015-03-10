@@ -74,10 +74,13 @@ public class UserModel {
 	}
 
 	public Activity getActivity() {
+		long now = System.currentTimeMillis();
+		return getActivity(now);
+	}
+	public Activity getActivity(long now) {
 		// TODO better :-) e.g. longer history
 		if (mLocations.size()==0)
 			return Activity.NOGPS;
-		long now = System.currentTimeMillis();
 		Location lastLoc = mLocations.get(0);
 		long elapsed = now-lastLoc.time;
 		if (elapsed > MAX_GPS_INTERVAL || lastLoc.elapsed1==0 || lastLoc.elapsed1 > MAX_GPS_INTERVAL)
@@ -149,7 +152,7 @@ public class UserModel {
 		if (mContext!=null && localWaypoints!=null && localWaypoints.size()>0) {
 			boolean lastWaypointIsLocal = false;
 			waypointInfos = new HashMap<String,WaypointInfo>();
-			for (HashMap.Entry<String,String> entry: localWaypoints.entrySet()) {
+			for (Map.Entry<String,String> entry: localWaypoints.entrySet()) {
 				if (mLastWaypoint!=null && mLastWaypoint.getName().equals(entry.getValue())) {
 					lastWaypointIsLocal = true;
 					lastWaypointName = entry.getKey();

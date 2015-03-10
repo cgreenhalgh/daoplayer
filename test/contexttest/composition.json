@@ -12,7 +12,8 @@
       {
         "name": "work",
         "lat": 52.9544603,
-        "lng": -1.1893014
+        "lng": -1.1893014,
+        "origin": true
       }
     ],
     "routes": [
