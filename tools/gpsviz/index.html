@@ -9,14 +9,23 @@
 .chart .xline {
   stroke: blue;
 }
+.chart .waypointX {
+  stroke: blue;
+}
 .chart .yline {
   stroke: red;
 }
+.chart .waypointY {
+  stroke: red;
+}
+.chart .activity {
+  stroke: green;
+}
 
 .chart text {
-  fill: white;
+  fill: black;
   font: 10px sans-serif;
-  text-anchor: end;
+  text-anchor: start;
 }
 
 .axis path,
@@ -46,20 +55,64 @@ var xScale = d3.scale.linear()
 var yScale = d3.scale.linear()
     .range([height-padding, 0]);
 
-console.log("yscale "+6928961.115321899+"="+yScale(6928961.115321899));
+var activityScale = d3.scale.linear()
+    .range([height-padding, 0])
+    .domain([0,9]);
+
+//console.log("yscale "+6928961.115321899+"="+yScale(6928961.115321899));
 
 var chart = d3.select(".chart")
     .attr("width", width)
     .attr("height", height);
 
-d3.tsv("walk.tsv", type, function(error, data) {
-  var tref = d3.min(data, function(d) { return d.time });
-  xScale.domain(d3.extent(data, function(d) { return (d.time-tref)/1000; }));
-  yScale.domain([d3.min(data, function(d) { return Math.min(d.y, d.x); }), d3.max(data, function(d) { return Math.max(d.y,d.x); })]);
+d3.json("out.json", function(error, data) {
+  if (error) 
+    console.log("Error reading file: "+error);
+  var locations = data.locations;
+  console.log("Found "+locations.length+" location records");
+  var tref = d3.min(locations, function(d) { return d.time });
+  xScale.domain(d3.extent(locations, function(d) { return (d.time-tref)/1000; }));
+  yScale.domain([d3.min(locations, function(d) { return Math.min(d.y, d.x); }), d3.max(locations, function(d) { return Math.max(d.y,d.x); })]);
 
-  var bar = chart.selectAll("g")
-      .data(data)
-    .enter().append("g")	
+  var rule = chart.selectAll("g.waypointX")
+      .data(data.waypoints)
+    .enter().append("g")
+      .classed('waypointX',true)
+      .attr("transform", function(d, i) { return "translate(0, " + yScale(d.x) + ")"; });
+
+  rule.append("line")
+      .classed('waypointX',true)
+      .attr("x1", padding)
+      .attr("x2", width)
+      .attr("y1", 0)
+      .attr("y2", 0);
+  rule.append("text")
+      .attr("x", padding+10)
+      .attr("y", -10)
+      .text(function(d) { return d.name; });
+
+  rule = chart.selectAll("g.waypointY")
+      .data(data.waypoints)
+    .enter().append("g")
+      .classed('waypointY',true)
+      .attr("transform", function(d, i) { return "translate(0, " + yScale(d.y) + ")"; });
+
+  rule.append("line")
+      .classed('waypointY',true)
+      .attr("x1", padding)
+      .attr("x2", width)
+      .attr("y1", 0)
+      .attr("y2", 0);
+  rule.append("text")
+      .attr("x", padding+10)
+      .attr("y", -10)
+      .text(function(d) { return d.name; });
+
+
+  var bar = chart.selectAll("g.location")
+      .data(locations)
+    .enter().append("g")
+      .classed('location',true)	
       .attr("transform", function(d, i) { return "translate(" + xScale((d.time-tref)/1000) + "," + 0 + ")"; });
 
   bar.append("line")
@@ -67,7 +120,7 @@ d3.tsv("walk.tsv", type, function(error, data) {
       .attr("x1", 0)
       .attr("x2", 0)
       .attr("y1", function(d) { return yScale(d.y-d.accuracy); })
-      .attr("y2", function(d) { return yScale(d.y+d.accuracy); })
+      .attr("y2", function(d) { return yScale(d.y+d.accuracy); });
 //      .attr("height", function(d) { console.log(""+(d.y-d.accuracy/2)+" - "+(d.y+d.accuracy/2)+" = "+yScale(d.y+d.accuracy/2)+" - "+yScale(d.y-d.accuracy/2)+" = "+(yScale(d.y+d.accuracy/2)-yScale(d.y-d.accuracy/2))); return yScale(d.y+d.accuracy/2)-yScale(d.y-d.accuracy/2); });
 
   bar.append("line")
@@ -75,7 +128,22 @@ d3.tsv("walk.tsv", type, function(error, data) {
       .attr("x1", 0)
       .attr("x2", 0)
       .attr("y1", function(d) { return yScale(d.x-d.accuracy); })
-      .attr("y2", function(d) { return yScale(d.x+d.accuracy); })
+      .attr("y2", function(d) { return yScale(d.x+d.accuracy); });
+
+  var bar = chart.selectAll("g.activity")
+      .data(locations)
+    .enter().append("g")
+      .classed('activity',true)	
+      .attr("transform", function(d, i) { return "translate(" + xScale((d.time-tref)/1000) + "," + 0 + ")"; });
+
+  var activities = {};
+  activities['NOGPS']=1; activities['STATIONARY']=2; activities['WALKING']=3;
+  bar.append("line")
+      .classed('activity',true)
+      .attr("x1", 0)
+      .attr("x2", 0)
+      .attr("y1", function(d) { return activityScale(activities[d.activity]); })
+      .attr("y2", function(d) { return activityScale(activities[d.activity])+10; });
 
   var xAxis = d3.svg.axis()
                   .scale(xScale)
