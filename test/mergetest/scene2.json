@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "scene2.json",
+    "description": "for use in test merge"
+  },
+  "constants": {
+    "d1":"scene2.json",
+    "d3":"scene2"
+  },
+  "scenes": [
+    {
+      "name": "scene2",
+      "onload":"daoplayer.log('scene2 loaded :-), d1='+d1+' (composition.json), d2='+d2+' (d2.js), d3='+d3+' (scene2)');"
+    }
+  ]
+}
+

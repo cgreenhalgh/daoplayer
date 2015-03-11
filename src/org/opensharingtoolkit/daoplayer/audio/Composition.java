@@ -12,13 +12,17 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONStringer;
 import org.opensharingtoolkit.daoplayer.IAudio;
 import org.opensharingtoolkit.daoplayer.IAudio.IFile;
 import org.opensharingtoolkit.daoplayer.IAudio.IScene;
@@ -26,6 +30,7 @@ import org.opensharingtoolkit.daoplayer.IAudio.ITrack;
 import org.opensharingtoolkit.daoplayer.ILog;
 import org.opensharingtoolkit.daoplayer.audio.ATrack.Section;
 
+import android.util.JsonWriter;
 import android.util.Log;
 
 /** Read a "composition" file.
@@ -45,6 +50,7 @@ public class Composition {
 	private static final String FILE_POS = "filePos";
 	private static final String LENGTH = "length";
 	private static final String MAX_DURATION = "maxDuration";
+	private static final String MERGE = "merge";
 	private static final String NAME = "name";
 	private static final String NEXT = "next";	
 	private static final String ONLOAD = "onload";
@@ -106,19 +112,34 @@ public class Composition {
 	}
 	public void read(File file, ILog log, android.content.Context androidContext) throws IOException, JSONException {
 		Log.d(TAG,"read composition from "+file);
+		mTracks = new HashMap<String,ITrack>();
+		mScenes = new HashMap<String, DynScene>();
+		mScenesInOrder = new Vector<String>();
+		HashSet<String> mergedFiles = new HashSet<String>();
+		merge(file, log, androidContext, false, mergedFiles);
+	}
+	public void merge(File file, ILog log, android.content.Context androidContext, boolean merging, HashSet<String> mergedFiles) throws IOException, JSONException {
 		File parent = file.getParentFile();
 		String data = readFully(file);
+		data = handleIncludes(file, data, log);
 		JSONObject jcomp = new JSONObject(data);
-		if (jcomp.has(CONTEXT))
-			mContext = Context.parse(jcomp.getJSONObject(CONTEXT));
-		else
-			// empty context
-			mContext = new Context();
+		if (!merging || mContext!=null) {
+			if (jcomp.has(CONTEXT))
+				mContext = Context.parse(jcomp.getJSONObject(CONTEXT));
+			else
+				// empty context
+				mContext = new Context();
+		} else if (jcomp.has(CONTEXT))
+			// TODO merge context?!
+			log.logError("Ignoring duplicate context from "+file.getName());
+
 		// TODO meta
-		mDefaultScene = (jcomp.has(DEFAULT_SCENE) ? jcomp.getString(DEFAULT_SCENE) : null);
-		if (jcomp.has(CONSTANTS))
-			mConstants.parse(jcomp.getJSONObject(CONSTANTS));
-		mTracks = new HashMap<String,ITrack>();
+		if (!merging || mDefaultScene==null) {
+			mDefaultScene = (jcomp.has(DEFAULT_SCENE) ? jcomp.getString(DEFAULT_SCENE) : null);
+		}
+		if (jcomp.has(CONSTANTS)) {
+			mConstants.parse(jcomp.getJSONObject(CONSTANTS), merging);
+		}
 		if (jcomp.has(TRACKS)) {
 			JSONArray jtracks = jcomp.getJSONArray(TRACKS);
 			for (int ti=0; ti<jtracks.length(); ti++) {
@@ -129,8 +150,12 @@ public class Composition {
 				boolean pauseIfSilent = jtrack.has(PAUSE_IF_SILENT) && jtrack.getBoolean(PAUSE_IF_SILENT);
 				ATrack atrack = (ATrack)mEngine.addTrack(pauseIfSilent);
 				atrack.setName(name);
-				if (name!=null)
-					mTracks.put(name, atrack);
+				if (name!=null) {
+					if (!merging || !mTracks.containsKey(name))
+						mTracks.put(name, atrack);
+					else
+						log.logError("Ignoring duplicate merged track "+name+" from "+file.getName());
+				}
 				else
 					Log.w(TAG,"Unnamed track "+ti);
 				if (jtrack.has(FILES)) {
@@ -221,8 +246,6 @@ public class Composition {
 				mSectionSelectors.put(atrack.getName(), selector);
 			}
 		}
-		mScenes = new HashMap<String, DynScene>();
-		mScenesInOrder = new Vector<String>();
 		if (jcomp.has(SCENES)) {
 			JSONArray jscenes = jcomp.getJSONArray(SCENES);
 			for (int si=0; si<jscenes.length(); si++) {
@@ -233,18 +256,22 @@ public class Composition {
 				mScenesInOrder.add(name);
 				boolean partial = jscene.has(PARTIAL) && jscene.getBoolean(PARTIAL);
 				DynScene ascene = new DynScene(partial);
-				if (name!=null)
-					mScenes.put(name, ascene);
+				if (name!=null) {
+					if (!merging || !mScenes.containsKey(name))
+						mScenes.put(name, ascene);
+					else
+						log.logError("Ignoring duplicate merged scene "+name+" from "+file.getName());
+				}
 				else 
 					log.logError("Unnamed scene "+si);
 				if (jscene.has(CONSTANTS)) {
 					DynConstants cons = new DynConstants();
-					cons.parse(jscene.getJSONObject(CONSTANTS));
+					cons.parse(jscene.getJSONObject(CONSTANTS), false);
 					ascene.setConstants(cons);
 				}
 				if (jscene.has(VARS)) {
 					DynConstants vars = new DynConstants();
-					vars.parse(jscene.getJSONObject(VARS));
+					vars.parse(jscene.getJSONObject(VARS), false);
 					ascene.setVars(vars);
 				}
 				if (jscene.has(UPDATE_PERIOD))
@@ -288,9 +315,67 @@ public class Composition {
 				}
 			}
 		}
+		if (jcomp.has(MERGE)) {
+			JSONArray files = jcomp.getJSONArray(MERGE);
+			for (int i=0; i<files.length(); i++) {
+				String filename = files.getString(i);
+				if (mergedFiles.contains(filename)) 
+					log.log("ignore duplicate merge of "+filename);
+				else {
+					Log.d(TAG,"merge file "+filename);
+					mergedFiles.add(filename);
+					merge(new File(file.getParent(), filename), log, androidContext, true, mergedFiles);
+				}
+			}
+		}
 		log.log("Read composition "+file);
 	}
-	
+	private Pattern includePattern = Pattern.compile("[\"][#]((json)|(string))\\s+([^\"]+)[\"]");
+	private String handleIncludes(File file, String data, ILog log) throws IOException {
+		Matcher m = includePattern.matcher(data);
+		StringBuilder sb = new StringBuilder();
+		int pos = 0;
+		while(m.find()) {
+			sb.append(data, pos, m.start());
+			pos = m.end();
+			String op = m.group(1);
+			String filename = m.group(4);
+			String incdata;
+			Log.d(TAG,"Found #"+op+" "+filename+" in "+file);
+			try {
+				incdata = readFully(new File(file.getParentFile(), filename));
+			}
+			catch (IOException e) {
+				throw new IOException("Error reading #"+op+" file "+filename+" in "+file+": "+e);
+			}
+			if (op.equals("string")) {
+				JSONStringer js = new JSONStringer();
+				try {
+					js.array();
+					js.value(incdata);
+					js.endArray();
+					String jstring = js.toString();
+					sb.append(jstring,1,jstring.length()-1);
+				} catch (JSONException e) {
+					Log.e(TAG,"stringing #string "+filename+" ("+incdata+"): "+e, e);
+					throw new IOException("Error handling #string "+filename+" in "+file+": "+e);
+				}
+			} else if (op.equals("json")) {
+				try {
+					JSONObject jobj = new JSONObject(incdata);
+					sb.append(jobj.toString());
+				}
+				catch (JSONException e) {
+					throw new IOException("Error parsing (#json) "+filename+": "+e+" in "+incdata);
+				}
+			} else
+				throw new IOException("Unsupported operator #"+op+" in "+file);
+		}
+		// rest of string
+		Log.d(TAG, "No #op found in last "+pos+"-"+data.length());
+		sb.append(data, pos, data.length());
+		return sb.toString();
+	}
 	/**
 	 * @return the context
 	 */
@@ -631,7 +716,7 @@ public class Composition {
 	public boolean setScene(String name, String position, IScriptEngine scriptEngine) {
 		DynScene scene = mScenes.get(name);
 		if (scene==null) {
-			Log.w(TAG, "setScene unknown "+name);
+			mEngine.getLog().logError("setScene unknown "+name);
 			return false;			
 		}
 		AScene ascene = mEngine.newAScene(scene.isPartial());

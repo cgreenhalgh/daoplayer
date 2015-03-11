@@ -1,0 +1,5 @@
+    {
+      "name": "scene1",
+      "onload":"daoplayer.setScene('scene2');"
+    }
+

@@ -8,12 +8,19 @@ JSON object with:
 - `meta`, `tracks`, `scenes`, `context` - see below
 - `defaultScene` - name of default/initial scene (if any)
 - `constants` - optional set of Javascript constants for the whole composition - see below
+- `merge` - an array of (local) filenames of other composition files to be loaded as part of this composition (values from this file take precedence, and values from files earlier in the list take precedence over values from later files)
+
+The composition file reader also has a basic macro facility:
+- a value anywhere in the composition of the form `"#string FILENAME"` will replace the value with the contents of the named file as a string (typically a Javascript file for use as a script function). 
+- a value of the form `"#json FILENAME"` will replace the value with the contents of the named file parsed as a JSON object. This can be used as a complement to `merge` (above).
 
 ### `meta`
 
 Object with metadata:
 - `mimetype` - `application/x-daoplayer-composition`
 - `version` - `1`
+- `title` - descriptive, for human consumption only (string, optional)
+- `description` - descriptive, for human consumption only (string, optional)
 
 ### `tracks`
 
@@ -24,6 +31,8 @@ Array of track Objects with:
 - `sections` - array of sections (see below)
 - `unitTime` - duration in sections of a "unit" of the song when dynamically choosing sections. Usually one bar, but may be one beat or a small number of beats or bars. Defaults to shortest section length.
 - `maxDuration` - greatest duration to which this track might be extended when dynamically choosing sections (seconds, default twice time to last section).
+- `title` - descriptive, for human consumption only (string, optional)
+- `description` - descriptive, for human consumption only (string, optional)
 
 File ref is Object with:
 - `path` - file path (string)
@@ -39,6 +48,8 @@ File ref is Object with:
 - `startCost` - "cost" of starting with this section (float, default very large, but smaller for first section)
 - `endCost` - "cost" of ending during this section (float, default very large, but smaller for last section)
 - `next` - array of Next Sections (see below)
+- `title` - descriptive, for human consumption only (string, optional)
+- `description` - descriptive, for human consumption only (string, optional)
 
 Next section is Object with:
 - `name` - name of next section
@@ -49,7 +60,7 @@ The next section cost for unspecified sections is assumed to be very large (infi
 ### `scenes`
 
 Array of scene objects with:
-- `name` - name (string)
+- `name` - name (string), used to refer to the scene within the composition (e.g. from javascript)
 - `partial` - scene is partial, i.e. unspecified track stay at current levels (boolean, default false)
 - `tracks` - array of track refs (see below)
 - `constants` - optional set of Javascript constants for the whole composition - see below
@@ -58,6 +69,8 @@ Array of scene objects with:
 - `onupdate` - Javascript code to execute (after onany) when this scene is updated, e.g. when time or position changes (string, see dynamic scenes, below).
 - `updatePeriod` - regular period in seconds after which the scene should be updated (float, default undefined => never, see dynamic scenes, below). E.g. `3.0` implies update the scene every 3 seconds.
 - `waypoints` - map (object) from scene-specific waypoint name to global waypoint name or alias (as used in `context` waypoint list)
+- `title` - descriptive, for human consumption only (string, optional)
+- `description` - descriptive, for human consumption only (string, optional)
 
 Track ref is object with:
 - `name` - name of track
@@ -71,20 +84,26 @@ Track ref is object with:
 Object with:
 - `waypoints` - array of waypoints (see below)
 - `routes` - array of routes (see below)
+- `title` - descriptive, for human consumption only (string, optional)
+- `description` - descriptive, for human consumption only (string, optional)
 
 Waypoint (todo) is object with:
-- `name` - name of waypoint (global name)
+- `name` - name of waypoint (global name), used to refer to the waypoint within the composition
 - `aliases` - array of alternative names for waypoint (e.g. 'start')
 - `lat` - latitude, degrees (float)
 - `lng` - longitude, degrees (float)
 - `nearDistance` - how far from waypoint is 'near', metres (float, default provisionally 15m, may change)
 - `origin` - whether to use waypoint as coordinate system origin, boolean (default false)
+- `title` - descriptive, for human consumption only (string, optional)
+- `description` - descriptive, for human consumption only (string, optional)
 (future: polyline or other geometry)
 
 Route (todo) is object with
 - `from` - name of origin waypoint
 - `to` - name of destination waypoint
 - `nearDistance` - how far off the direct route is 'near' to it, metres (float, default provisionally 5m, may change)
+- `title` - descriptive, for human consumption only (string, optional)
+- `description` - descriptive, for human consumption only (string, optional)
 (future: `oneway` - one way flag (boolean, default false, i.e. two-way))
 (future: `via` - array of intermediate waypoint name(s), which are along the route but there you cannot join the route)
 

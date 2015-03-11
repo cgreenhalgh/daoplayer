@@ -1,0 +1,20 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "mergetest",
+    "description": "test merge, #string and #json support (v1.7+)"
+  },
+  "merge": [
+    "scene2.json"
+  ],
+  "defaultScene": "scene1",
+  "constants": {
+    "d1":"composition.json",
+    "d2":"#string d2.js"
+  },
+  "scenes": [
+    "#json scene1.json"
+  ]
+}
+
