@@ -658,6 +658,7 @@ public class Composition {
 							ivals[j] = ival;
 							if ((j % 2)==0)
 								nextSceneTime = ival;
+							Log.d(TAG,"dynpos align "+j+" ("+i+") = "+ival+" samples ("+aval.get(i)+")");
 						}
 					}
 					di.align = ivals;

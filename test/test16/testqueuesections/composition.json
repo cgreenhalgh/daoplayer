@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "test queue selections"
+  },
+  "defaultScene": "section one",
+  "tracks": [
+    {
+      "name": "test16",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "count16-all.wav", 
+          "trackPos": 0,
+          "length": 16
+        }
+      ],
+      "sections": [
+        { "name": "one", "trackPos": 0 },
+        { "name": "five", "trackPos": 4 },
+        { "name": "nine", "trackPos": 8 },
+        { "name": "thirteen", "trackPos": 12 },
+        { "name": "end", "trackPos": 16, "length": 0 }
+      ],
+      "unitTime": 2,
+      "maxDuration": 32
+    }
+  ],
+  "scenes": [
+    {
+      "name": "section one",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "test16",
+          "pos":"currentSection!=null ? [currentSection.startTime,currentSection.name,'one','end'] : ['one','end']",
+          "volume": 1          
+        }
+      ]
+    },
+    {
+      "name": "section five",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "test16",
+          "pos":"currentSection!=null ? [currentSection.startTime,currentSection.name,'five','end'] : ['five','end']",
+          "volume": 1          
+        }
+      ]
+    },
+    {
+      "name": "section nine",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "test16",
+          "pos":"currentSection!=null ? [currentSection.startTime,currentSection.name,'nine','end'] : ['nine','end']",
+          "volume": 1          
+        }
+      ]
+    },
+    {
+      "name": "section thirteen",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "test16",
+          "pos":"currentSection!=null ? [currentSection.startTime,currentSection.name,'thirteen','end'] : ['thirteen','end']",
+          "volume": 1          
+        }
+      ]
+    }
+  ]
+}
+

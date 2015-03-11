@@ -639,8 +639,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	public Integer secondsToSamples(Double seconds) {
 		if (seconds==null)
 			return null;
-		if (seconds<0)
-			return -1;
+		// -ve was once clamped to -1; don't know why, and it breaks e.g. -ve current section times in new scene
 		return new Double(seconds*DEFAULT_SAMPLE_RATE).intValue();
 	}
 	public double samplesToSeconds(int trackPos) {
