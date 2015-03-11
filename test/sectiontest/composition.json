@@ -28,7 +28,7 @@
         {
           "name": "track1",
           "volume": 1,
-          "pos": "(currentSection!=null) ? currentSection.name : 0"
+          "pos": "[(currentSection!=null) ? currentSection.name : 'section one']"
         }
       ]
     }

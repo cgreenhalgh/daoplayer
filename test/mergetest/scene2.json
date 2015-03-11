@@ -5,6 +5,23 @@
     "title": "scene2.json",
     "description": "for use in test merge"
   },
+  "context": {
+    "waypoints": [
+      {
+        "name": "work1",
+        "lat": 0,
+        "lng": 0,
+        "origin": true
+      },
+      {
+        "name": "work2",
+        "lat": 52.9544603,
+        "lng": -1.1893014
+      }
+    ],
+    "routes": [
+    ]
+  },
   "constants": {
     "d1":"scene2.json",
     "d3":"scene2"

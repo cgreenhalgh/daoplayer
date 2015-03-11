@@ -8,6 +8,18 @@
   "merge": [
     "scene2.json"
   ],
+  "context": {
+    "waypoints": [
+      {
+        "name": "work1",
+        "lat": 52.9544603,
+        "lng": -1.1893014,
+        "origin": true
+      }
+    ],
+    "routes": [
+    ]
+  },
   "defaultScene": "scene1",
   "constants": {
     "d1":"composition.json",

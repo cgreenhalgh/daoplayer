@@ -12,6 +12,7 @@ import java.util.Vector;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.opensharingtoolkit.daoplayer.ILog;
 
 import android.util.Log;
 
@@ -160,16 +161,25 @@ public class Context {
 		
 	}
 
-	static public Context parse(JSONObject jcontext) throws JSONException {
+	static public Context parse(JSONObject jcontext, ILog log) throws JSONException {
 		Context context = new Context();
+		context.parse(jcontext, false, log);
+		return context;
+	}
+	public void parse(JSONObject jcontext, boolean merging, ILog log) throws JSONException {
+		Context context = this;
 		if (jcontext.has(WAYPOINTS)) {
 			JSONArray jwaypoints = jcontext.getJSONArray(WAYPOINTS);
 			for (int i=0; i<jwaypoints.length(); i++) {
 				JSONObject jwaypoint = jwaypoints.getJSONObject(i);
 				String name = jwaypoint.has(NAME) ? jwaypoint.getString(NAME) : null;
 				if (name==null) {
-					Log.w(TAG,"Unnamed waypoint "+i);
+					log.logError("Unnamed waypoint "+i);
 					name = "["+i+"]";
+				}
+				if (merging && context.mWaypoints.containsKey(name)) {
+					log.logError("Ignore duplicate waypoint "+name+" when merging compositions");
+					continue;
 				}
 				double lat = jwaypoint.has(LAT) ? jwaypoint.getDouble(LAT) : 0;
 				double lng = jwaypoint.has(LNG) ? jwaypoint.getDouble(LNG) : 0;
@@ -193,7 +203,7 @@ public class Context {
 			for (int ri=0; ri<jroutes.length(); ri++) {
 				JSONObject jroute = jroutes.getJSONObject(ri);
 				if (!jroute.has(FROM) || !jroute.has(TO)) {
-					Log.w(TAG,"Ignoring route "+ri+" without from/to: "+jroute.get(FROM)+"->"+jroute.get(TO));
+					log.logError("Ignoring route "+ri+" without from/to: "+jroute.get(FROM)+"->"+jroute.get(TO));
 					continue;
 				}
 				String from = jroute.has(FROM) ? jroute.getString(FROM) : null;
@@ -202,14 +212,14 @@ public class Context {
 				Waypoint fromWaypoint = context.getWaypoint(from);
 				Waypoint toWaypoint = context.getWaypoint(to);
 				if (fromWaypoint==null) 
-					Log.d(TAG,"route "+ri+" with unknonwn from "+from);
+					log.logError("route "+ri+" with unknown from "+from);
 				if (toWaypoint==null) 
-					Log.d(TAG,"route "+ri+" with unknonwn to "+to);
+					log.logError("route "+ri+" with unknown to "+to);
 				Route route = new Route(from, to, fromWaypoint, toWaypoint, nearDistance);
+				// TODO avoid duplicate routes?
 				context.mRoutes.add(route);
 			}
 		}
-		return context;
 	}
 	public Map<String,Waypoint> getWaypoints() {
 		return mWaypoints;

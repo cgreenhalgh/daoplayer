@@ -123,16 +123,17 @@ public class Composition {
 		String data = readFully(file);
 		data = handleIncludes(file, data, log);
 		JSONObject jcomp = new JSONObject(data);
-		if (!merging || mContext!=null) {
+		if (!merging || mContext==null) {
 			if (jcomp.has(CONTEXT))
-				mContext = Context.parse(jcomp.getJSONObject(CONTEXT));
+				mContext = Context.parse(jcomp.getJSONObject(CONTEXT), log);
 			else
 				// empty context
 				mContext = new Context();
-		} else if (jcomp.has(CONTEXT))
+		} else if (jcomp.has(CONTEXT)) {
 			// TODO merge context?!
-			log.logError("Ignoring duplicate context from "+file.getName());
-
+			//log.logError("Ignoring duplicate context from "+file.getName());
+			mContext.parse(jcomp.getJSONObject(CONTEXT), merging, log);
+		}
 		// TODO meta
 		if (!merging || mDefaultScene==null) {
 			mDefaultScene = (jcomp.has(DEFAULT_SCENE) ? jcomp.getString(DEFAULT_SCENE) : null);
