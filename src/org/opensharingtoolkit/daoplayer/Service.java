@@ -552,6 +552,9 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			return;
 		}
 		mUserModel.setContext(comp.getContext());
+		String res = mScriptEngine.runScript(comp.getContext().getInitScript());
+		if (res!="OK")
+			log("problem initialising context; got "+null);
 		String defaultScene = mScene = comp.getDefaultScene();
 		if (defaultScene!=null) {
 			setScene(defaultScene);

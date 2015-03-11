@@ -1,17 +1,27 @@
 {
   "meta": {
     "mimetype": "application/x-daoplayer-composition",
-    "version": 1
+    "version": 1,
+    "title": "context test"
   },
   "defaultScene": "context test 1",
-  "constants": {
-    "d1":"20"
-  },
   "context": {
     "waypoints": [
       {
         "name": "work",
         "lat": 52.9544603,
+        "lng": -1.1893014,
+        "origin": true
+      },
+      {
+        "name": "work2",
+        "lat": 52.9544603,
+        "lng": -1.0893014,
+        "origin": true
+      },
+      {
+        "name": "work3",
+        "lat": 52.8544603,
         "lng": -1.1893014,
         "origin": true
       }
@@ -21,14 +31,40 @@
   },
   "tracks": [
     {
-      "name": "track1",
+      "name": "1L1",
       "pauseIfSilent": false,
       "files": [
         { 
-          "path": "626898.mp3", 
+          "path": "1L1short.mp3", 
           "trackPos": 0,
           "filePos": 0,
+          "length": 5,
           "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "1L2a",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "1L2ashort.mp3", 
+          "trackPos": 0,
+          "filePos": 0,
+          "length": 5,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "1Accent2",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "1Accent2.mp3", 
+          "trackPos": 0,
+          "filePos": 0,
+          "repeats": 1
         }
       ]
     }
@@ -38,11 +74,16 @@
       "name": "context test 1",
       "partial": false,
       "updatePeriod":1.0,
-      "onLoad":"daoplayer.log('hello');",
+      "description": "adjust volume by distance to defined waypoints",
       "tracks": [
         {
-          "name": "track1",
-          "volume": 1,
+          "name": "1L1",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['work'].distance,[30,1,100,0],0)]",
+          "pos": 0
+        },
+        {
+          "name": "1L2a",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['work2'].distance,[30,1,100,0],0)]",
           "pos": 0
         }
       ]

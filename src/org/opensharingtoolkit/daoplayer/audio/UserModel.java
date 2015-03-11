@@ -22,6 +22,7 @@ public class UserModel {
 		private double lng;
 		private double accuracy;
 		private long time;
+		private double x, y;
 		
 		private double distance1;
 		//private double distanceN;
@@ -61,7 +62,12 @@ public class UserModel {
 	
 	public void setLocation(double lat, double lng, double accuracy, long time) {
 		Location loc = new Location(lat, lng, accuracy, time);
-		// TODO log?
+		if (mContext!=null) {
+			loc.x = mContext.lng2x(lng);
+			loc.y = mContext.lat2y(lat);
+		}
+		else
+			Log.e(TAG,"cannot map location to x,y - no user context");
 		if (mLocations.size()>0) {
 			Location lastLoc = mLocations.get(0);
 			loc.distance1 = Utils.distance(lat, lng, lastLoc.lat, lastLoc.lng);
@@ -196,14 +202,22 @@ public class UserModel {
 			sb.append(wi.waypoint.getLat());
 			sb.append(", lng: ");
 			sb.append(wi.waypoint.getLng());
-			sb.append(", distance: ");
-			sb.append(wi.distance);
+			sb.append(", x: ");
+			sb.append(wi.waypoint.getX());
+			sb.append(", y: ");
+			sb.append(wi.waypoint.getY());
 			sb.append(", near: ");
-			sb.append(wi.near ? "true" : "false");
-			sb.append(", timeAtCurrentSpeed: ");
-			sb.append(wi.timeAtCurrentSpeed);
-			sb.append(", timeAtWalkingSpeed: ");
-			sb.append(wi.timeAtWalkingSpeed);
+			if (wi.valid) {
+				sb.append(wi.near ? "true" : "false");
+				sb.append(", distance: ");
+				sb.append(wi.distance);
+				sb.append(", timeAtCurrentSpeed: ");
+				sb.append(wi.timeAtCurrentSpeed);
+				sb.append(", timeAtWalkingSpeed: ");
+				sb.append(wi.timeAtWalkingSpeed);
+			}
+			else
+				sb.append("false");
 			if (wi.waypoint==mLastWaypoint) {
 				sb.append(", nearTime: ");
 				sb.append(mLastWaypointNearTime/1000);
@@ -248,12 +262,14 @@ public class UserModel {
 				wi.timeAtCurrentSpeed = wi.distance / currentSpeed;
 			if (walkingSpeed>=0)
 				wi.timeAtWalkingSpeed = wi.distance / walkingSpeed;
+			wi.valid = true;
 		}		
 	}
 	static class WaypointInfo {
 		private Context.Waypoint waypoint;
-		private double distance;
 		private boolean near = false;
+		private boolean valid = false;
+		private double distance;
 		//private Vector<String> route;
 		private double timeAtCurrentSpeed;
 		private double timeAtWalkingSpeed;

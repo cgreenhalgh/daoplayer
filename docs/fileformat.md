@@ -93,7 +93,7 @@ Waypoint (todo) is object with:
 - `lat` - latitude, degrees (float)
 - `lng` - longitude, degrees (float)
 - `nearDistance` - how far from waypoint is 'near', metres (float, default provisionally 15m, may change)
-- `origin` - whether to use waypoint as coordinate system origin, boolean (default false)
+- `origin` - whether to use waypoint as coordinate system origin, boolean (default false) (an arbitrary waypoint is used as origin if none is specified)
 - `title` - descriptive, for human consumption only (string, optional)
 - `description` - descriptive, for human consumption only (string, optional)
 (future: polyline or other geometry)
@@ -136,7 +136,9 @@ Note that volume and pos functions are always called on scene load, but only cal
 - `lat`: latitude, degrees (float)
 - `lng`: longitude, degrees (float)
 - `age`: age of position, i.e. time since it was received, in seconds (float)
-- `accuracy`: estimated accuracy of position (float, metres)
+- `accuracy`: estimated accuracy of position (float, metres) (68% radius, i.e. 1 SD)
+- `x`: x position relative to origin, metres (float)
+- `y`: y position relative to origin, metres (float)
 
 `sceneTime`: time in seconds since this scene was loaded (float).
 
@@ -158,12 +160,13 @@ Note that volume and pos functions are always called on scene load, but only cal
 `waypoints` (todo): map from local name of waypoint to objects, each with:
 - `name` - global name of waypoint -->
 - `lat`, `lng` of waypoint - see waypoint
-- `distance` - direct distance from waypoint, metres (float)
+- `x`, `y` of waypoint, metres, relative to origin waypoint (if defined)
+- `distance` - direct distance from waypoint, metres (float), based on last known location (undefined if no location)
 - `near` - near to waypoint? (boolean), i.e. accordinng to waypoint `nearDistance`
 (future: `routeDistance`, `routeNear`)
 - `route` (todo) - array of intermediate waypoint local names on shortest path to waypoint
-- `timeAtCurrentSpeed` - time (seconds) to waypoint along route at current speed
-- `timeAtWalkingSpeed` - time (seconds) to waypoint along route at typical speed
+- `timeAtCurrentSpeed` - time (seconds) to waypoint along route at current speed, based on last known location (undefined if no location)
+- `timeAtWalkingSpeed` - time (seconds) to waypoint along route at typical speed, based on last known location (undefined if no location)
 
 and in the last waypoint only: 
 - `nearTime` - time while (still) near, 

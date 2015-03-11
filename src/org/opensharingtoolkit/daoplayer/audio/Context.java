@@ -12,6 +12,7 @@ import java.util.Vector;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONStringer;
 import org.opensharingtoolkit.daoplayer.ILog;
 
 import android.util.Log;
@@ -43,6 +44,9 @@ public class Context {
 	private Map<String,String> mWaypointAliases = new HashMap<String,String>();
 	private Vector<Route> mRoutes = new Vector<Route>();
 	
+	private double mRefX, mRefY;
+	private double mRefMetre=1;
+	
 	public static class Waypoint {
 		private String name;
 		private double lat;
@@ -50,6 +54,8 @@ public class Context {
 		private double nearDistance;
 		private HashSet<String> aliases;
 		private boolean origin;
+		private double x;
+		private double y;
 		/**
 		 * @param name
 		 * @param lat
@@ -102,6 +108,30 @@ public class Context {
 		 */
 		public boolean isOrigin() {
 			return origin;
+		}
+		/**
+		 * @return the x
+		 */
+		public double getX() {
+			return x;
+		}
+		/**
+		 * @return the y
+		 */
+		public double getY() {
+			return y;
+		}
+		/**
+		 * @param x the x to set
+		 */
+		void setX(double x) {
+			this.x = x;
+		}
+		/**
+		 * @param y the y to set
+		 */
+		void setY(double y) {
+			this.y = y;
 		}
 		
 	}
@@ -220,6 +250,36 @@ public class Context {
 				context.mRoutes.add(route);
 			}
 		}
+		fixOrigin();
+	}
+	/** sort out x, y, ref */
+	private void fixOrigin() {
+		Waypoint origin = null;
+		for (Waypoint w : mWaypoints.values()) {
+			if (w.isOrigin())
+				origin = w;
+		}
+		if (origin==null && mWaypoints.size()>0)
+			origin = mWaypoints.values().iterator().next();
+		if (origin!=null) {
+			mRefX = Utils.mercX(origin.getLng());
+			mRefY = Utils.mercY(origin.getLat());
+			mRefMetre = Utils.mercMetre(origin.getLat(), origin.getLng());
+		}
+		else {
+			mRefX = mRefY = 0;
+			mRefMetre = 1;
+		}
+		for (Waypoint w : mWaypoints.values()) {
+			w.setX(lng2x(w.getLng()));
+			w.setY(lat2y(w.getLat()));
+		}
+	}
+	public double lng2x(double lng) {
+		return (Utils.mercX(lng)-mRefX)/mRefMetre;
+	}
+	public double lat2y(double lat) {
+		return (Utils.mercY(lat)-mRefY)/mRefMetre;
 	}
 	public Map<String,Waypoint> getWaypoints() {
 		return mWaypoints;
@@ -233,5 +293,35 @@ public class Context {
 			}			
 		}
 		return waypoint;
+	}
+	/** generate javascript to initialise context in script engine */
+	public String getInitScript() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("window.allWaypoints=");
+		JSONStringer js = new JSONStringer();
+		try {
+			js.object();
+			for(Map.Entry<String, Waypoint> entry: mWaypoints.entrySet()) {
+				js.key(entry.getKey());
+				js.object();
+				js.key("name");
+				Waypoint wi = entry.getValue();
+				js.value(wi.getName());
+				js.key("lat");
+				js.value(wi.getLat());
+				js.key("lng");
+				js.value(wi.getLng());
+				js.key("x");
+				js.value(wi.getX());
+				js.key("y");
+				js.value(wi.getY());
+				js.endObject();
+			}
+			js.endObject();
+		} catch (JSONException e) {
+			Log.e(TAG,"error stringing waypoint: "+e, e);
+		}
+		sb.append(js.toString());
+		return sb.toString();
 	}
 }
