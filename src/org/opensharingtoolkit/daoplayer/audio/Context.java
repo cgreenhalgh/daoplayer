@@ -31,6 +31,7 @@ public class Context {
 	private static final String NAME = "name";
 	private static final String NEAR_DISTANCE = "nearDistance";
 	private static final String ORIGIN = "origin";
+	private static final String REQUIRED_ACCURACY = "requiredAccuracy";
 	private static final String ROUTES = "routes";
 	private static final String TO = "to";
 	//private static final String VIA = "via";
@@ -43,7 +44,7 @@ public class Context {
 	private Map<String,Waypoint> mWaypoints = new HashMap<String,Waypoint>();
 	private Map<String,String> mWaypointAliases = new HashMap<String,String>();
 	private Vector<Route> mRoutes = new Vector<Route>();
-	
+	private double mRequiredAccuracy = Double.MAX_VALUE;
 	private double mRefX, mRefY;
 	private double mRefMetre=1;
 	
@@ -198,6 +199,8 @@ public class Context {
 	}
 	public void parse(JSONObject jcontext, boolean merging, ILog log) throws JSONException {
 		Context context = this;
+		if (jcontext.has(REQUIRED_ACCURACY) && (!merging || context.mRequiredAccuracy==Double.MAX_VALUE))
+			context.mRequiredAccuracy = jcontext.getDouble(REQUIRED_ACCURACY);
 		if (jcontext.has(WAYPOINTS)) {
 			JSONArray jwaypoints = jcontext.getJSONArray(WAYPOINTS);
 			for (int i=0; i<jwaypoints.length(); i++) {
@@ -293,6 +296,9 @@ public class Context {
 			}			
 		}
 		return waypoint;
+	}
+	public double getRequiredAccuracy() {
+		return mRequiredAccuracy;
 	}
 	/** generate javascript to initialise context in script engine */
 	public String getInitScript() {

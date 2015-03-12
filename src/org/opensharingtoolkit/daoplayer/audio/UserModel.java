@@ -91,6 +91,8 @@ public class UserModel {
 		long elapsed = now-lastLoc.time;
 		if (elapsed > MAX_GPS_INTERVAL || lastLoc.elapsed1==0 || lastLoc.elapsed1 > MAX_GPS_INTERVAL)
 			return Activity.NOGPS;
+		if (lastLoc.accuracy>mContext.getRequiredAccuracy())
+			return Activity.NOGPS;	
 		if (lastLoc.distance1 <= MAX_STATIONARY_SPEED)
 			return Activity.STATIONARY;
 		return Activity.WALKING;
@@ -247,8 +249,8 @@ public class UserModel {
 		}
 	}
 	private void updateWaypointInfos() {
-		if (mLocations.size()==0)
-			return;
+		if (mLocations.size()==0 || mLocations.get(0).accuracy>mContext.getRequiredAccuracy())
+			return;	
 		// last known?!
 		Location lastLoc = mLocations.get(0);
 		double currentSpeed = getCurrentSpeed();

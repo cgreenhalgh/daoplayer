@@ -86,6 +86,7 @@ Object with:
 - `routes` - array of routes (see below)
 - `title` - descriptive, for human consumption only (string, optional)
 - `description` - descriptive, for human consumption only (string, optional)
+- `requiredAccuracy` - location accuracy required for GPS updates to be used (metres, default unlimited)
 
 Waypoint (todo) is object with:
 - `name` - name of waypoint (global name), used to refer to the waypoint within the composition
