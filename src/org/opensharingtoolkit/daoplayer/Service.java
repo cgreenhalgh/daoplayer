@@ -278,6 +278,11 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 					synchronized (Service.this) {
 						mWebViewLoaded = true;
 						if (mSetSceneOnLoad!=null) {
+							if (mComposition!=null && mComposition.getContext()!=null) {
+								String res = mScriptEngine.runScript(mComposition.getContext().getInitScript());
+								if (res!="OK")
+									log("problem initialising context; got "+null);
+							}
 							setScene(mSetSceneOnLoad);
 							mSetSceneOnLoad = null;
 						}
@@ -440,8 +445,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 					mAudioEngine.stop();
 				mAudioEngine.reset();
 				mRecorder.startNewFile("RELOAD", null);
-				loadComposition();
 				mAudioEngine.init(this);
+				loadComposition();
 				if (start)
 					mAudioEngine.start(this);
 			}
@@ -552,9 +557,11 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			return;
 		}
 		mUserModel.setContext(comp.getContext());
-		String res = mScriptEngine.runScript(comp.getContext().getInitScript());
-		if (res!="OK")
-			log("problem initialising context; got "+null);
+		if (mWebViewLoaded && comp.getContext()!=null) {
+			String res = mScriptEngine.runScript(mComposition.getContext().getInitScript());
+			if (res!="OK")
+				log("problem initialising context; got "+null);
+		}
 		String defaultScene = mScene = comp.getDefaultScene();
 		if (defaultScene!=null) {
 			setScene(defaultScene);

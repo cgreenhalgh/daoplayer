@@ -328,6 +328,7 @@ public class Context {
 			Log.e(TAG,"error stringing waypoint: "+e, e);
 		}
 		sb.append(js.toString());
+		sb.append(";return true;");
 		return sb.toString();
 	}
 }

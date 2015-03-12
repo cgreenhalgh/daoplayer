@@ -239,12 +239,14 @@ public class Composition {
 					atrack.setMaxDuration(mEngine.secondsToSamples(jtrack.getDouble(MAX_DURATION)));
 				else
 					atrack.setMaxDuration(maxDuration);
-				Log.d(TAG,"Create SectionSelector for "+atrack.getName());
-				SectionSelector selector = new SectionSelector(atrack, atrack.getMaxDuration(), mEngine.getLog());
-				selector.prepare();
-				// debug
-				selector.dump(androidContext);
-				mSectionSelectors.put(atrack.getName(), selector);
+				if (atrack.getSections()!=null && atrack.getSections().size()>0) {
+					Log.d(TAG,"Create SectionSelector for "+atrack.getName());
+					SectionSelector selector = new SectionSelector(atrack, atrack.getMaxDuration(), mEngine.getLog());
+					selector.prepare();
+					// debug
+					selector.dump(androidContext);
+					mSectionSelectors.put(atrack.getName(), selector);
+				}
 			}
 		}
 		if (jcomp.has(SCENES)) {
