@@ -137,6 +137,8 @@ Note that volume and pos functions are always called on scene load, but only cal
 - `accuracy`: estimated accuracy of position (float, metres) (68% radius, i.e. 1 SD)
 - `x`: x position relative to origin, metres (float)
 - `y`: y position relative to origin, metres (float)
+- `xspeed`: x speed, metres per second (float)
+- `yspeed`: x speed, metres per second (float)
 (current not supported: `lat`, `lng`, `age`)
 
 `sceneTime`: time in seconds since this scene was loaded (float).
@@ -161,11 +163,12 @@ Note that volume and pos functions are always called on scene load, but only cal
 - `lat`, `lng` of waypoint - see waypoint
 - `x`, `y` of waypoint, metres, relative to origin waypoint (if defined)
 - `distance` - direct distance from waypoint, metres (float), based on last known location (undefined if no location)
+- `relativeBearing` - direction of waypoint relative to current direction of movement of user, degrees clockwise (undefined if no location/velocity)
 - `near` - near to waypoint? (boolean), i.e. accordinng to waypoint `nearDistance`
 (future: `routeDistance`, `routeNear`)
 - `route` (todo) - array of intermediate waypoint local names on shortest path to waypoint
-- `timeAtCurrentSpeed` - time (seconds) to waypoint along route at current speed, based on last known location (undefined if no location)
-- `timeAtWalkingSpeed` - time (seconds) to waypoint along route at typical speed, based on last known location (undefined if no location)
+- `timeAtCurrentSpeed` - time (seconds) to waypoint along route at current speed if approached directly, based on last known location (undefined if no location)
+- `timeAtWalkingSpeed` - time (seconds) to waypoint along route at typical speed if approached directly, based on last known location (undefined if no location)
 
 and in the last waypoint only: 
 - `nearTime` - time while (still) near, 

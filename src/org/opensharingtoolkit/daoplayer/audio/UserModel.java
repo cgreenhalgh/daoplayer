@@ -80,6 +80,7 @@ public class UserModel {
 	private long mLastElapsedtime;
 	private KalmanFilter mKalmanFilter = new KalmanFilter();
 	private double mEstimatedX, mEstimatedY, mEstimatedAccuracy, mEstimatedSpeedAccuracy;
+	private double mEstimatedXSpeed, mEstimatedYSpeed;
 	
 	public void setLocation(double lat, double lng, double accuracy, long time, long elapsedtime) {
 		mKalmanFilter.predict();
@@ -112,7 +113,9 @@ public class UserModel {
 		Log.d(TAG,"Kalman: "+state.get(0)+","+state.get(1)+" v="+state.get(2)+","+state.get(3)+", cov="+cov.get(0,0)+","+cov.get(1,1)+","+cov.get(2,2)+","+cov.get(3,3));
 		
 		// current speed
-		mEstimatedCurrentSpeed = Math.sqrt(state.get(KalmanFilter.STATE_VX)*state.get(KalmanFilter.STATE_VX)+state.get(KalmanFilter.STATE_VY)*state.get(KalmanFilter.STATE_VY));
+		mEstimatedXSpeed = state.get(KalmanFilter.STATE_VX);
+		mEstimatedYSpeed = state.get(KalmanFilter.STATE_VY);
+		mEstimatedCurrentSpeed = Math.sqrt(mEstimatedXSpeed*mEstimatedXSpeed+mEstimatedYSpeed*mEstimatedYSpeed);
 		/*
 		// TODO better :-) e.g. longer history
 		if (mLocations.size()>0) {
@@ -205,6 +208,10 @@ public class UserModel {
 			sb.append(mEstimatedX);
 			sb.append(",y:");
 			sb.append(mEstimatedY);
+			sb.append(",xspeed:");
+			sb.append(mEstimatedXSpeed);
+			sb.append(",yspeed:");
+			sb.append(mEstimatedYSpeed);
 			sb.append(",accuracy:");
 			sb.append(mEstimatedAccuracy);
 			sb.append("}");
@@ -297,6 +304,8 @@ public class UserModel {
 				sb.append(wi.near ? "true" : "false");
 				sb.append(", distance: ");
 				sb.append(wi.distance);
+				sb.append(", relativeBearing: ");
+				sb.append(wi.relativeBearing);
 				sb.append(", timeAtCurrentSpeed: ");
 				sb.append(wi.timeAtCurrentSpeed);
 				sb.append(", timeAtWalkingSpeed: ");
@@ -345,9 +354,10 @@ public class UserModel {
 			for(Map.Entry<String, WaypointInfo> entry: mWaypointInfos.entrySet()) {
 				WaypointInfo wi = entry.getValue();
 				// TODO route and distance along route!
-				double dx = mEstimatedX-wi.waypoint.getX();
-				double dy = mEstimatedY-wi.waypoint.getY();
+				double dx = wi.waypoint.getX()-mEstimatedX;
+				double dy = wi.waypoint.getY()-mEstimatedY;
 				wi.distance = Math.sqrt(dx*dx+dy*dy);
+				wi.relativeBearing = Math.atan2(-mEstimatedYSpeed*dx+mEstimatedXSpeed*dy, mEstimatedXSpeed*dx+mEstimatedYSpeed*dy)*180/Math.PI;
 				wi.near = wi.distance < wi.waypoint.getNearDistance();
 				if (currentSpeed>=0)
 					wi.timeAtCurrentSpeed = wi.distance / currentSpeed;
@@ -362,6 +372,7 @@ public class UserModel {
 		private boolean near = false;
 		private boolean valid = false;
 		private double distance;
+		private double relativeBearing;
 		//private Vector<String> route;
 		private double timeAtCurrentSpeed;
 		private double timeAtWalkingSpeed;
