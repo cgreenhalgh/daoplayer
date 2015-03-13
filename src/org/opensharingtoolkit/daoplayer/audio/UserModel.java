@@ -49,14 +49,22 @@ public class UserModel {
 	}
 	private static final int MAX_LOCATION_HISTORY_SIZE = 100;
 	private static final long MAX_GPS_INTERVAL = 2000;
-	private static final double MAX_STATIONARY_SPEED = 0.5; // m/s
+	private static final double MAX_STATIONARY_SPEED = 0.3; // m/s
+	private static final double MIN_WALKING_SPEED = 0.9; // m/s
 	private static final double DEFAULT_WALKING_SPEED = 1.5; // m/s
+	/** work in progress. Not sure if this is useful. Depends a lot on the uncertainty
+	 * in the kalman model, but also on the gps accuracy. With acceleration 2m/s in model
+	 * I see 2.7 as very good (with <4m accuracy), often 3.7 (with 10m accuracy),
+	 * 4.3 (w 15m), 5 (w 25m) (w 0.3m drift).
+	 * Even w 10m accuracy (3.7-4 speed acc) i often see 0.3m/s+ drift, up 1.1m/s
+	 */
+	private static final double MAX_SPEED_INACCURACY = 6; 
 	private static final String TAG = "usermodel";
 	private static final int MIN_UPDATE_INTERVAL = 900;
 	/* 50 m ?! */
 	private static final double MAX_REQUIRED_ACCURACY = 50;
 	
-	public static enum Activity { NOGPS, STATIONARY, WALKING };
+	public static enum Activity { NOGPS, STATIONARY, WALKING, UNCERTAIN };
 
 	//private Location mLastLocation;
 	private Vector<Location> mLocations = new Vector<Location>();
@@ -118,7 +126,6 @@ public class UserModel {
 		*/
 		// TODO walking speed
 		// activity
-		// TODO better :-) e.g. longer history
 		mEstimatedSpeedAccuracy = Math.sqrt(cov.get(2,2)+cov.get(3,3));
 
 		mEstimatedAccuracy = Math.sqrt(cov.get(0,0)+cov.get(1,1));
@@ -127,8 +134,12 @@ public class UserModel {
 		
 		if (mEstimatedAccuracy > mContext.getRequiredAccuracy() || mEstimatedAccuracy>MAX_REQUIRED_ACCURACY)
 			mEstimatedActivity = Activity.NOGPS;
+		else if (mEstimatedSpeedAccuracy > MAX_SPEED_INACCURACY)
+			mEstimatedActivity = Activity.UNCERTAIN;
 		else if (mEstimatedCurrentSpeed<=MAX_STATIONARY_SPEED)
 			mEstimatedActivity = Activity.STATIONARY;
+		else if (mEstimatedCurrentSpeed<=MIN_WALKING_SPEED)
+			mEstimatedActivity = Activity.UNCERTAIN;
 		else
 			mEstimatedActivity = Activity.WALKING;
 
@@ -185,12 +196,30 @@ public class UserModel {
 		mLocalWaypoints = localWaypoints;
 		Activity activity = getActivity();
 		double currentSpeed = getCurrentSpeed();
+		double currentSpeedAccuracy = getCurrentSpeedAccuracy();
 		double walkingSpeed = getWalkingSpeed();
+		// TODO position
+		sb.append("var position=");
+		if (mEstimatedAccuracy < mContext.getRequiredAccuracy() && mEstimatedAccuracy < MAX_REQUIRED_ACCURACY) {
+			sb.append("{x:");
+			sb.append(mEstimatedX);
+			sb.append(",y:");
+			sb.append(mEstimatedY);
+			sb.append(",accuracy:");
+			sb.append(mEstimatedAccuracy);
+			sb.append("}");
+		}
+		else
+			sb.append("null");
+		sb.append(";");
 		sb.append("var activity='");
 		sb.append(activity.name());
 		sb.append("';");
 		sb.append("var currentSpeed=");
 		sb.append(currentSpeed);
+		sb.append(";");
+		sb.append("var currentSpeedAccuracy=");
+		sb.append(currentSpeedAccuracy);
 		sb.append(";");
 		sb.append("var walkingSpeed=");
 		sb.append(walkingSpeed);

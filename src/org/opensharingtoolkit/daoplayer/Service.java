@@ -763,6 +763,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		}
 	}
 	private ScriptEngine mScriptEngine;
+	/* now in usermodel
 	private String getPosition() {
 		StringBuilder sb = new StringBuilder();
 		if (mLastTime==0)
@@ -780,6 +781,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		}
 		return sb.toString();
 	}
+	*/
 	private synchronized void setScene(String scene) {
 		if (mWebViewLoaded) {
 			if (started) {
@@ -788,7 +790,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 					Long now = System.currentTimeMillis();
 					mUserModel.updateNoLocation(now, (now-mLastTime)+mLastElapsedtime);
 				}
-				mComposition.setScene(scene, getPosition(), mScriptEngine);
+				mComposition.setScene(scene, mScriptEngine);
 				setSceneUpdateTimer(mComposition.getSceneUpdateDelay(scene));
 			}
 			else 
@@ -806,7 +808,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				Long now = System.currentTimeMillis();
 				mUserModel.updateNoLocation(now, (now-mLastTime)+mLastElapsedtime);
 			}
-			mComposition.updateScene(mScene, getPosition(), mScriptEngine);
+			mComposition.updateScene(mScene, mScriptEngine);
 			setSceneUpdateTimer(mComposition.getSceneUpdateDelay(mScene));
 		}
 		else

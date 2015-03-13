@@ -399,7 +399,7 @@ public class Composition {
 		int [] align;
 	}
 	/** value in map is either null, Float (single volume) or float[] (array of args for pwl) */
-	private Map<Integer,DynInfo> getDynInfo(IScriptEngine scriptEngine, DynScene scene, boolean loadFlag, String position, long time) {
+	private Map<Integer,DynInfo> getDynInfo(IScriptEngine scriptEngine, DynScene scene, boolean loadFlag, long time) {
 		AudioEngine.StateRec srec = mEngine.getNextState();
 		AState astate = (srec!=null ? srec.getState() : null);
 		JSONObject loginfo = new JSONObject();
@@ -411,8 +411,6 @@ public class Composition {
 		StringBuilder sb = new StringBuilder();
 		// "built-in"
 		sb.append("var pwl=window.pwl;\n");
-		sb.append("var position=");
-		sb.append(position);
 		sb.append(";\n");
 		sb.append("var distance=function(coord1,coord2){return window.distance(coord1,coord2 ? coord2 : position);};\n");
 		sb.append("var sceneTime=");
@@ -717,7 +715,7 @@ public class Composition {
 			fval = MAX_VOLUME;
 		return fval;
 	}
-	public boolean setScene(String name, String position, IScriptEngine scriptEngine) {
+	public boolean setScene(String name, IScriptEngine scriptEngine) {
 		DynScene scene = mScenes.get(name);
 		if (scene==null) {
 			mEngine.getLog().logError("setScene unknown "+name);
@@ -728,7 +726,7 @@ public class Composition {
 		if (mFirstSceneLoadTime==0)
 			mFirstSceneLoadTime = mLastSceneLoadTime;
 		mLastSceneUpdateTime = mLastSceneLoadTime;
-		Map<Integer,DynInfo> dynInfos = getDynInfo(scriptEngine, scene, true, position, mLastSceneLoadTime);
+		Map<Integer,DynInfo> dynInfos = getDynInfo(scriptEngine, scene, true, mLastSceneLoadTime);
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			DynInfo di = dynInfos.get(tr.getTrack().getId());
 			if (di!=null && di.volume!=null) {
@@ -751,7 +749,7 @@ public class Composition {
 		mEngine.setScene(ascene, true);
 		return true;
 	}
-	public boolean updateScene(String name, String position, IScriptEngine scriptEngine) {
+	public boolean updateScene(String name, IScriptEngine scriptEngine) {
 		DynScene scene = mScenes.get(name);
 		if (scene==null) {
 			Log.w(TAG, "updateScene unknown "+name);
@@ -760,7 +758,7 @@ public class Composition {
 		// partial
 		AScene ascene = mEngine.newAScene(true);
 		mLastSceneUpdateTime = System.currentTimeMillis();
-		Map<Integer,DynInfo> dynInfos = getDynInfo(scriptEngine, scene, false, position, mLastSceneUpdateTime);
+		Map<Integer,DynInfo> dynInfos = getDynInfo(scriptEngine, scene, false, mLastSceneUpdateTime);
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			DynInfo di = dynInfos.get(tr.getTrack().getId());
 			if (di!=null && di.volume!=null) {

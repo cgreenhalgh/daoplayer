@@ -134,12 +134,10 @@ Note that volume and pos functions are always called on scene load, but only cal
 ### Standard variables
 
 `position`: last known user position (WGS-84 coordinates, i.e. GPS). Nulll or undefined if there has been no position reported since the app started. Value is an object with fields:
-- `lat`: latitude, degrees (float)
-- `lng`: longitude, degrees (float)
-- `age`: age of position, i.e. time since it was received, in seconds (float)
 - `accuracy`: estimated accuracy of position (float, metres) (68% radius, i.e. 1 SD)
 - `x`: x position relative to origin, metres (float)
 - `y`: y position relative to origin, metres (float)
+(current not supported: `lat`, `lng`, `age`)
 
 `sceneTime`: time in seconds since this scene was loaded (float).
 
@@ -156,7 +154,7 @@ Note that volume and pos functions are always called on scene load, but only cal
 - `startTime`: scene time in seconds when current section started (float)
 - `endTime`: scene time in seconds when current section will end (float), if the section has a length/end time
 
-`activity`: one of `NOGPS`, `STATIONARY`, `WALKING` (future?: `RUNNING`, `FASTD`)
+`activity`: one of `NOGPS`, `STATIONARY`, `WALKING`, `UNCERTAIN` (future?: `RUNNING`, `FASTD`)
 
 `waypoints` (todo): map from local name of waypoint to objects, each with:
 - `name` - global name of waypoint -->
@@ -178,6 +176,7 @@ and in the last waypoint only:
 `nextWaypoint` (todo): name of closest/closest to route waypoint, which will be in `waypoints`
 
 `currentSpeed`: speed, metres/second, of current movement
+`currentSpeedAccuracy`: estimated accuracy (SD) of current speed, metres/section
 
 `walkingSpeed`: speed, metres/second, of estimated 'normal' walking pace for current user
 

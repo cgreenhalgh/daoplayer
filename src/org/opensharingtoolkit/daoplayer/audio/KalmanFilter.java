@@ -32,7 +32,7 @@ public class KalmanFilter {
 	private static final double DELTA_T = 1;
 	/** SD of process noise acceleration, i.e. "reasonable" acceleration in m/s*s.
 	 * At the start of the 100m Bolt manages 10 :-) */
-	private static final double ACCELERATION_UNCERTAINTY = 1;
+	private static final double ACCELERATION_UNCERTAINTY = 2;
 
     // kinematics description
     private DenseMatrix64F F;
@@ -67,8 +67,8 @@ public class KalmanFilter {
 		// process noise covariance - random acceleration in X & Y.
 		// constant over dt => dx of 0.5*a*dt*dt, dv of a*dt
 		double dstate [] = new double[4];
-		dstate[STATE_X] = dstate[STATE_Y] = 0.5*ACCELERATION_UNCERTAINTY*DELTA_T*DELTA_T;
-		dstate[STATE_VX] = dstate[STATE_VY] = ACCELERATION_UNCERTAINTY*DELTA_T;
+		dstate[STATE_X] = dstate[STATE_Y] = 0.5*ACCELERATION_UNCERTAINTY/Math.sqrt(2)*DELTA_T*DELTA_T;
+		dstate[STATE_VX] = dstate[STATE_VY] = ACCELERATION_UNCERTAINTY/Math.sqrt(2)*DELTA_T;
 		// covariance = dstate * dstate-1
 		// dimensions are independent
 		for (int i=0; i<STATE_N; i+=2)
@@ -94,8 +94,8 @@ public class KalmanFilter {
 		DenseMatrix64F x = new DenseMatrix64F(state);
 		// state estimate covariance matrix, P 
 		double statecovariance [][] = new double[STATE_N][STATE_N];
-		statecovariance[STATE_X][STATE_X] = statecovariance[STATE_Y][STATE_Y] = INITIAL_POSITION_UNCERTAINTY*INITIAL_POSITION_UNCERTAINTY;
-		statecovariance[STATE_VX][STATE_VX] = statecovariance[STATE_VY][STATE_VY] = INITIAL_SPEED_UNCERTAINTY*INITIAL_SPEED_UNCERTAINTY;
+		statecovariance[STATE_X][STATE_X] = statecovariance[STATE_Y][STATE_Y] = INITIAL_POSITION_UNCERTAINTY*INITIAL_POSITION_UNCERTAINTY/2;
+		statecovariance[STATE_VX][STATE_VX] = statecovariance[STATE_VY][STATE_VY] = INITIAL_SPEED_UNCERTAINTY*INITIAL_SPEED_UNCERTAINTY/2;
 		DenseMatrix64F P = new DenseMatrix64F(statecovariance);
 		
 		setState(x, P);
@@ -111,7 +111,7 @@ public class KalmanFilter {
 		double observationcovariance [][] = new double[OBSERVATION_N][OBSERVATION_N];
 		observationcovariance[OBSERVATION_X][OBSERVATION_X] =
 				observationcovariance[OBSERVATION_Y][OBSERVATION_Y] =
-				observationaccuracy*observationaccuracy;
+				observationaccuracy*observationaccuracy/2;
 		
 		DenseMatrix64F z = new DenseMatrix64F(observation);
 		DenseMatrix64F R = new DenseMatrix64F(observationcovariance);
