@@ -103,6 +103,9 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	HashMap<String, String> mSpeechParameters = new HashMap<String,String>();
 	private UserModel mUserModel = new UserModel();
 	protected Recorder mRecorder = new Recorder(this, "daoplayer.service");
+	private boolean mWebViewLoaded = false;
+	private String mSetSceneOnLoad = null;
+	private String mSetSceneOnStart = null;
 	
 	static enum LogEntryType { LOG_ERROR, LOG_INFO };
 	class LogEntry {
@@ -280,8 +283,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 						if (mSetSceneOnLoad!=null) {
 							if (mComposition!=null && mComposition.getContext()!=null) {
 								String res = mScriptEngine.runScript(mComposition.getContext().getInitScript());
-								if (res!="OK")
-									log("problem initialising context; got "+null);
+								if (!res.equals("OK"))
+									log("problem initialising context; got "+res);
 							}
 							setScene(mSetSceneOnLoad);
 							mSetSceneOnLoad = null;
@@ -339,8 +342,14 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			loadComposition();
 			mAudioEngine.init(this);
 		}
+		else if (mComposition!=null && mSetSceneOnStart!=null)  {
+			// avoid race
+			String scene = mSetSceneOnStart;
+			mSetSceneOnStart = null;
+			setScene(scene);
+		}
 		else if (mComposition!=null && mScene!=null)
-			updateScene();
+			setSceneUpdateTimer(mComposition.getSceneUpdateDelay(mScene));
 			
 		mAudioEngine.start(this);	
 		
@@ -445,8 +454,9 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 					mAudioEngine.stop();
 				mAudioEngine.reset();
 				mRecorder.startNewFile("RELOAD", null);
-				mAudioEngine.init(this);
 				loadComposition();
+				// warm up cache
+				mAudioEngine.init(this);
 				if (start)
 					mAudioEngine.start(this);
 			}
@@ -559,8 +569,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		mUserModel.setContext(comp.getContext());
 		if (mWebViewLoaded && comp.getContext()!=null) {
 			String res = mScriptEngine.runScript(mComposition.getContext().getInitScript());
-			if (res!="OK")
-				log("problem initialising context; got "+null);
+			if (!res.equals("OK"))
+				logError("problem initialising context; got "+res);
 		}
 		String defaultScene = mScene = comp.getDefaultScene();
 		if (defaultScene!=null) {
@@ -572,8 +582,6 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			logError("Read but no default scene");			
 		}
 	}
-	private boolean mWebViewLoaded = false;
-	private String mSetSceneOnLoad = null;
 	static class MBox {
 		private boolean mDone = false;
 		private Object mValue;
@@ -730,9 +738,9 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			sb.append("javascript:");
 			sb.append("daoplayer.returnString(");
 			sb.append(ix);
-			sb.append(",function(){");
+			sb.append(",(function(){");
 			sb.append(script);
-			sb.append("}());");
+			sb.append("})());");
 			mWebView.loadUrl(sb.toString());
 			Object result = mbox.get(SCRIPT_TIMEOUT);
 			removeMBox(ix);
@@ -767,9 +775,13 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	}
 	private synchronized void setScene(String scene) {
 		if (mWebViewLoaded) {
-			log("SET SCENE "+scene);
-			mComposition.setScene(scene, getPosition(), mScriptEngine);
-			setSceneUpdateTimer(mComposition.getSceneUpdateDelay(scene));
+			if (started) {
+				log("SET SCENE "+scene);
+				mComposition.setScene(scene, getPosition(), mScriptEngine);
+				setSceneUpdateTimer(mComposition.getSceneUpdateDelay(scene));
+			}
+			else 
+				mSetSceneOnStart = scene;
 		}
 		else
 			mSetSceneOnLoad = scene;
@@ -777,13 +789,13 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private synchronized void updateScene() {
 		if (mScene==null)
 			return;
-		if (mWebViewLoaded) {
+		if (mWebViewLoaded && started) {
 			log("UPDATE SCENE "+mScene);
 			mComposition.updateScene(mScene, getPosition(), mScriptEngine);
 			setSceneUpdateTimer(mComposition.getSceneUpdateDelay(mScene));
 		}
 		else
-			Log.w(TAG,"dropped updateScene("+mScene+") due to web view not loaded");
+			Log.w(TAG,"dropped updateScene("+mScene+") due to web view not loaded/started");
 	}
 	private void setSceneUpdateTimer(Long delay) {
 		if (delay==null || mScene==null) 
