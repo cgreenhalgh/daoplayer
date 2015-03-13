@@ -21,12 +21,14 @@ import org.opensharingtoolkit.daoplayer.audio.Context;
 import org.opensharingtoolkit.daoplayer.audio.UserModel;
 import org.opensharingtoolkit.daoplayer.audio.Context.Waypoint;
 import org.opensharingtoolkit.daoplayer.audio.Utils;
+import org.opensharingtoolkit.daoplayer.ILog;
 
 /** gps / usermodel / filter test */
 public class TestFilter {
 	static final String TAG = "test-filter";
 	static private SimpleDateFormat rfcdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", new Locale("","",""));
-
+	static public final long NANOS_PER_MILLI = 1000000;
+	
 	public static void main(String args[]) {
 		if (args.length!=3) {
 			System.err.println("Usage: <composition.json> <logfile.log> <outfile.json>");
@@ -37,7 +39,7 @@ public class TestFilter {
 		try {
 			JSONObject jcomp = new JSONObject(composition);
 			if (jcomp.has("context")) {
-				context = Context.parse(jcomp.getJSONObject("context"));
+				context = Context.parse(jcomp.getJSONObject("context"), new ILog());
 			}
 		}
 		catch (Exception e) {
@@ -111,6 +113,8 @@ public class TestFilter {
 			// read log entries
 			jout.key("locations");
 			jout.array();
+			long lastElapsed = 0;
+			long lastTime = 0;
 			for (String line : lines) {
 				if (line.length()==0)
 					continue;
@@ -118,19 +122,36 @@ public class TestFilter {
 					JSONObject rec = new JSONObject(line);
 					String event = rec.has("event") ? rec.getString("event") : null;
 					Date date = rec.has("time") ? new Date(rec.getLong("time")) : (rec.has("datetime") ? rfcdf.parse(rec.getString("datetime")) : null);
-				    if ("on.location".equals(event)) {
+					Object oinfo = rec.has("info") ? rec.get("info"): null;
+				    if ("on.location".equals(event) && oinfo instanceof JSONObject) {
+				    	JSONObject info = (JSONObject)oinfo;
 				        // lng, lat, accuracy
 				        // mercator projection
-				    	double lat = rec.getJSONObject("info").getDouble("lat");
-				    	double lng = rec.getJSONObject("info").getDouble("lng");
-				    	double accuracy = rec.getJSONObject("info").getDouble("accuracy");
+				    	double lat = info.getDouble("lat");
+				    	double lng = info.getDouble("lng");
+				    	double accuracy = info.getDouble("accuracy");
+						long elapsedtime = info.has("elapsedRealtimeNanos") ? info.getLong("elapsedRealtimeNanos")/NANOS_PER_MILLI : 0;
 				        double x = (Utils.mercX(lng)-refX)/refMetre;
 				        double y = (Utils.mercY(lat)-refY)/refMetre;
+
+				        if (lastElapsed!=0 && elapsedtime>=lastElapsed+1500) {
+				        	int catchup = (int)((elapsedtime-lastElapsed-500)/1000);
+				        	System.out.println("Catch up "+catchup+" missing locations");
+				        	for (int i=0; i<catchup; i++) {
+				        		userModel.updateNoLocation(lastTime+1000*(i+1), lastElapsed+1000*(i+1));
+				        	}
+				        }
+				        lastTime = date.getTime();
+				        lastElapsed = elapsedtime;
 				        
-				        userModel.setLocation(lat, lng, accuracy, date.getTime());
-				        UserModel.Activity activity = userModel.getActivity(date.getTime());
+				        userModel.setLocation(lat, lng, accuracy, date.getTime(), elapsedtime);
+				        UserModel.Activity activity = userModel.getActivity();
 				        double currentSpeed = userModel.getCurrentSpeed();
 				        double walkingSpeed = userModel.getWalkingSpeed();
+				        double estimatedX = userModel.getX();
+				        double estimatedY = userModel.getY();
+				        double estimatedAccuracy = userModel.getAccuracy();
+				        double speedAccuracy = userModel.getCurrentSpeedAccuracy();
 				        
 				        jout.object();
 				        jout.key("time");
@@ -139,12 +160,20 @@ public class TestFilter {
 				        jout.value(lat);
 				        jout.key("lng");
 				        jout.value(lng);
-				        jout.key("accuracy");
+				        jout.key("rawaccuracy");
 				        jout.value(accuracy);
-				        jout.key("x");
+				        jout.key("rawx");
 				        jout.value(x);
-				        jout.key("y");
+				        jout.key("rawy");
 				        jout.value(y);
+				        jout.key("accuracy");
+				        jout.value(estimatedAccuracy);
+				        jout.key("x");
+				        jout.value(estimatedX);
+				        jout.key("y");
+				        jout.value(estimatedY);
+				        jout.key("currentSpeedAccuracy");
+				        jout.value(speedAccuracy);
 				        jout.key("activity");
 				        jout.value(activity.name());
 				        jout.key("currentSpeed");

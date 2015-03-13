@@ -83,9 +83,11 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	public static final String EXTRA_SCENE = "scene";
 	public static final String EXTRA_TIME = "time";
 	public static final String EXTRA_ACCURACY = "accuracy";
+	public static final String EXTRA_ELAPSEDTIME = "elapsedtime";
 	private static final String PREF_USEGPS = "pref_usegps";
 	private static final String PREF_ENABLESPEECH = "pref_enablespeech";
 	private static final double DEFAULT_SPEECH_VOLUME = 1;
+	public static final long NANOS_PER_MILLI = 1000000;
 	private AudioEngine mAudioEngine;
 	private boolean started = false;
 	private boolean logGps = false;
@@ -94,6 +96,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private WebView mWebView;
 	private double mLastLat, mLastLng, mLastAccuracy;
 	private long mLastTime;
+	private long mLastElapsedtime;
 	private boolean mGpsStarted = false;
 	private boolean mEnableSpeech = false;
 	private TextToSpeech mTextToSpeech = null;
@@ -517,7 +520,10 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			mLastLat = intent.getDoubleExtra(EXTRA_LAT, 0.0);
 			mLastLng = intent.getDoubleExtra(EXTRA_LNG, 0.0);
 			mLastAccuracy = intent.getDoubleExtra(EXTRA_ACCURACY, 0.0);
-			mLastTime = intent.getLongExtra(EXTRA_TIME, System.currentTimeMillis());
+			// defaults mainly for mock updates
+			long now = System.currentTimeMillis();
+			mLastElapsedtime = intent.getLongExtra(EXTRA_ELAPSEDTIME, (mLastTime>0 ? mLastElapsedtime+now-mLastTime : 0));
+			mLastTime = intent.getLongExtra(EXTRA_TIME, now);
 			Log.d(TAG,"Service setLatLng "+mLastLat+","+mLastLng+" acc="+mLastAccuracy+" at "+mLastTime);
 			if (logGps)
 				log("SET POSITION "+mLastLat+","+mLastLng+" acc="+mLastAccuracy+" at "+mLastTime);
@@ -527,6 +533,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				info.put("lng", mLastLng);
 				info.put("accuracy", mLastAccuracy);
 				info.put("time", mLastTime);
+				info.put("elapsedtime", mLastElapsedtime);
 				mRecorder.i("set.latlng", info);
 			}
 			catch (JSONException e) {
@@ -542,7 +549,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				sb.append("}");
 				mScriptEngine.runScript(sb.toString());
 			}*/
-			mUserModel.setLocation(mLastLat, mLastLng, mLastAccuracy, mLastTime);
+			mUserModel.setLocation(mLastLat, mLastLng, mLastAccuracy, mLastTime, mLastElapsedtime);
 			if (mComposition!=null) {
 				updateScene();
 			}
@@ -777,6 +784,10 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		if (mWebViewLoaded) {
 			if (started) {
 				log("SET SCENE "+scene);
+				if (mLastTime>0 && mUserModel!=null) {
+					Long now = System.currentTimeMillis();
+					mUserModel.updateNoLocation(now, (now-mLastTime)+mLastElapsedtime);
+				}
 				mComposition.setScene(scene, getPosition(), mScriptEngine);
 				setSceneUpdateTimer(mComposition.getSceneUpdateDelay(scene));
 			}
@@ -791,6 +802,10 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			return;
 		if (mWebViewLoaded && started) {
 			log("UPDATE SCENE "+mScene);
+			if (mLastTime>0 && mUserModel!=null) {
+				Long now = System.currentTimeMillis();
+				mUserModel.updateNoLocation(now, (now-mLastTime)+mLastElapsedtime);
+			}
 			mComposition.updateScene(mScene, getPosition(), mScriptEngine);
 			setSceneUpdateTimer(mComposition.getSceneUpdateDelay(mScene));
 		}
@@ -978,6 +993,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			i.putExtra(EXTRA_LNG, location.getLongitude());
 			i.putExtra(EXTRA_ACCURACY, (double)location.getAccuracy());
 			i.putExtra(EXTRA_TIME, location.getTime());
+			i.putExtra(EXTRA_ELAPSEDTIME, (location.getElapsedRealtimeNanos()/NANOS_PER_MILLI));
 			i.setClass(getApplicationContext(), Service.class);
 			startService(i);
 		}

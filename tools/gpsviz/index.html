@@ -6,14 +6,22 @@
 .chart rect {
   fill: steelblue;
 }
+.chart .rawxline {
+  stroke: #008;
+}
 .chart .xline {
-  stroke: blue;
+  stroke: #00f;
+  opacity: 0.5;
 }
 .chart .waypointX {
   stroke: blue;
 }
+.chart .rawyline {
+  stroke: #800;
+}
 .chart .yline {
-  stroke: red;
+  stroke: #f00;
+  opacity: 0.5;
 }
 .chart .waypointY {
   stroke: red;
@@ -114,6 +122,20 @@ d3.json("out.json", function(error, data) {
     .enter().append("g")
       .classed('location',true)	
       .attr("transform", function(d, i) { return "translate(" + xScale((d.time-tref)/1000) + "," + 0 + ")"; });
+
+  bar.append("line")
+      .classed('rawyline',true)
+      .attr("x1", 0)
+      .attr("x2", 0)
+      .attr("y1", function(d) { return yScale(d.rawy-d.rawaccuracy); })
+      .attr("y2", function(d) { return yScale(d.rawy+d.rawaccuracy); });
+
+  bar.append("line")
+      .classed('rawxline',true)
+      .attr("x1", 0)
+      .attr("x2", 0)
+      .attr("y1", function(d) { return yScale(d.rawx-d.rawaccuracy); })
+      .attr("y2", function(d) { return yScale(d.rawx+d.rawaccuracy); });
 
   bar.append("line")
       .classed('yline',true)

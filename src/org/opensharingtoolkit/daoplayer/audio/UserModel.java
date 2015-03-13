@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
+import org.ejml.data.DenseMatrix64F;
 import org.opensharingtoolkit.daoplayer.audio.Context.Waypoint;
 
 import android.util.Log;
@@ -23,6 +24,7 @@ public class UserModel {
 		private double accuracy;
 		private long time;
 		private double x, y;
+		private long elapsedtime;
 		
 		private double distance1;
 		//private double distanceN;
@@ -33,13 +35,15 @@ public class UserModel {
 		 * @param lng
 		 * @param accuracy
 		 * @param time
+		 * @param elapsedtime 
 		 */
-		public Location(double lat, double lng, double accuracy, long time) {
+		public Location(double lat, double lng, double accuracy, long time, long elapsedtime) {
 			super();
 			this.lat = lat;
 			this.lng = lng;
 			this.accuracy = accuracy;
 			this.time = time;
+			this.elapsedtime = elapsedtime;
 		}
 		
 	}
@@ -48,6 +52,9 @@ public class UserModel {
 	private static final double MAX_STATIONARY_SPEED = 0.5; // m/s
 	private static final double DEFAULT_WALKING_SPEED = 1.5; // m/s
 	private static final String TAG = "usermodel";
+	private static final int MIN_UPDATE_INTERVAL = 900;
+	/* 50 m ?! */
+	private static final double MAX_REQUIRED_ACCURACY = 50;
 	
 	public static enum Activity { NOGPS, STATIONARY, WALKING };
 
@@ -59,61 +66,109 @@ public class UserModel {
 	private Context.Waypoint mLastWaypoint;
 	private long mLastWaypointCheckTime, mLastWaypointNearTime, mLastWaypointNotNearTime;
 	HashMap<String,WaypointInfo> mWaypointInfos = new HashMap<String,WaypointInfo>();
+	private Activity mEstimatedActivity = Activity.NOGPS;
+	private double mEstimatedWalkingSpeed = DEFAULT_WALKING_SPEED;
+	private double mEstimatedCurrentSpeed = 0;
+	private long mLastElapsedtime;
+	private KalmanFilter mKalmanFilter = new KalmanFilter();
+	private double mEstimatedX, mEstimatedY, mEstimatedAccuracy, mEstimatedSpeedAccuracy;
 	
-	public void setLocation(double lat, double lng, double accuracy, long time) {
-		Location loc = new Location(lat, lng, accuracy, time);
+	public void setLocation(double lat, double lng, double accuracy, long time, long elapsedtime) {
+		mKalmanFilter.predict();
+
+		Location loc = new Location(lat, lng, accuracy, time, elapsedtime);
 		if (mContext!=null) {
 			loc.x = mContext.lng2x(lng);
 			loc.y = mContext.lat2y(lat);
+			mKalmanFilter.update(loc.x, loc.y, accuracy);
 		}
 		else
-			Log.e(TAG,"cannot map location to x,y - no user context");
+			Log.e(TAG,"cannot map location to x,y - no user context");		
+		
 		if (mLocations.size()>0) {
 			Location lastLoc = mLocations.get(0);
 			loc.distance1 = Utils.distance(lat, lng, lastLoc.lat, lastLoc.lng);
-			loc.elapsed1 = time-lastLoc.time;
+			loc.elapsed1 = elapsedtime-lastLoc.elapsedtime;
 		}
 		mLocations.add(0, loc);
 		if (mLocations.size()>MAX_LOCATION_HISTORY_SIZE)
 			mLocations.remove(mLocations.size()-1);
-		updateWaypointInfos();
+		updateEstimates(time, elapsedtime);
 	}
-
-	public Activity getActivity() {
-		long now = System.currentTimeMillis();
-		return getActivity(now);
-	}
-	public Activity getActivity(long now) {
+	private void updateEstimates(long time, long elapsedtime) {
+		mLastElapsedtime = elapsedtime;
+		Log.d(TAG,"updateEstimates("+time+","+elapsedtime+")");
+		
+		DenseMatrix64F cov = mKalmanFilter.getCovariance();
+		DenseMatrix64F state = mKalmanFilter.getState();
+		Log.d(TAG,"Kalman: "+state.get(0)+","+state.get(1)+" v="+state.get(2)+","+state.get(3)+", cov="+cov.get(0,0)+","+cov.get(1,1)+","+cov.get(2,2)+","+cov.get(3,3));
+		
+		// current speed
+		mEstimatedCurrentSpeed = Math.sqrt(state.get(KalmanFilter.STATE_VX)*state.get(KalmanFilter.STATE_VX)+state.get(KalmanFilter.STATE_VY)*state.get(KalmanFilter.STATE_VY));
+		/*
 		// TODO better :-) e.g. longer history
-		if (mLocations.size()==0)
-			return Activity.NOGPS;
-		Location lastLoc = mLocations.get(0);
-		long elapsed = now-lastLoc.time;
-		if (elapsed > MAX_GPS_INTERVAL || lastLoc.elapsed1==0 || lastLoc.elapsed1 > MAX_GPS_INTERVAL)
-			return Activity.NOGPS;
-		if (lastLoc.accuracy>mContext.getRequiredAccuracy())
-			return Activity.NOGPS;	
-		if (lastLoc.distance1 <= MAX_STATIONARY_SPEED)
-			return Activity.STATIONARY;
-		return Activity.WALKING;
+		if (mLocations.size()>0) {
+			// last known?!
+			Location lastLoc = mLocations.get(0);
+			if (lastLoc.elapsed1==0 || lastLoc.elapsed1 > MAX_GPS_INTERVAL)
+				mEstimatedCurrentSpeed = 0;
+			else 
+				mEstimatedCurrentSpeed = lastLoc.distance1/lastLoc.elapsed1/1000;		
+		}
+		*/
+		// TODO walking speed
+		// activity
+		// TODO better :-) e.g. longer history
+		mEstimatedSpeedAccuracy = Math.sqrt(cov.get(2,2)+cov.get(3,3));
+
+		mEstimatedAccuracy = Math.sqrt(cov.get(0,0)+cov.get(1,1));
+		mEstimatedX = state.get(0);
+		mEstimatedY = state.get(1);
+		
+		if (mEstimatedAccuracy > mContext.getRequiredAccuracy() || mEstimatedAccuracy>MAX_REQUIRED_ACCURACY)
+			mEstimatedActivity = Activity.NOGPS;
+		else if (mEstimatedCurrentSpeed<=MAX_STATIONARY_SPEED)
+			mEstimatedActivity = Activity.STATIONARY;
+		else
+			mEstimatedActivity = Activity.WALKING;
+
+		updateWaypointInfos();		
+	}
+	/* note elapsedtime should be comparable with gps elapsedTimeNanos mapped to ms */
+	public void updateNoLocation(long time, long elapsedtime) {
+		if (elapsedtime<mLastElapsedtime+MIN_UPDATE_INTERVAL) {
+			Log.d(TAG,"Ignore updateNoLocation("+time+","+elapsedtime+"); last elapsedtime="+mLastElapsedtime);
+			return;
+		}
+		for (long t=mLastElapsedtime+1000; t<elapsedtime; t+=1000)
+			mKalmanFilter.predict();
+
+		updateEstimates(time, elapsedtime);		
+	}
+	
+	public Activity getActivity() {
+		return mEstimatedActivity;
 	}
 	
 	public double getWalkingSpeed() {
-		// TODO personalise for this user!
-		return DEFAULT_WALKING_SPEED;
+		return mEstimatedWalkingSpeed;
 	}
 	
 	public double getCurrentSpeed() {
-		// TODO better :-) e.g. longer history
-		if (mLocations.size()==0)
-			return 0;
-		// last known?!
-		Location lastLoc = mLocations.get(0);
-		if (lastLoc.elapsed1==0 || lastLoc.elapsed1 > MAX_GPS_INTERVAL)
-			return 0;
-		return lastLoc.distance1/lastLoc.elapsed1/1000;		
+		return mEstimatedCurrentSpeed;
 	}
-
+	public double getX() {
+		return mEstimatedX;
+	}
+	public double getY() {
+		return mEstimatedY;
+	}
+	public double getAccuracy() {
+		return mEstimatedAccuracy;
+	}
+	public double getCurrentSpeedAccuracy() {
+		return mEstimatedSpeedAccuracy;
+	}
 	public synchronized void setContext(Context context) {
 		Log.d(TAG,"user setContext");
 		mContext = context;
@@ -249,23 +304,29 @@ public class UserModel {
 		}
 	}
 	private void updateWaypointInfos() {
-		if (mLocations.size()==0 || mLocations.get(0).accuracy>mContext.getRequiredAccuracy())
-			return;	
-		// last known?!
-		Location lastLoc = mLocations.get(0);
-		double currentSpeed = getCurrentSpeed();
-		double walkingSpeed = getWalkingSpeed();
-		for(Map.Entry<String, WaypointInfo> entry: mWaypointInfos.entrySet()) {
-			WaypointInfo wi = entry.getValue();
-			// TODO route and distance along route!
-			wi.distance = Utils.distance(lastLoc.lat, lastLoc.lng, wi.waypoint.getLat(), wi.waypoint.getLng());
-			wi.near = wi.distance < wi.waypoint.getNearDistance();
-			if (currentSpeed>=0)
-				wi.timeAtCurrentSpeed = wi.distance / currentSpeed;
-			if (walkingSpeed>=0)
-				wi.timeAtWalkingSpeed = wi.distance / walkingSpeed;
-			wi.valid = true;
-		}		
+		if (mEstimatedAccuracy > mContext.getRequiredAccuracy() || mEstimatedAccuracy>MAX_REQUIRED_ACCURACY) {
+			for(Map.Entry<String, WaypointInfo> entry: mWaypointInfos.entrySet()) {
+				WaypointInfo wi = entry.getValue();
+				wi.valid = false;
+				wi.near = false;
+			}
+		} else {
+			double currentSpeed = getCurrentSpeed();
+			double walkingSpeed = getWalkingSpeed();
+			for(Map.Entry<String, WaypointInfo> entry: mWaypointInfos.entrySet()) {
+				WaypointInfo wi = entry.getValue();
+				// TODO route and distance along route!
+				double dx = mEstimatedX-wi.waypoint.getX();
+				double dy = mEstimatedY-wi.waypoint.getY();
+				wi.distance = Math.sqrt(dx*dx+dy*dy);
+				wi.near = wi.distance < wi.waypoint.getNearDistance();
+				if (currentSpeed>=0)
+					wi.timeAtCurrentSpeed = wi.distance / currentSpeed;
+				if (walkingSpeed>=0)
+					wi.timeAtWalkingSpeed = wi.distance / walkingSpeed;
+				wi.valid = true;
+			}		
+		}
 	}
 	static class WaypointInfo {
 		private Context.Waypoint waypoint;
