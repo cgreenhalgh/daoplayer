@@ -81,6 +81,7 @@ public class UserModel {
 	private KalmanFilter mKalmanFilter = new KalmanFilter();
 	private double mEstimatedX, mEstimatedY, mEstimatedAccuracy, mEstimatedSpeedAccuracy;
 	private double mEstimatedXSpeed, mEstimatedYSpeed;
+	private int mUpdateNoLocationCount;
 	
 	public void setLocation(double lat, double lng, double accuracy, long time, long elapsedtime) {
 		mKalmanFilter.predict();
@@ -102,6 +103,8 @@ public class UserModel {
 		mLocations.add(0, loc);
 		if (mLocations.size()>MAX_LOCATION_HISTORY_SIZE)
 			mLocations.remove(mLocations.size()-1);
+
+		mUpdateNoLocationCount = 0;
 		updateEstimates(time, elapsedtime);
 	}
 	private void updateEstimates(long time, long elapsedtime) {
@@ -154,8 +157,10 @@ public class UserModel {
 			Log.d(TAG,"Ignore updateNoLocation("+time+","+elapsedtime+"); last elapsedtime="+mLastElapsedtime);
 			return;
 		}
-		for (long t=mLastElapsedtime+1000; t<elapsedtime; t+=1000)
+		for (long t=mLastElapsedtime+1000; t<elapsedtime; t+=1000) {
 			mKalmanFilter.predict();
+			mUpdateNoLocationCount++;
+		}
 
 		updateEstimates(time, elapsedtime);		
 	}
@@ -214,6 +219,8 @@ public class UserModel {
 			sb.append(mEstimatedYSpeed);
 			sb.append(",accuracy:");
 			sb.append(mEstimatedAccuracy);
+			sb.append(",age:");
+			sb.append(mUpdateNoLocationCount);
 			sb.append("}");
 		}
 		else

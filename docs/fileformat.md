@@ -139,6 +139,7 @@ Note that volume and pos functions are always called on scene load, but only cal
 - `y`: y position relative to origin, metres (float)
 - `xspeed`: x speed, metres per second (float)
 - `yspeed`: x speed, metres per second (float)
+- `age`: seconds since last GPS fix (values continue to be updated using position filter)
 (current not supported: `lat`, `lng`, `age`)
 
 `sceneTime`: time in seconds since this scene was loaded (float).
