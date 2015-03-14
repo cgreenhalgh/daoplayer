@@ -11,6 +11,7 @@
       "name": "waiting for gps",
       "partial": false,
       "onload": "daoplayer.speak('Waiting for G P S. If you have just left the building turn right and walk to the end',true);",
+      "onupdate": "if (activity!=null && activity!='NOGPS') {daoplayer.setScene('episode1/got gps');}",
       "updatePeriod":1.0,
       "description": "adjust volume by distance to defined waypoints",
       "tracks": [
@@ -20,7 +21,35 @@
           "pos":"currentSection!=null ? [currentSection.startTime,currentSection.name,'NA_introB','NA_end'] : ['NA_introA','NA_end']"
         }
       ]
-    }
+    },
+    {
+      "name": "episode1/got gps",
+      "partial": false,
+      "onload": "daoplayer.speak('OK, G P S is working',false); window.lastWarning=0;",
+      "updatePeriod":1.0,
+      "onupdate": "daoplayer.log('junction near='+waypoints['junction1'].near+', relativeBearing='+waypoints['junction1'].relativeBearing+', lastWarning='+window.lastWarning); if (waypoints['junction1'].near) { daoplayer.setScene('episode1/junction1'); }; if (activity=='WALKING' && waypoints['junction1'].relativeBearing!==undefined && (waypoints['junction1'].relativeBearing>90 || waypoints['junction1'].relativeBearing< -90) && (window.lastWarning===undefined || totalTime-window.lastWarning>10)) {daoplayer.log('warn'); window.lastWarning=totalTime;daoplayer.speak('you seem to be walking the wrong way',true);};",
+      "tracks": [
+        {
+          "name": "NotAlone",
+          "volume": 1,
+          "pos":"currentSection!=null ? [currentSection.startTime,currentSection.name,'NA_verse1','NA_end'] : ['NA_verse1','NA_end']",
+          "update": false
+        }
+      ]
+    },
+    {
+      "name": "episode1/junction1",
+      "partial": false,
+      "onload": "daoplayer.speak('Now turn right',true);",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "NotAlone",
+          "volume": 1,
+          "pos":"currentSection!=null ? [currentSection.startTime,currentSection.name,'NA_chorus1','NA_end'] : ['NA_chorus1','NA_end']"
+        }
+      ]
+    },
   ]
 }
 
