@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "chris' oxford test context"
+  },
+  "context": {
+    "waypoints": [
+      {
+        "name": "start",
+        "lat": 52.892119,  
+        "lng": -1.157021,
+        "origin": true
+      },
+      {
+        "name": "junction1",
+        "lat": 52.891763,  
+        "lng": -1.156764
+      },
+      {
+        "name": "junction2",
+        "lat": 52.891294,  
+        "lng": -1.158658
+      },
+      {
+        "name": "corner2.1",
+        "lat": 52.891663,  
+        "lng": -1.158851
+      },
+      {
+        "name": "end",
+        "lat": 52.892653,  
+        "lng": -1.157982
+      }
+    ],
+    "routes": [
+    ]
+  }
+}
+

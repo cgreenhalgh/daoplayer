@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title":  "Not Alone - Sections",
+    "description":  "tracks sections, for use in other compositions"
+  },
+  "defaultScene": "rearrangementA",
+  "tracks": [
+    {
+      "name": "NotAlone",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "NotAlone.wav",
+          "trackPos": 0,
+          "length": 418.7579
+        }
+      ],
+      "sections": [
+        { "name": "NA_introA", "trackPos": 0, "length":  14.1528 },
+        { "name": "NA_introB", "trackPos": 14.1528, "length":  28.3575 },
+        { "name": "NA_verse1", "trackPos": 42.5103, "length":  28.6237 },
+        { "name": "NA_chorus1", "trackPos": 71.134, "length":  28.6017 },
+        { "name": "NA_link1", "trackPos": 99.7357, "length":  14.2589 },
+        { "name": "NA_verse2", "trackPos": 113.9946, "length":  28.6008 },
+        { "name": "NA_verse3", "trackPos": 142.5954, "length":  15.2046 },
+        { "name": "NA_chorus2", "trackPos": 157.8, "length":  27.536 },
+        { "name": "NA_link2", "trackPos": 185.3360, "length":  28.5728 },
+        { "name": "NA_bridgeA", "trackPos": 213.9088, "length":  28.2246 },
+        { "name": "NA_bridgeB", "trackPos": 242.1334, "length":  29.057 },
+        { "name": "NA_bridgeC", "trackPos": 271.1904, "length":  14.1711 },
+        { "name": "NA_guitarSoloA", "trackPos": 285.3615, "length":  28.958 },
+        { "name": "NA_guitarSoloB", "trackPos": 314.3195, "length":  28.9823 },
+        { "name": "NA_guitarSoloC", "trackPos": 343.3018, "length":  28.958 },
+        { "name": "NA_guitarSoloD", "trackPos": 372.2598, "length":  29.8944 },
+        { "name": "NA_coda", "trackPos": 402.1542, "length":  8.7723 },
+        { "name": "NA_drumFlam", "trackPos": 410.9265, "length": 7.8314 },
+        { "name": "NA_end", "trackPos": 418.7579, "length": 7.2 }
+      ],
+      "unitTime": 7.15,
+      "maxDuration": 600
+    }
+  ],
+  "scenes": [
+    {
+      "name": "rearrangementA",
+      "partial": false,
+      "updatePeriod": 1,
+      "tracks": [
+        {
+          "name": "NotAlone",
+          "pos": "['NA_coda','NA_introB','NA_drumFlam','NA_verse1','NA_introA','NA_end']",
+          "volume": 1,
+          "update": false          
+        }
+      ]
+    }
+  ]
+}

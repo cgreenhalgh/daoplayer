@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "oxford test 1 (chris)"
+  },
+  "merge": [
+    "notalone.json",
+    "context_chris.json",
+    "episode1.json"
+  ],
+  "defaultScene": "waiting for gps"
+}
+

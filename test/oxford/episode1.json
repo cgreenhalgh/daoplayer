@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "oxford test episode 1",
+    "description" : "requires notalone.json and (e.g.) context_chris.json"
+  },
+  "defaultScene": "waiting for gps",
+  "scenes": [
+    {
+      "name": "waiting for gps",
+      "partial": false,
+      "onload": "daoplayer.speak('Waiting for G P S. If you have just left the building turn right and walk to the end',true);",
+      "updatePeriod":1.0,
+      "description": "adjust volume by distance to defined waypoints",
+      "tracks": [
+        {
+          "name": "NotAlone",
+          "volume": 1,
+          "pos":"currentSection!=null ? [currentSection.startTime,currentSection.name,'NA_introB','NA_end'] : ['NA_introA','NA_end']"
+        }
+      ]
+    }
+  ]
+}
+
