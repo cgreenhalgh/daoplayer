@@ -139,7 +139,7 @@ public class Composition {
 		String data = readFully(file);
 		data = handleIncludes(file, data, log);
 		JSONObject jcomp = new JSONObject(data);
-		// TODO meta
+		// meta
 		if (!jcomp.has(META) || !(jcomp.get(META) instanceof JSONObject)) 
 			throw new IOException("File "+file+" is not a valid composition file: no meta section");
 		JSONObject jmeta = jcomp.getJSONObject(META);
@@ -376,6 +376,7 @@ public class Composition {
 				}
 			}
 		}
+		log.log("Read composition "+(jmeta.has(TITLE) ? jmeta.getString(TITLE) : "(unnamed)")+" from "+file);
 		if (jcomp.has(MERGE)) {
 			JSONArray files = jcomp.getJSONArray(MERGE);
 			for (int i=0; i<files.length(); i++) {
@@ -389,7 +390,6 @@ public class Composition {
 				}
 			}
 		}
-		log.log("Read composition "+getTitle()+" from "+file);
 	}
 	private Pattern includePattern = Pattern.compile("[\"][#]((json)|(string))\\s+([^\"]+)[\"]");
 	private String handleIncludes(File file, String data, ILog log) throws IOException {
