@@ -11,15 +11,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
+import java.util.concurrent.ExecutionException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.AssetFileDescriptor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -60,6 +63,35 @@ public class ZipHandlerActivity extends Activity {
 				Log.d(TAG,"Click reload....");
 				reload.setEnabled(false);
 				Intent i = new Intent();
+				try {
+					Result res = task.get();
+					SharedPreferences spref = PreferenceManager.getDefaultSharedPreferences(ZipHandlerActivity.this);
+					String filename = spref.getString(Service.PREF_FILENAME, Service.DEFAULT_COMPOSITION);
+					if (!res.configFiles.contains(filename)) {
+						filename = null;
+						if (res.configFiles.contains(Service.DEFAULT_COMPOSITION))
+							filename = Service.DEFAULT_COMPOSITION;
+						else if (res.configFiles.size()==1)
+							filename = res.configFiles.get(0);
+						else {
+							Log.w(TAG,"Ambiguous choice of composition file");
+							for (String f : res.configFiles) {
+								if (f.startsWith("composition"))
+									filename = f;
+								else if (filename!=null && filename.startsWith("_"))
+									filename = f;
+								else if (filename==null)
+									filename = f;
+							}
+						}
+						if (filename!=null) {
+							Log.d(TAG,"Try to set composition filename to "+filename);
+							i.putExtra(Service.EXTRA_FILENAME, filename);
+						}
+					}
+				} catch (Exception e) {
+					Log.w(TAG,"Could not get result from unzip task: "+e);
+				}
 				i.setAction(Service.ACTION_RELOAD);
 				i.setClass(getApplicationContext(), Service.class);
 				startService(i);

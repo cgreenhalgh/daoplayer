@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "filenametest another.json"
+  },
+  "merge": [
+    "_composition.json"
+  ],
+  "defaultScene": "another",
+  "scenes": [
+    {
+      "name": "another",
+      "partial": false
+    }
+  ]
+}
+

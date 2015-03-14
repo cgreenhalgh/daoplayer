@@ -70,7 +70,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private static final String TAG = "daoplayer-service";
 	private static final int SERVICE_NOTIFICATION_ID = 1;
 	public static final String ACTION_RELOAD = "org.opensharingtoolkit.daoplayer.RELOAD";
-	private static final String DEFAULT_COMPOSITION = "composition.json";
+	static final String DEFAULT_COMPOSITION = "composition.json";
 	public static final String ACTION_DEFAULT_SCENE = "org.opensharingtoolkit.daoplayer.DEFAULT_SCENE";
 	public static final String ACTION_NEXT_SCENE = "org.opensharingtoolkit.daoplayer.NEXT_SCENE";
 	public static final String ACTION_PREV_SCENE = "org.opensharingtoolkit.daoplayer.PREV_SCENE";
@@ -84,8 +84,10 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	public static final String EXTRA_TIME = "time";
 	public static final String EXTRA_ACCURACY = "accuracy";
 	public static final String EXTRA_ELAPSEDTIME = "elapsedtime";
+	public static final String EXTRA_FILENAME = "filename";
 	private static final String PREF_USEGPS = "pref_usegps";
 	private static final String PREF_ENABLESPEECH = "pref_enablespeech";
+	static final String PREF_FILENAME = "pref_filename";
 	private static final double DEFAULT_SPEECH_VOLUME = 1;
 	public static final long NANOS_PER_MILLI = 1000000;
 	private AudioEngine mAudioEngine;
@@ -149,6 +151,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			JSONObject jstatus = new JSONObject();
 			try {
 				synchronized (Service.this) {
+					if (mComposition!=null) 
+						jstatus.put("composition", mComposition.getTitle());
 					if (Service.this.mAudioEngine!=null) {
 						jstatus.put("audioEngine",  mAudioEngine.getStatus());
 					}
@@ -450,6 +454,13 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private void handleCommand(Intent intent) {
 		Log.d(TAG,"handleCommand "+intent.getAction());
 		if (ACTION_RELOAD.equals(intent.getAction())) {
+			String filename = intent.getStringExtra(EXTRA_FILENAME);
+			if (filename!=null){
+				Log.i(TAG,"Changing filename to "+filename+" on RELOAD intent");
+				SharedPreferences spref = PreferenceManager.getDefaultSharedPreferences(this);
+				if (!spref.edit().putString(PREF_FILENAME, filename).commit())
+					Log.e(TAG,"Attempt to change filename to "+filename+" failed");
+			}
 			if (mAudioEngine!=null) {
 				log("RELOAD");
 				boolean start = started;
@@ -564,13 +575,15 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		Log.d(TAG,"loadComposition...");
 		log("LOAD COMPOSITION");
 		File filesDir = Compat.getExternalFilesDir(this);
+		SharedPreferences spref = PreferenceManager.getDefaultSharedPreferences(this);
+		String filename = spref.getString(PREF_FILENAME, DEFAULT_COMPOSITION);
 		Composition comp = mComposition = new Composition(mAudioEngine, mUserModel);
 		try {
-			comp.read(new File(filesDir, DEFAULT_COMPOSITION), this, this);
+			comp.read(new File(filesDir, filename), this, this);
 		} catch (Exception e) {
-			Log.w(TAG,"Error reading "+DEFAULT_COMPOSITION+": "+e, e);
+			Log.w(TAG,"Error reading "+filename+": "+e, e);
 			Toast.makeText(this, "Error reading composition: "+e.getMessage(), Toast.LENGTH_SHORT).show();
-			logError("Error reading "+DEFAULT_COMPOSITION+": "+e);
+			logError("Error reading "+filename+": "+e);
 			return;
 		}
 		mUserModel.setContext(comp.getContext());
@@ -582,10 +595,10 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		String defaultScene = mScene = comp.getDefaultScene();
 		if (defaultScene!=null) {
 			setScene(defaultScene);
-			Log.i(TAG,"Read "+DEFAULT_COMPOSITION+"; playing scene "+defaultScene);
+			Log.i(TAG,"Read "+filename+"; playing scene "+defaultScene);
 			log("Read; playing scene "+defaultScene);
 		} else {
-			Log.i(TAG,"Read "+DEFAULT_COMPOSITION+"; no default scene");
+			Log.i(TAG,"Read "+filename+"; no default scene");
 			logError("Read but no default scene");			
 		}
 	}

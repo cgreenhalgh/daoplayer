@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
     
+    <PreferenceCategory android:title="@string/pref_generalsettings_title" >
+    <EditTextPreference
+        android:key="pref_filename"
+        android:title="@string/pref_filename_title"
+        android:defaultValue="composition.json"
+        android:enabled="true" />
+    
+    <Preference 
+        android:title="@string/pref_pickfile_title" 
+        android:key="pref_pickfile" />
+
     <CheckBoxPreference
         android:defaultValue="false"
         android:enabled="true"
@@ -8,29 +19,17 @@
         android:title="@string/pref_runservice_title" />
     
     <Preference 
-        android:title="@string/pref_showgui_title">
-        <intent
-            android:targetPackage="org.opensharingtoolkit.daoplayer"
-            android:targetClass="org.opensharingtoolkit.daoplayer.ui.BrowserActivity" />
-    </Preference>
+        android:title="@string/pref_reload_title" 
+        android:key="pref_reload" />
 
-    <CheckBoxPreference
-        android:defaultValue="true"
-        android:enabled="true"
-        android:key="pref_usegps"
-        android:title="@string/pref_usegps_title" />
-    
-    <CheckBoxPreference
-        android:defaultValue="true"
-        android:enabled="true"
-        android:key="pref_enablespeech"
-        android:title="@string/pref_enablespeech_title" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_developmentsettings_title" >
     
     <Preference 
-        android:title="@string/pref_showlogs_title">
+        android:title="@string/pref_showsceneselect_title">
         <intent
             android:targetPackage="org.opensharingtoolkit.daoplayer"
-            android:targetClass="org.opensharingtoolkit.daoplayer.ui.LogsActivity" />
+            android:targetClass="org.opensharingtoolkit.daoplayer.ui.SceneSelectActivity" />
     </Preference>
 
     <Preference 
@@ -41,21 +40,17 @@
     </Preference>
 
     <Preference 
+        android:title="@string/pref_showlogs_title">
+        <intent
+            android:targetPackage="org.opensharingtoolkit.daoplayer"
+            android:targetClass="org.opensharingtoolkit.daoplayer.ui.LogsActivity" />
+    </Preference>
+
+    <Preference 
         android:title="@string/pref_clearlogs_title" 
         android:key="pref_clearlogs" />
 
     
-    <Preference 
-        android:title="@string/pref_reload_title" 
-        android:key="pref_reload" />
-
-    <Preference 
-        android:title="@string/pref_showsceneselect_title">
-        <intent
-            android:targetPackage="org.opensharingtoolkit.daoplayer"
-            android:targetClass="org.opensharingtoolkit.daoplayer.ui.SceneSelectActivity" />
-    </Preference>
-
     <Preference 
         android:title="@string/pref_defaultscene_title" 
         android:key="pref_defaultscene" />
@@ -68,8 +63,32 @@
         android:title="@string/pref_prevscene_title" 
         android:key="pref_prevscene" />
      -->
+	</PreferenceCategory>    
+    <PreferenceCategory android:title="@string/pref_debugsettings_title" >
+    
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:enabled="true"
+        android:key="pref_usegps"
+        android:title="@string/pref_usegps_title" />
+    
+    <Preference 
+        android:title="@string/pref_showgui_title">
+        <intent
+            android:targetPackage="org.opensharingtoolkit.daoplayer"
+            android:targetClass="org.opensharingtoolkit.daoplayer.ui.BrowserActivity" />
+    </Preference>
+
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:enabled="true"
+        android:key="pref_enablespeech"
+        android:title="@string/pref_enablespeech_title" />
+    
     <Preference 
         android:title="@string/pref_runtest_title"
         android:key="pref_runtest" />
 
+    </PreferenceCategory>
+    
 </PreferenceScreen>

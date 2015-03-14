@@ -45,12 +45,15 @@ public class Composition {
 	private static final String CONTEXT = "context";	
 	private static final String COST = "cost";	
 	private static final String DEFAULT_SCENE = "defaultScene";
+	private static final String DESCRIPTION = "description";
 	private static final String END_COST = "endCost";	
 	private static final String FILES = "files";
 	private static final String FILE_POS = "filePos";
 	private static final String LENGTH = "length";
 	private static final String MAX_DURATION = "maxDuration";
+	private static final String META = "meta";
 	private static final String MERGE = "merge";
+	private static final String MIMETYPE = "mimetype";
 	private static final String NAME = "name";
 	private static final String NEXT = "next";	
 	private static final String ONLOAD = "onload";
@@ -64,15 +67,23 @@ public class Composition {
 	private static final String SCENES = "scenes";
 	private static final String SECTIONS = "sections";
 	private static final String START_COST = "startCost";	
+	private static final String TITLE = "title";
 	private static final String TRACKS = "tracks";
 	private static final String TRACK_POS = "trackPos";
 	private static final String UNIT_TIME = "unitTime";
 	private static final String UPDATE = "update";
 	private static final String UPDATE_PERIOD = "updatePeriod";
 	private static final String VARS = "vars";
+	private static final String VERSION = "version";
 	private static final String VOLUME = "volume";
 	private static final String WAYPOINTS = "waypoints";
 
+	private static final String COMPOSITION_MIMETYPE = "application/x-daoplayer-composition";
+	private static final int MAJOR_VERSION = 1;
+	private static final int MINOR_VERSION = 0;
+	
+	private Pattern mVersionPattern = Pattern.compile("^(\\d+)(\\.(d+)(\\.(d+)(\\-(\\w+))?)?)?$");
+	
 	private static final double DEFAULT_END_COST = 100000000;
 	// larger than DEFAULT_FIRST_SECTION_START_COST to prefer starting at the beginning to ending at the end!
 	private static final double DEFAULT_LAST_SECTION_END_COST = 10000000;
@@ -80,18 +91,20 @@ public class Composition {
 	private static final double DEFAULT_NEXT_SECTION_NEXT_COST = 1000000;
 	private static final double DEFAULT_START_COST = 100000000;
 	private static final double DEFAULT_FIRST_SECTION_START_COST = 1000000;
-	
+
 	private AudioEngine mEngine;
 	private String mDefaultScene;
 	private DynConstants mConstants = new DynConstants();
 	private Map<String,ITrack> mTracks = new HashMap<String,ITrack>();
 	private Map<String,DynScene> mScenes = new HashMap<String, DynScene>();
 	private Vector<String> mScenesInOrder = new Vector<String>();
-	private Context mContext;
+	private Context mContext = new Context();
 	private long mFirstSceneLoadTime;
 	private long mLastSceneUpdateTime;
 	private long mLastSceneLoadTime;
 	private UserModel mUserModel;
+	private Map<String,String> mMeta = new HashMap<String,String>();
+	private File mFile;
 	
 	public Composition(AudioEngine engine, UserModel userModel) {		
 		mEngine = engine;
@@ -118,23 +131,68 @@ public class Composition {
 		HashSet<String> mergedFiles = new HashSet<String>();
 		merge(file, log, androidContext, false, mergedFiles);
 	}
+	public static String getVersion() {
+		return ""+MAJOR_VERSION+"."+MINOR_VERSION;
+	}
 	public void merge(File file, ILog log, android.content.Context androidContext, boolean merging, HashSet<String> mergedFiles) throws IOException, JSONException {
 		File parent = file.getParentFile();
 		String data = readFully(file);
 		data = handleIncludes(file, data, log);
 		JSONObject jcomp = new JSONObject(data);
+		// TODO meta
+		if (!jcomp.has(META) || !(jcomp.get(META) instanceof JSONObject)) 
+			throw new IOException("File "+file+" is not a valid composition file: no meta section");
+		JSONObject jmeta = jcomp.getJSONObject(META);
+		if (!jmeta.has(MIMETYPE) || !jmeta.has(VERSION))
+			throw new IOException("File "+file+" is not a valid composition file: missing mimetype or version in meta section");
+		String mimetype = jmeta.get(MIMETYPE).toString();
+		if (!mimetype.equals(COMPOSITION_MIMETYPE))
+			throw new IOException("File "+file+" is not a valid composition file: mimetype "+mimetype+" (not "+COMPOSITION_MIMETYPE+")");
+		String version = jmeta.getString(VERSION).toString();
+		Matcher matcher = mVersionPattern.matcher(version);
+		if (!matcher.matches())
+			throw new IOException("File "+file+" is not a valid composition file: version "+version+" (not of form a.b.c-d; currently "+getVersion()+")");
+		int majorVersion;
+		try {
+			majorVersion = Integer.parseInt(matcher.group(1));
+		}
+		catch (NumberFormatException nfe) {
+			Log.e(TAG,"Error parsing major version numer "+matcher.group(1)+" from "+version, nfe);
+			throw new IOException("File "+file+" is not a valid composition file: version "+version+" (not of form a.b.c-d; currently "+getVersion()+")");
+		}
+		if (majorVersion!=MAJOR_VERSION)
+			throw new IOException("File "+file+" is not supported by this player: version "+version+" (this supports "+getVersion()+")");
+		// Minor version?
+		int minorVersion = 0;
+		if (matcher.group(3)!=null && matcher.group(3).length()>0) {
+			try {
+				minorVersion = Integer.parseInt(matcher.group(3));
+			}
+			catch (NumberFormatException nfe) {
+				Log.e(TAG,"Error parsing minor version numer "+matcher.group(3)+" from "+version, nfe);
+			}			
+		}
+		if (minorVersion<MINOR_VERSION)
+			log.log("Note: composition version is "+version+"; player is "+getVersion());
+		else if (minorVersion>MINOR_VERSION)
+			log.logError("composition version is "+version+"; player is "+getVersion()+"; some features may not be supported");
+		if (!merging) {
+			Iterator<String> keys = jmeta.keys();
+			while(keys.hasNext()) {
+				String key = keys.next();
+				mMeta.put(key,  jmeta.get(key).toString());
+			}
+		}
 		if (!merging || mContext==null) {
+			mFile = file;
 			if (jcomp.has(CONTEXT))
 				mContext = Context.parse(jcomp.getJSONObject(CONTEXT), log);
 			else
 				// empty context
 				mContext = new Context();
 		} else if (jcomp.has(CONTEXT)) {
-			// TODO merge context?!
-			//log.logError("Ignoring duplicate context from "+file.getName());
 			mContext.parse(jcomp.getJSONObject(CONTEXT), merging, log);
 		}
-		// TODO meta
 		if (!merging || mDefaultScene==null) {
 			mDefaultScene = (jcomp.has(DEFAULT_SCENE) ? jcomp.getString(DEFAULT_SCENE) : null);
 		}
@@ -331,7 +389,7 @@ public class Composition {
 				}
 			}
 		}
-		log.log("Read composition "+file);
+		log.log("Read composition "+getTitle()+" from "+file);
 	}
 	private Pattern includePattern = Pattern.compile("[\"][#]((json)|(string))\\s+([^\"]+)[\"]");
 	private String handleIncludes(File file, String data, ILog log) throws IOException {
@@ -378,6 +436,22 @@ public class Composition {
 		Log.d(TAG, "No #op found in last "+pos+"-"+data.length());
 		sb.append(data, pos, data.length());
 		return sb.toString();
+	}
+	public File getFile() {
+		return mFile;
+	}
+	public Map<String,String> getMeta() {
+		return mMeta;
+	}
+	public String getTitle() {
+		String title = mMeta.get(TITLE);
+		if (title==null) {
+			if (mFile==null)
+				title = "(no file loaded)";
+			else
+				title = "untitled (file "+mFile.getName()+")";
+		}
+		return title;
 	}
 	/**
 	 * @return the context

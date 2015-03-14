@@ -1,8 +1,11 @@
 <resources>
 
     <string name="app_name">DAO Player</string>
+    <string name="pref_generalsettings_title">General Settings</string>
+    <string name="pref_developmentsettings_title">Development Settings</string>
+    <string name="pref_debugsettings_title">Debug Settings</string>
     <string name="pref_runservice_title">Run audio service</string>
-    <string name="pref_showgui_title">Show User Interface</string>
+    <string name="pref_showgui_title">Mock GPS input</string>
     <string name="pref_showlogs_title">Show Logs</string>
     <string name="pref_showstatus_title">Show Status</string>
     <string name="pref_usegps_title">Use GPS for position</string>
@@ -14,6 +17,8 @@
     <string name="pref_updatescene_title">Update Current Scene</string>
     <string name="pref_runtest_title">Run Test</string>
     <string name="pref_enablespeech_title">Enable Text-to-Speech</string>
+    <string name="pref_filename_title">Composition file to load</string>
+    <string name="pref_pickfile_title">Select composition file...</string>
     <string name="notification_title">DAO Player</string>
     <string name="notification_description">Audio service is running</string>
     <string name="zip_handler_name">Unzip to DAOPlayer</string>

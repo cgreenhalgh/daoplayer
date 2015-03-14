@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "filenametest composition.json"
+  },
+  "defaultScene": "composition",
+  "scenes": [
+    {
+      "name": "composition",
+      "partial": false
+    }
+  ]
+}
+

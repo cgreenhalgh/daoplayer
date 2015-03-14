@@ -47,7 +47,7 @@ public class BrowserActivity extends Activity {
         //webView.getSettings().setDatabaseEnabled(true);
         //webView.getSettings().setBuiltInZoomControls(false);
         // API level 5
-        webView.getSettings().setDatabasePath(getApplicationContext().getFilesDir().getPath()+"/org.opensharingtoolkit.chooser/databases/");
+        //webView.getSettings().setDatabasePath(getApplicationContext().getFilesDir().getPath()+"/org.opensharingtoolkit.daoplayer/databases/");
         // API level 7
         webView.getSettings().setDomStorageEnabled(true);
         // API level 17

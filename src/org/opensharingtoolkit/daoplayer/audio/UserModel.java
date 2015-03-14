@@ -138,7 +138,11 @@ public class UserModel {
 		mEstimatedX = state.get(0);
 		mEstimatedY = state.get(1);
 		
-		if (mEstimatedAccuracy > mContext.getRequiredAccuracy() || mEstimatedAccuracy>MAX_REQUIRED_ACCURACY)
+		if (mContext==null) {
+			Log.w(TAG,"updateEstimates with no context");
+			mEstimatedActivity = Activity.NOGPS;
+		}
+		else if (mEstimatedAccuracy > mContext.getRequiredAccuracy() || mEstimatedAccuracy>MAX_REQUIRED_ACCURACY)
 			mEstimatedActivity = Activity.NOGPS;
 		else if (mEstimatedSpeedAccuracy > MAX_SPEED_INACCURACY)
 			mEstimatedActivity = Activity.UNCERTAIN;
@@ -208,7 +212,7 @@ public class UserModel {
 		double walkingSpeed = getWalkingSpeed();
 		// TODO position
 		sb.append("var position=");
-		if (mEstimatedAccuracy < mContext.getRequiredAccuracy() && mEstimatedAccuracy < MAX_REQUIRED_ACCURACY) {
+		if (mContext!=null && mEstimatedAccuracy < mContext.getRequiredAccuracy() && mEstimatedAccuracy < MAX_REQUIRED_ACCURACY) {
 			sb.append("{x:");
 			sb.append(mEstimatedX);
 			sb.append(",y:");
@@ -349,6 +353,8 @@ public class UserModel {
 		}
 	}
 	private void updateWaypointInfos() {
+		if (mContext==null)
+			return;
 		if (mEstimatedAccuracy > mContext.getRequiredAccuracy() || mEstimatedAccuracy>MAX_REQUIRED_ACCURACY) {
 			for(Map.Entry<String, WaypointInfo> entry: mWaypointInfos.entrySet()) {
 				WaypointInfo wi = entry.getValue();
