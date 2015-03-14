@@ -24,29 +24,32 @@
     },
     {
       "name": "episode1/got gps",
-      "partial": false,
-      "onload": "daoplayer.speak('OK, G P S is working',false); window.lastWarning=0;",
+      "partial": true,
+      "onload": "daoplayer.speak('OK, G P S is working',false); window.lastWarning=totalTime; window.nextWaypoint='junction1'; window.nextScene='episode1/junction1';",
       "updatePeriod":1.0,
-      "onupdate": "daoplayer.log('junction near='+waypoints['junction1'].near+', relativeBearing='+waypoints['junction1'].relativeBearing+', lastWarning='+window.lastWarning); if (waypoints['junction1'].near) { daoplayer.setScene('episode1/junction1'); }; if (activity=='WALKING' && waypoints['junction1'].relativeBearing!==undefined && (waypoints['junction1'].relativeBearing>90 || waypoints['junction1'].relativeBearing< -90) && (window.lastWarning===undefined || totalTime-window.lastWarning>10)) {daoplayer.log('warn'); window.lastWarning=totalTime;daoplayer.speak('you seem to be walking the wrong way',true);};",
+      "onupdate": "#string walk_to_waypoint.js",
+      "description": "play full track; warn if walking wrong way",
       "tracks": [
         {
           "name": "NotAlone",
           "volume": 1,
-          "pos":"currentSection!=null ? [currentSection.startTime,currentSection.name,'NA_verse1','NA_end'] : ['NA_verse1','NA_end']",
+          "pos":"currentSection!=null ? [currentSection.startTime,currentSection.name,'NA_verse1'] : ['NA_verse1']",
           "update": false
         }
       ]
     },
     {
       "name": "episode1/junction1",
-      "partial": false,
-      "onload": "daoplayer.speak('Now turn right',true);",
+      "partial": true,
+      "onload": "daoplayer.speak('Now turn right',true); window.lastWarning=totalTime; window.nextWaypoint='junction2'; window.nextScene='episode1/junction2';",
       "updatePeriod":1.0,
+      "onupdate": "#string walk_to_waypoint.js",
       "tracks": [
         {
           "name": "NotAlone",
           "volume": 1,
-          "pos":"currentSection!=null ? [currentSection.startTime,currentSection.name,'NA_chorus1','NA_end'] : ['NA_chorus1','NA_end']"
+          "pos":"currentSection!=null ? [currentSection.startTime,currentSection.name] : ['NA_introB']",
+          "update": false
         }
       ]
     },
