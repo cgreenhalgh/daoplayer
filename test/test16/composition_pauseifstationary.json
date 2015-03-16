@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "sample of pausing if stationary (or no GPS)."
+  },
+  "merge": [
+    "context_uon.json"
+  ],
+  "defaultScene": "pause",
+  "tracks": [
+    {
+      "name": "test16all wav",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "count16-all.wav", 
+          "trackPos": 0,
+          "length": 16,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "padding",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "count16-all.wav", 
+          "trackPos": 0,
+          "length": 1,
+          "repeats": -1
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "pause",
+      "partial": true,
+      "updatePeriod": 1,
+      "onupdate": "if (activity=='WALKING') daoplayer.setScene('resume');",
+      "description": "saves where we are up to in the track but don't change it",
+      "tracks": [
+        {
+          "name": "test16all wav",
+          "pos": "(function(){window.trackTimeTest16=trackTime; return null;})()",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,0]",
+          "update": false 
+        },
+        {
+          "name": "padding",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,0.5]",
+          "update": false 
+        },
+      ]
+    },
+    {
+      "name": "resume",
+      "partial": true,
+      "updatePeriod": 1,
+      "onupdate": "if (activity=='NOGPS' || activity=='STATIONARY') daoplayer.setScene('pause');",
+      "description": "carry on from saved position",
+      "tracks": [
+        {
+          "name": "test16all wav",
+          "pos": "[sceneTime,window.trackTimeTest16-1]",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,1]",
+          "update": false 
+        },
+        {
+          "name": "padding",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,0]",
+          "update": false         
+        },
+      ]
+    }
+  ]
+}
+
