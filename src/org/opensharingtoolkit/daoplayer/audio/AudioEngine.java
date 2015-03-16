@@ -613,7 +613,11 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			}
 				
 			//Log.d(TAG,"CurrentState="+current);
-			AState target = current.mState.applyScene(ascene, mSamplesPerBlock);
+			double sceneTimeAdjustSeconds = 0;
+			if (newScene)
+				// adjust any mappings from scene time carried over
+				sceneTimeAdjustSeconds = (0-(current.mSceneTime+samplesToSeconds(mSamplesPerBlock)));
+			AState target = current.mState.applyScene(ascene, mSamplesPerBlock, secondsToSamples(sceneTimeAdjustSeconds), (float)sceneTimeAdjustSeconds);
 			
 			StateRec srec = new StateRec();
 			srec.mType = StateType.STATE_FUTURE;

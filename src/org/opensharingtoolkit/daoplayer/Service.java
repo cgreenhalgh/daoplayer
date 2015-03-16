@@ -285,18 +285,24 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 					super.onPageFinished(view, url);
 					mWebView.loadUrl("javascript:console.log('daoplayer='+daoplayer);");
 					// This is OK...
-					synchronized (Service.this) {
-						mWebViewLoaded = true;
-						if (mSetSceneOnLoad!=null) {
-							if (mComposition!=null && mComposition.getContext()!=null) {
-								String res = mScriptEngine.runScript(mComposition.getContext().getInitScript());
-								if (!res.equals("OK"))
-									log("problem initialising context; got "+res);
+					// delay on first load seems necessary
+					mHandler.postDelayed(new Runnable() {
+						public void run() {
+							Log.d(TAG,"handling delayed webview loaded");
+							synchronized (Service.this) {
+								mWebViewLoaded = true;
+								if (mSetSceneOnLoad!=null) {
+									if (mComposition!=null && mComposition.getContext()!=null) {
+										String res = mScriptEngine.runScript(mComposition.getContext().getInitScript());
+										if (!"OK".equals(res))
+											log("problem initialising context; got "+res);
+									}
+									setScene(mSetSceneOnLoad);
+									mSetSceneOnLoad = null;
+								}
 							}
-							setScene(mSetSceneOnLoad);
-							mSetSceneOnLoad = null;
 						}
-					}
+					}, 500);
 				}
 	        });
 			Log.d(TAG,"Test service webview daoplayer...");
@@ -348,6 +354,10 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			mAudioEngine = new AudioEngine(this);
 			loadComposition();
 			mAudioEngine.init(this);
+		}
+		if (mComposition==null) {
+			loadComposition();
+			mAudioEngine.init(this);			
 		}
 		else if (mComposition!=null && mSetSceneOnStart!=null)  {
 			// avoid race
@@ -464,15 +474,18 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			if (mAudioEngine!=null) {
 				log("RELOAD");
 				boolean start = started;
-				if (started)
-					mAudioEngine.stop();
+				onStop();
 				mAudioEngine.reset();
 				mRecorder.startNewFile("RELOAD", null);
-				loadComposition();
-				// warm up cache
-				mAudioEngine.init(this);
+				mComposition = null;
+				mScene = null;
 				if (start)
-					mAudioEngine.start(this);
+					mHandler.postDelayed(new Runnable() {
+						public void run() {
+							Log.d(TAG,"Delayed restart on reload");
+							checkService();
+						}
+					}, 500);
 			}
 		}
 		else if (ACTION_DEFAULT_SCENE.equals(intent.getAction())) {
@@ -589,7 +602,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		mUserModel.setContext(comp.getContext());
 		if (mWebViewLoaded && comp.getContext()!=null) {
 			String res = mScriptEngine.runScript(mComposition.getContext().getInitScript());
-			if (!res.equals("OK"))
+			if (!"OK".equals(res))
 				logError("problem initialising context; got "+res);
 		}
 		String defaultScene = mScene = comp.getDefaultScene();
@@ -797,7 +810,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	*/
 	private synchronized void setScene(String scene) {
 		if (mWebViewLoaded) {
-			if (started) {
+			if (started && mComposition!=null) {
 				log("SET SCENE "+scene);
 				if (mLastTime>0 && mUserModel!=null) {
 					Long now = System.currentTimeMillis();
@@ -815,7 +828,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private synchronized void updateScene() {
 		if (mScene==null)
 			return;
-		if (mWebViewLoaded && started) {
+		if (mWebViewLoaded && started && mComposition!=null) {
 			log("UPDATE SCENE "+mScene);
 			if (mLastTime>0 && mUserModel!=null) {
 				Long now = System.currentTimeMillis();
@@ -845,7 +858,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				Log.d(TAG,"ignore delayed scene update when scene null");
 				return;
 			}
-			Long delay = mComposition.getSceneUpdateDelay(mScene);
+			Long delay = mComposition!=null ? mComposition.getSceneUpdateDelay(mScene) : null;
 			if (delay==null)
 				Log.w(TAG,"ignore delayed scene update for "+mScene+"; no longer needed?");
 			else if (delay>0) {

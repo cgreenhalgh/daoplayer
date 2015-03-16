@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "test scene adjust",
+    "description": "test adjustment to scene times in pwl volume & pos on scene change; should play smoothly on scene change"
+  },
+  "defaultScene": "init",
+  "tracks": [
+    {
+      "name": "test16all wav",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "count16-all.wav", 
+          "trackPos": 0,
+          "length": 16
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "init",
+      "partial": false,
+      "tracks": [
+        {
+          "name": "test16all wav",
+          "pos": "[0,0,4,0]",
+          "volume": "[0,0,1,1]"
+        }
+      ]
+    },
+    {
+      "name": "test",
+      "partial": true,
+      "tracks": [
+        {
+          "name": "test16all wav"
+        }
+      ]
+    }
+  ]
+}
+

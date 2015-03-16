@@ -98,7 +98,7 @@ public class AState {
 	TrackRef get(ITrack track) {
 		return mTrackRefs.get(track.getId());
 	}
-	AState applyScene(AScene scene, int defaultPosAdvance) {
+	AState applyScene(AScene scene, int defaultPosAdvance, int sceneTimeAdjustSamples, float sceneTimeAdjustSeconds) {
 		AState state = new AState();
 		Collection<AScene.TrackRef> strs = scene.getTrackRefs();
 		for (AScene.TrackRef str : strs) {
@@ -116,7 +116,8 @@ public class AState {
 			}
 			if (str.getPwlVolume()!=null) {
 				pwlVolume = str.getPwlVolume();
-			}
+			} else if (pwlVolume!=null && sceneTimeAdjustSeconds!=0)
+				pwlVolume = adjustPwlSceneTimes(pwlVolume, sceneTimeAdjustSeconds);
 			boolean silent = volume<=0;
 			if (pwlVolume!=null)
 				// TODO silent if dynamic?! This would mean entirely silent. Note: need sceneTime
@@ -132,24 +133,51 @@ public class AState {
 			}
 			if (str.getAlign()!=null) {
 				align = str.getAlign();
-			}
+			} else if (align!=null && sceneTimeAdjustSamples!=0)
+				align = adjustAlignSceneTimes(align, sceneTimeAdjustSamples);
 			state.set(track, volume, pwlVolume, pos, align, silent && track.isPauseIfSilent());
 		}
 		for (TrackRef tr : mTrackRefs.values()) {
+			// unspecified tracks...
 			if (!state.mTrackRefs.containsKey(tr.mTrack.getId())) {
 				int pos = tr.mPos;
+				// adjust for scene time change in pwl/align
+				float pwlVolume[] = tr.mPwlVolume;
+				if (pwlVolume!=null && sceneTimeAdjustSeconds!=0)
+					pwlVolume = adjustPwlSceneTimes(pwlVolume, sceneTimeAdjustSeconds);
+				int align[] = tr.mAlign;
+				if (align!=null && sceneTimeAdjustSamples!=0)
+					align = adjustAlignSceneTimes(align, sceneTimeAdjustSamples);
 				if (!tr.mPaused)
 					// TODO part-silent - would advance less than full amount. Note: need sceneTime
 					pos += defaultPosAdvance;
 				if (scene.isPartial()) 
 					// copy existing
-					state.set(tr.mTrack, tr.mVolume, tr.mPwlVolume, pos, tr.mAlign, tr.mPaused);
+					state.set(tr.mTrack, tr.mVolume, pwlVolume, pos, align, tr.mPaused);
 				else 
 					// total -> silent; copies Align - not sure if it should!
-					state.set(tr.mTrack, 0.0f, null, pos, tr.mAlign, tr.mTrack.isPauseIfSilent());
+					state.set(tr.mTrack, 0.0f, null, pos, align, tr.mTrack.isPauseIfSilent());
 			}
 		}
 		return state;
+	}
+	private float[] adjustPwlSceneTimes(float[] pwlVolume, float sceneTimeAdjustSeconds) {
+		float ret[] = new float[pwlVolume.length];
+		for (int i=0; i<ret.length; i+=2) {
+			ret[i] = pwlVolume[i]+sceneTimeAdjustSeconds;
+			if (i+1<ret.length)
+				ret[i+1] = pwlVolume[i+1];
+		}
+		return ret;
+	}
+	private int[] adjustAlignSceneTimes(int[] align, int sceneTimeAdjustSamples) {
+		int ret[] = new int[align.length];
+		for (int i=0; i<ret.length; i+=2) {
+			ret[i] = align[i]+sceneTimeAdjustSamples;
+			if (i+1<ret.length)
+				ret[i+1] = align[i+1];
+		}
+		return ret;
 	}
 	AState advance(int posAdvance) {
 		AState state = new AState();
