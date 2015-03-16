@@ -365,6 +365,10 @@ public class Composition {
 						if (jtracks.isNull(ti))
 							continue;
 						JSONObject jtrack = jtracks.getJSONObject(ti);
+						if (!jtrack.has(NAME)) {
+							log.logError("Scene "+name+" include unnamed track "+ti);
+							continue;
+						}
 						String trackName = jtrack.getString(NAME);
 						ITrack atrack = mTracks.get(trackName);
 						if (atrack==null) {
