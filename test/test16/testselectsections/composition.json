@@ -28,11 +28,12 @@
         { "name": "thirteen", "trackPos": 12,
           "next": [ {"name":"end","cost":0}, {"name":"nine","cost":100} ] 
         },
-        { "name": "end", "trackPos": 16, "length": 4, "endCost": 0
+        { "name": "end", "trackPos": 16, "endCost": 0, "endCostExtra": 1000
         }
       ],
       "unitTime": 2,
-      "maxDuration": 32
+      "maxDuration": 32,
+      "defaultEndCost": 100000
     }
   ],
   "scenes": [

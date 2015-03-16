@@ -76,6 +76,7 @@ public class ATrack implements IAudio.ITrack {
 		int mLength;
 		double mStartCost;
 		double mEndCost;
+		double mEndCostExtra;
 		Vector<NextSection> mNext = new Vector<NextSection>();
 		
 		/**
@@ -84,15 +85,17 @@ public class ATrack implements IAudio.ITrack {
 		 * @param mLength
 		 * @param mStartCost
 		 * @param mEndCost
+		 * @param endCostExtra 
 		 */
 		public Section(String mName, int mTrackPos, int mLength,
-				double mStartCost, double mEndCost) {
+				double mStartCost, double mEndCost, double endCostExtra) {
 			super();
 			this.mName = mName;
 			this.mTrackPos = mTrackPos;
 			this.mLength = mLength;
 			this.mStartCost = mStartCost;
 			this.mEndCost = mEndCost;
+			this.mEndCostExtra = endCostExtra;
 		}
 
 		public void addNext(String name, double cost) {

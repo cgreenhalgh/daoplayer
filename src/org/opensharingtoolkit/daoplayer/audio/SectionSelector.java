@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import org.opensharingtoolkit.daoplayer.IAudio.ITrack;
+import org.opensharingtoolkit.daoplayer.IAudio;
 import org.opensharingtoolkit.daoplayer.ILog;
 import org.opensharingtoolkit.daoplayer.audio.ATrack.Section;
 
@@ -32,10 +33,12 @@ public class SectionSelector {
 	static class Subsection {
 		ATrack.Section section;
 		int unit;
-		public Subsection(Section section, int unit) {
+		boolean unlimited; // no length limit - usually last section
+		public Subsection(Section section, int unit, boolean unlimited) {
 			super();
 			this.section = section;
 			this.unit = unit;
+			this.unlimited = unlimited;
 		}		
 	}
 	private int mNumSubsections;
@@ -95,7 +98,7 @@ public class SectionSelector {
 			}
 			mSectionIndexes.put(section.mName, subsections.size());
 			for (int unit=0; unit<units; unit++) {
-				Subsection s = new Subsection(section, unit);
+				Subsection s = new Subsection(section, unit, section.mLength==IAudio.ITrack.LENGTH_ALL);
 				subsections.add(s);
 			}
 		}
@@ -107,7 +110,7 @@ public class SectionSelector {
 		Timestep timestep = new Timestep(mNumSubsections);
 		mTimesteps[0] = timestep;
 		for (int si=0; si<mNumSubsections; si++) {
-			timestep.costs[si] = mSubsections[si].section.mEndCost;
+			timestep.costs[si] = mSubsections[si].section.mEndCost+mSubsections[si].section.mEndCostExtra*mSubsections[si].unit*mUnitTime;
 			timestep.nextSubsections[si] = -1;
 		}
 		for (int ti=1; ti<mNumTimesteps; ti++) {
@@ -122,8 +125,13 @@ public class SectionSelector {
 			Timestep nextTimestep = mTimesteps[ti-1];
 			for (int si=0; si<mNumSubsections; si++) {
 				Subsection sub = mSubsections[si];
+				// special end section
+				if (sub.unlimited) {
+					timestep.costs[si] = nextTimestep.costs[si]+mSubsections[si].section.mEndCostExtra*mUnitTime;
+					timestep.nextSubsections[si] = si;
+				}
 				// within section?
-				if (si+1<mNumSubsections && sub.section==mSubsections[si+1].section) {
+				else if (si+1<mNumSubsections && sub.section==mSubsections[si+1].section) {
 					// must move to next step of subsection!
 					timestep.costs[si] = nextTimestep.costs[si+1];
 					timestep.nextSubsections[si] = si+1;
@@ -188,12 +196,15 @@ public class SectionSelector {
 			currentSection = mTrack.getSections().get(currentSectionName);
 			// adjust targetTime for when we started this section (unit is 0 from rsi)
 			if (currentSection!=null) {
-				if (currentSection.mLength!=ITrack.LENGTH_ALL && currentSectionTime<currentSection.mLength) {
-					sections.add(sceneTime-currentSectionTime);
-					sections.add(currentSectionName);
-					//sections.add(sceneTime+currentSection.mLength-currentSectionTime);
-					// reduce targetDuration by remaining time
-					targetDuration += currentSectionTime;
+				sections.add(sceneTime-currentSectionTime);
+				sections.add(currentSectionName);
+				if (currentSection.mLength!=ITrack.LENGTH_ALL) {
+					if (currentSectionTime<currentSection.mLength) 
+						//sections.add(sceneTime+currentSection.mLength-currentSectionTime);
+						// reduce targetDuration by remaining time
+						targetDuration += currentSectionTime;
+					else
+						targetDuration += currentSection.mLength;
 				}
 			}
 		}
@@ -204,7 +215,7 @@ public class SectionSelector {
 		} 
 		if (targetUnits<0) {
 			mLog.logError("selectSections called for "+targetUnits+" time units");
-			return new String[0];
+			return sections.toArray();
 		}
 		if (currentSectionName==null) {
 			// any section (first unit) - find lowest cost+startCost
@@ -248,7 +259,7 @@ public class SectionSelector {
 			}
 			File file = new File(cacheDir, mTrack.getName()+"-selectors.csv");
 			FileWriter fw = new FileWriter(file);
-			fw.append("section,startCost,endCost");
+			fw.append("section,startCost,endCost,endCostExtra");
 			Collection<ATrack.Section> sections = mTrack.mSections.values();
 			for (ATrack.Section s : sections) {
 				fw.append(","+s.mName);
@@ -258,6 +269,7 @@ public class SectionSelector {
 				fw.append(s.mName);
 				fw.append(","+s.mStartCost);
 				fw.append(","+s.mEndCost);
+				fw.append(","+s.mEndCostExtra*mUnitTime);
 				Vector<ATrack.NextSection> nss = s.mNext;
 				for (ATrack.Section s2 : sections) {
 					fw.append(",");

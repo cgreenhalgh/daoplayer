@@ -707,7 +707,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				Object sections[] = null;
 				try {
 					sections = composition.selectSections(trackName, currentSectionName, currentSectionTime, sceneTime, targetDuration);
-					if (sections.length>0 && sections[0] instanceof Integer) {
+					if (sections!=null && sections.length>0 && sections[0] instanceof Integer) {
 						sections[0] = mAudioEngine.samplesToSeconds((Integer)sections[0]);
 					}
 				} catch (Exception e) {

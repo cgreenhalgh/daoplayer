@@ -44,9 +44,12 @@ public class Composition {
 	private static final String CONSTANTS = "constants";
 	private static final String CONTEXT = "context";	
 	private static final String COST = "cost";	
+	private static final String DEFAULT_NEXT_SECTION_COST = "defaultNextSectionCost";
+	private static final String DEFAULT_END_COST = "defaultEndCost";
 	private static final String DEFAULT_SCENE = "defaultScene";
 	private static final String DESCRIPTION = "description";
 	private static final String END_COST = "endCost";	
+	private static final String END_COST_EXTRA = "endCostExtra";	
 	private static final String FILES = "files";
 	private static final String FILE_POS = "filePos";
 	private static final String LENGTH = "length";
@@ -84,13 +87,12 @@ public class Composition {
 	
 	private Pattern mVersionPattern = Pattern.compile("^(\\d+)(\\.(d+)(\\.(d+)(\\-(\\w+))?)?)?$");
 	
-	private static final double DEFAULT_END_COST = 100000000;
-	// larger than DEFAULT_FIRST_SECTION_START_COST to prefer starting at the beginning to ending at the end!
-	private static final double DEFAULT_LAST_SECTION_END_COST = 10000000;
-	private static final double DEFAULT_NEXT_COST = 100000000;
-	private static final double DEFAULT_NEXT_SECTION_NEXT_COST = 1000000;
 	private static final double DEFAULT_START_COST = 100000000;
-	private static final double DEFAULT_FIRST_SECTION_START_COST = 1000000;
+	private static final double DEFAULT_FIRST_SECTION_START_COST = 0;
+	private static final double DEFAULT_NEXT_COST = 100000000;
+	private static final double DEFAULT_NEXT_SECTION_NEXT_COST = 0;
+	private static final double DEFAULT_END_COST_VALUE = 10000;
+	private static final double DEFAULT_END_COST_EXTRA = 0;
 
 	private AudioEngine mEngine;
 	private String mDefaultScene;
@@ -239,6 +241,8 @@ public class Composition {
 				int minSectionLength = 0;
 				int maxDuration = 0;
 				if (jtrack.has(SECTIONS)) {
+					double defaultNextSectionCost = jtrack.has(DEFAULT_NEXT_SECTION_COST) ? jtrack.getDouble(DEFAULT_NEXT_SECTION_COST) : DEFAULT_NEXT_SECTION_NEXT_COST;
+					double defaultEndCost = jtrack.has(DEFAULT_END_COST) ? jtrack.getDouble(DEFAULT_END_COST) : DEFAULT_END_COST_VALUE;
 					JSONArray jsections = jtrack.getJSONArray(SECTIONS);
 					Section lastSection = null;
 					for (int fi=0; fi<jsections.length(); fi++) {
@@ -259,8 +263,11 @@ public class Composition {
 						if (length>0 && (minSectionLength==0 || length<minSectionLength))
 							minSectionLength = length;
 						double startCost = jsection.has(START_COST) ? jsection.getDouble(START_COST) : (fi==0 ? DEFAULT_FIRST_SECTION_START_COST : DEFAULT_START_COST);
-						double endCost = jsection.has(END_COST) ? jsection.getDouble(END_COST) : (fi+1==jsections.length() ? DEFAULT_LAST_SECTION_END_COST : DEFAULT_END_COST);
-						Section section = new Section(sname, trackPos, length, startCost, endCost);
+						double endCost = jsection.has(END_COST) ? jsection.getDouble(END_COST) : defaultEndCost;
+						double endCostExtra = jsection.has(END_COST_EXTRA) ? jsection.getDouble(END_COST_EXTRA) : DEFAULT_END_COST_EXTRA;
+						// adjust to per sample
+						endCostExtra = endCostExtra/mEngine.secondsToSamples(1.0);
+						Section section = new Section(sname, trackPos, length, startCost, endCost, endCostExtra);
 						if (jsection.has(NEXT)) {
 							JSONArray jnext = jsection.getJSONArray(NEXT);
 							for (int ni=0; ni<jnext.length(); ni++) {
@@ -283,7 +290,7 @@ public class Composition {
 									if (next.mName.equals(sname))
 										found = true;
 							if (!found)
-								lastSection.addNext(sname, DEFAULT_NEXT_SECTION_NEXT_COST);
+								lastSection.addNext(sname, defaultNextSectionCost);
 						}
 						atrack.addSection(section);
 						lastSection = section;

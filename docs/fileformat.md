@@ -31,6 +31,8 @@ Array of track Objects with:
 - `sections` - array of sections (see below)
 - `unitTime` - duration in sections of a "unit" of the song when dynamically choosing sections. Usually one bar, but may be one beat or a small number of beats or bars. Defaults to shortest section length.
 - `maxDuration` - greatest duration to which this track might be extended when dynamically choosing sections (seconds, default twice time to last section).
+- `defaultNextSectionCost` - default cost for transition from one section to the next section immediately following it (float, default 0)
+- `defaultEndCost` - default `endCost` for sections without an explicit `endCost` (see below) (float, default is 10,000) 
 - `title` - descriptive, for human consumption only (string, optional)
 - `description` - descriptive, for human consumption only (string, optional)
 
@@ -45,15 +47,16 @@ File ref is Object with:
 - `name` - name (string)
 - `trackPos` - start position in track, in seconds (float, default 0)
 - `length` - length of section (float, default is to start of next section, else -1 = end of track)
-- `startCost` - "cost" of starting with this section (float, default very large, but smaller for first section)
-- `endCost` - "cost" of ending during this section (float, default very large, but smaller for last section)
+- `startCost` - "cost" of starting with this section (float, default is 0 for first section; 100,000,000 for other sections)
+- `endCost` - "cost" of ending during this section (float, default is `defaultEndCost`, above)
+- `endCostExtra` - additional cost per second of ending part way through this session, added to `endCost` (float, default 0)
 - `next` - array of Next Sections (see below)
 - `title` - descriptive, for human consumption only (string, optional)
 - `description` - descriptive, for human consumption only (string, optional)
 
 Next section is Object with:
 - `name` - name of next section
-- `cost` - "cost" of this being the next section (float, default 0)
+- `cost` - "cost" of this being the next section (float, default 0; default cost where the is NO next section record is 100,000,000)
 
 The next section cost for unspecified sections is assumed to be very large (infinite?), but smaller for the next section(!).
 
