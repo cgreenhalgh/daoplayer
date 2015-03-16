@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "test context at University of Nottingham"
+  },
+  "context": {
+    "waypoints": [
+      {
+        "name": "work",
+        "lat": 52.953306, 
+        "lng": -1.187547,
+        "origin": true
+      },
+      {
+        "name": "work2",
+        "lat": 52.952088, 
+        "lng": -1.186968,
+        "origin": true
+      },
+      {
+        "name": "work3",
+        "lat": 52.949992, 
+        "lng": -1.187582,
+        "origin": true
+      }
+    ],
+    "routes": [
+    ]
+  }
+}
+

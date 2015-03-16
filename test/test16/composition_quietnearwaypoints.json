@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "sample of reducing volume neaer waypoints. Distance and level may be exagerated."
+  },
+  "merge": [
+    "context_uon.json"
+  ],
+  "defaultScene": "init",
+  "tracks": [
+    {
+      "name": "test16all wav",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "count16-all.wav", 
+          "trackPos": 0,
+          "length": 16,
+          "repeats": -1
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "init",
+      "partial": false,
+      "updatePeriod": 1,
+      "description": "volume drops to 0.3 when close to waypoint work or work2; defaults to full volume if location unknown",
+      "tracks": [
+        {
+          "name": "test16all wav",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,Math.min(pwl(waypoints['work'].distance,[20,0.1,40,1],1),pwl(waypoints['work2'].distance,[20,0.1,40,1],1))]"
+        }
+      ]
+    }
+  ]
+}
+
