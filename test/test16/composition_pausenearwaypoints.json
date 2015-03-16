@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "sample of reducing volume neaer waypoints. Distance and level may be exagerated."
+  },
+  "merge": [
+    "context_uon.json"
+  ],
+  "defaultScene": "start",
+  "tracks": [
+    {
+      "name": "test16all wav",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "count16-all.wav", 
+          "trackPos": 0,
+          "length": 16,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "padding",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "count16-all.wav", 
+          "trackPos": 0,
+          "length": 1,
+          "repeats": -1
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "start",
+      "partial": false,
+      "updatePeriod": 1,
+      "onupdate": "if (waypoints['work'].near) daoplayer.setScene('pause');",
+      "tracks": [
+        {
+          "name": "test16all wav",
+          "volume": 1,
+          "pos": 0
+        }
+      ]
+    },
+    {
+      "name": "pause",
+      "partial": true,
+      "updatePeriod": 1,
+      "onupdate": "if (!waypoints['work'].near) daoplayer.setScene('resume');",
+      "description": "saves where we are up to in the track but don't change it",
+      "tracks": [
+        {
+          "name": "test16all wav",
+          "pos": "(function(){window.trackTimeTest16=trackTime; return null;})()",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,0]",
+          "update": false 
+        },
+        {
+          "name": "padding",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,0.5]",
+          "update": false 
+        },
+      ]
+    },
+    {
+      "name": "resume",
+      "partial": true,
+      "updatePeriod": 1,
+      "onupdate": "if (waypoints['work'].near) daoplayer.setScene('pause');",
+      "description": "carry on from saved position",
+      "tracks": [
+        {
+          "name": "test16all wav",
+          "pos": "[sceneTime,window.trackTimeTest16-1]",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,1]",
+          "update": false 
+        },
+        {
+          "name": "padding",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,0]",
+          "update": false         
+        },
+      ]
+    }
+  ]
+}
+
