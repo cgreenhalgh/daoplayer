@@ -15,14 +15,12 @@
       {
         "name": "work2",
         "lat": 52.952088, 
-        "lng": -1.186968,
-        "origin": true
+        "lng": -1.186968
       },
       {
         "name": "work3",
         "lat": 52.949992, 
-        "lng": -1.187582,
-        "origin": true
+        "lng": -1.187582
       }
     ],
     "routes": [

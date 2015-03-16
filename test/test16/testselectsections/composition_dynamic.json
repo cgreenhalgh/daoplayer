@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "test of dynamic (distance/time-based section select)"
+  },
+  "defaultScene": "testselectsections",
+  "context": {
+    "waypoints": [
+      {
+        "name": "work",
+        "lat": 52.953306, 
+        "lng": -1.187547,
+        "origin": true
+      }
+    ]
+  },
+  "tracks": [
+    {
+      "name": "test16",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "count16-all.wav", 
+          "trackPos": 0,
+          "length": 16
+        }
+      ],
+      "sections": [
+        { "name": "one", "trackPos": 0, "startCost": 0,
+          "next": [ {"name":"five","cost":0}, {"name":"nine","cost":10}, {"name":"thirteen","cost":20} ] 
+        },
+        { "name": "five", "trackPos": 4, 
+          "next": [ {"name":"nine","cost":0}, {"name":"thirteen","cost":10} ] 
+        },
+        { "name": "nine", "trackPos": 8, 
+          "next": [ {"name":"thirteen","cost":0}, {"name":"nine","cost":2} ] 
+        },
+        { "name": "thirteen", "trackPos": 12,
+          "next": [ {"name":"end","cost":0}, {"name":"nine","cost":100} ] 
+        },
+        { "name": "end", "trackPos": 16, "length": 4, "endCost": 0
+        }
+      ],
+      "unitTime": 2,
+      "maxDuration": 32
+    }
+  ],
+  "scenes": [
+    {
+      "name": "testselectsections",
+      "partial": false,
+      "onload": "if (waypoints['work'].distance!==undefined) window.esimatedEnd=totalTime+(waypoints['work'].distance-10)/1.5; else window.estimatedEnd=300;", 
+      "onupdate": "if (waypoints['work'].distance!==undefined) {  window.esimatedEnd=totalTime+(waypoints['work'].distance-10)/1.5; if (waypoints['work'].distance<10) daoplayer.setScene('done'); }", 
+      "updatePeriod": 1,
+      "tracks": [
+        {
+          "name": "test16",
+          "pos":"daoplayer.selectSections('test16',currentSection,sceneTime,window.estimatedEnd-totalTime)",
+          "volume": 1          
+        }
+      ]
+    },
+    {
+      "name": "done",
+      "partial": true,
+      "tracks": [
+        {
+          "name": "test16",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,0]"          
+        }
+      ]
+    }
+
+  ]
+}
+
