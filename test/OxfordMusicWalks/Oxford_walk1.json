@@ -7,18 +7,18 @@
   },
   
   "merge": [
-    "Oxford_contextWalk1.json",
+    "_Oxford_contextWalk1.json",
     
-    "Oxford_tracksNotAlone.json",
-    "Oxford_tracksR12.json",
-    "Oxford_tracksR8.json",
-    "Oxford_tracksInTheMeantime.json",
-    "Oxford_tracksLeadMeMulti.json",
-    "Oxford_tracks.json",
-    "Oxford_start1.json",
-    "Oxford_scenesWalk1.json"
+    "_Oxford_tracksNotAlone.json",
+    "_Oxford_tracksR12.json",
+    "_Oxford_tracksR8.json",
+    "_Oxford_tracksInTheMeantime.json",
+    "_Oxford_tracksLeadMeMulti.json",
+    "_Oxford_tracks1.json",
+    "_Oxford_start1.json",
+    "_Oxford_scenesWalk1.json"
     
   ],
-  "defaultScene": "Start"
+  "defaultScene": "Start1"
 }
 
