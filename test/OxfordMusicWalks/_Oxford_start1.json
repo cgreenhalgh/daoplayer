@@ -36,7 +36,7 @@
       "waypoints":{},
       "partial": false,
       "onload": "window.lastWarning=(-10); window.lastGpsWarning=(-10); daoplayer.speak('Waiting for G P S.',true);",
-      "onupdate": "if (activity!=null && activity!='NOGPS') {daoplayer.speak('OK, G P S is working',true); daoplayer.setScene('Start/any');}",
+      "onupdate": "if (activity!=null && activity!='NOGPS') {daoplayer.speak('OK, G P S is working',true); daoplayer.setScene('Start/any1');}",
       "updatePeriod":1.0,
       "description": "wait for gps",
       "tracks": [
@@ -47,7 +47,7 @@
       ]
     },
     {
-      "name": "Start/any",
+      "name": "Start/any1",
       "partial": true,
       "waypoints":{"S1_1":"S1_1","S1_2":"S1_2"},
       "onupdate": "if (waypoints['S1_2'].near) { daoplayer.speak('starting Walk 1', true); daoplayer.setScene('Start/walk1'); } else if (waypoints['S1_1'].near) daoplayer.setScene('Start/oerc'); else if (totalTime-window.lastWarning>20) { window.lastWarning=totalTime; daoplayer.speak('This walk start from the Oxford e-Research Centre, but you seem to be somewhere else', true); }",
@@ -65,7 +65,7 @@
       "partial": true,
       "waypoints":{"S1_1":"S1_1","S1_2":"S1_2"},
       "onload": "daoplayer.speak('Please walk along keble road and into the park', false);",
-      "onupdate": "if (waypoints['S1_2'].near) { daoplayer.speak('starting walk 1', true); daoplayer.setScene('Start/walk1'); } else if (position!=null && !waypoints['S1_1'].near) daoplayer.setScene('Start/any');",
+      "onupdate": "if (waypoints['S1_2'].near) { daoplayer.speak('starting walk 1', true); daoplayer.setScene('Start/walk1'); } else if (position!=null && !waypoints['S1_1'].near) daoplayer.setScene('Start/any1');",
       "updatePeriod":1.0,
       "tracks": [
         {
@@ -77,7 +77,7 @@
     {
       "name": "Start/walk1",
       "partial": true,
-      "onupdate": "daoplayer.setScene('LeadMeMulti1');",
+      "onupdate": "daoplayer.setScene('R12approach1');",
       "updatePeriod":1.0,
       "tracks": [
         {

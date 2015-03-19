@@ -65,7 +65,7 @@
       "partial": true,
       "waypoints":{"S2_1":"S2_1","S2_2":"S2_2"},
       "onload": "daoplayer.speak('Please walk along Fyfield Road and turn right onto Norham Gardens', false);",
-      "onupdate": "if (waypoints['S2_2'].near) { daoplayer.speak('starting walk 2', true); daoplayer.setScene('Start/walk2'); } else if (position!=null && !waypoints['S2_1'].near) daoplayer.setScene('Start/any');",
+      "onupdate": "if (waypoints['S2_2'].near) { daoplayer.speak('starting walk 2', true); daoplayer.setScene('Start/walk2'); } else if (position!=null && !waypoints['S2_1'].near) daoplayer.setScene('Start/any2');",
       "updatePeriod":1.0,
       "tracks": [
         {

@@ -27,7 +27,7 @@
       "waypoints":{"R2_4":"R2_4","R2_3":"R2_3"},
       "description":  "To accompany walk along Norham Gardens",
       "partial": false,
-      "onupdate": "if (waypoints['R2_4'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R2_4'].distance-10)/1.5; if (waypoints['R2_4'].distance<10) daoplayer.setScene('PouringRoom'); }",
+      "onupdate": "if (waypoints['R2_4'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R2_4'].distance-10)/1.5; if (waypoints['R2_4'].near) daoplayer.setScene('PouringRoom'); }",
       "updatePeriod":1.0,
       "tracks": [
         {
@@ -272,7 +272,7 @@
     },
     {
       "name": "R8end",
-      "waypoints":{},
+      "waypoints":{"R2_16":"R2_16"},
       "description": "This track initiates upon entry to Mansfield College gates",
       "partial": false,
       "tracks": [

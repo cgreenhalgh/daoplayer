@@ -200,7 +200,7 @@
     },
     {
       "name": "LeadMeMulti2",
-      "waypoints":{"R1_6":"R1_6"},
+      "waypoints":{"R1_6":"R1_6","R1_5":"R1_5"},
       "description": "change of instrument volumes",
       "partial": false,
       "onupdate": "if (waypoints['R1_6'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_6'].distance-10)/1.5; if (waypoints['R1_6'].distance<10) daoplayer.setScene('LeadMeMulti3'); }",
@@ -234,29 +234,29 @@
       "waypoints":{"R1_7":"R1_7"},
       "description": "volume dip at junction",
       "partial": false,
-      "onupdate": "if (waypoints['R1_7'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_7'].distance-10)/1.5; if (waypoints['R1_7'].distance<10) daoplayer.setScene('LeadMeMulti4'); }",
+      "onupdate": "if (waypoints['R1_7'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_7'].distance-10)/1.5; if (waypoints['R1_7'].near) daoplayer.setScene('LeadMeMulti4'); }",
       "updatePeriod":1.0,
       
       "tracks": [
         {
           "name": "LM_Drums",
-          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['work'].distance,[4,0.3,7,1],1)]"
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
         },
         {
           "name": "LM_Bass",
-          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['work'].distance,[4,0.3,7,1],1)]"
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
         },
         {
           "name": "LM_Guitars",
-          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['work'].distance,[4,0.3,7,1],1)]"
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
         },
         {
           "name": "LM_Accordian_Keys",
-          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['work'].distance,[4,0.3,7,1],1)]"
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
         },
         {
           "name": "LM_Vocals",
-          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['work'].distance,[4,0.7,7,1],1)]"
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
         }
       ]
     },
@@ -327,29 +327,29 @@
       "waypoints":{"R1_10":"R1_10"},
 
       "partial": false,
-      "onupdate": "if (waypoints['R1_10'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_10'].distance-10)/1.5; if (waypoints['R1_10'].distance<10) daoplayer.setScene('end_holdingPad'); }",
+      "onupdate": "if (waypoints['R1_10'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_10'].distance-10)/1.5; if (waypoints['R1_10'].near) daoplayer.setScene('end_holdingPad'); }",
       "updatePeriod":1.0,
       
       "tracks": [
         {
           "name": "LM_Drums",
-          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['work'].distance,[5,0,50,1],1)]"
+          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['R1_10'].distance,[5,0,50,1],1)]"
         },
         {
           "name": "LM_Bass",
-          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['work'].distance,[5,0,50,1],1)]"
+          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['R1_10'].distance,[5,0,50,1],1)]"
         },
         {
           "name": "LM_Guitars",
-          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['work'].distance,[5,0,50,1],1)]"
+          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['R1_10'].distance,[5,0,50,1],1)]"
         },
         {
           "name": "LM_Accordian_Keys",
-          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['work'].distance,[5,0,50,1],1)]"
+          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['R1_10'].distance,[5,0,50,1],1)]"
         },
         {
           "name": "LM_Vocals",
-          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['work'].distance,[5,0,50,0.8],0.8)]"
+          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['R1_10'].distance,[5,0,50,0.8],0.8)]"
         }
       ]
     },

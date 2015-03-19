@@ -8,11 +8,11 @@
   "defaultScene": "rearrangementA",
   "tracks": [
     {
-      "name": "ITM",
+      "name": "InTheMeantime",
       "pauseIfSilent": false,
       "files": [
         { 
-          "path": "InTheMeantimeTest.wav",
+          "path": "InTheMeantime.wav",
           "trackPos": 0,
           "length": 263.14
         }
