@@ -42,7 +42,7 @@
           },
           
         { "name": "NA_intro2b", "trackPos": 21.1861, "length":  7.09, "startCost": 40,
-          "next": [ {"name":"NA_intro2C","cost":0
+          "next": [ {"name":"NA_intro2c","cost":0
         },
           {"name":"NA_intro2a","cost":10},{"name":"NA_intro2b","cost":20},{"name":"NA_intro1a","cost":100},{"name":"NA_intro1b","cost":200
           },
@@ -100,7 +100,7 @@
         { "name": "NA_link1a", "trackPos": 99.7357, "length":  7.1332, 
           "next": [ {"name":"NA_link1b","cost":0
           },
-          {"name":"NA_link1a","cost":10},{"name":"NA_intro2a","cost":50},{"name":"NA_intro2c","cost":100},{"name":"NA_intro2b","cost":150},{"name":"NA_intro1d","cost":200},{"name":"NA_intro1a","cost":1000},{"name":"NA_intro1b","cost":1500
+          {"name":"NA_link1a","cost":10},{"name":"NA_intro2a","cost":50},{"name":"NA_intro2c","cost":100},{"name":"NA_intro2b","cost":150},{"name":"NA_intro2d","cost":200},{"name":"NA_intro1a","cost":1000},{"name":"NA_intro1b","cost":1500
           },
           {"name":"NA_verse2a","cost":10},{"name":"NA_verse2c","cost":20},{"name":"NA_verse3a","cost":100},{"name":"NA_chorus2a","cost":500},{"name":"NA_chorus2b","cost":1000},{"name":"NA_verse3b","cost":1500}]
         },

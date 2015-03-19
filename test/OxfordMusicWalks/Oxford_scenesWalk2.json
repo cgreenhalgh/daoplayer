@@ -34,8 +34,8 @@
         },
         {
           "name": "InTheMeantime",
-          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1",
-          "pos": 0
+          "volume": 1,
+          "pos": "daoplayer.selectSections('InTheMeantime',currentSection,sceneTime,window.estimatedEnd-totalTime)"
         }
       ]
     },

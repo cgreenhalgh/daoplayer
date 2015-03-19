@@ -1,0 +1,179 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title":  "In the Meantime - Sections in scenes",
+    "descriotion":  "Sections of the track rearranged within two scenes"
+  },
+  "defaultScene": "rearrangementA",
+  "tracks": [
+    {
+      "name": "ITM",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "InTheMeantimeTest.wav",
+          "trackPos": 0,
+          "length": 263.14
+        }
+      ],
+      "sections": [
+        { "name": "itm_intro1A", "trackPos": 0, "length":  4.5958, "startCost": 0,
+        "next": [ {"name":"itm_intro1B","cost":0},
+          {"name":"itm_intro1A","cost":10
+          },
+          {"name":"itm_intro1C","cost":20},{"name":"itm_intro1D","cost":100},{"name":"itm_verse1A","cost":200},{"name":"itm_verse1B","cost":400}]
+      
+        },
+        { "name": "itm_intro1B", "trackPos": 4.5959, "length":  4.6212,
+        "next": [ {"name":"itm_intro1C","cost":0
+        },
+          {"name":"itm_intro1B","cost":10
+          },
+          {"name":"itm_intro1C","cost":10},{"name":"itm_intro1D","cost":50},{"name":"itm_verse1A","cost":200},{"name":"itm_verse1B","cost":400},{"name":"itm_chorus1","cost":1000}]},
+        
+        
+        { "name": "itm_intro1C", "trackPos": 9.2172, "length":  4.6132,
+         "next": [ {"name":"itm_intro1D","cost":0
+        },
+          {"name":"itm_intro1B","cost":10},{"name":"itm_intro1C","cost":100},{"name":"itm_intro1A","cost":1000
+          },
+          {"name":"itm_verse1A","cost":10},{"name":"itm_verse1B","cost":100},{"name":"itm_chorus1","cost":100},{"name":"itm_verse2A","cost":1000}]
+        },
+        
+        { "name": "itm_intro1D", "trackPos": 13.8304, "length":  18.5037,
+          "next": [ {"name":"itm_verse1A","cost":0
+        },
+          {"name":"itm_intro1D","cost":10},{"name":"itm_intro1B","cost":50},{"name":"itm_intro1C","cost":100},{"name":"itm_intro1A","cost":1000
+          },
+          {"name":"itm_verse1B","cost":10},{"name":"itm_chorus1","cost":100},{"name":"itm_verse2A","cost":1000}]
+        },
+        
+        
+        { "name": "itm_verse1A", "trackPos": 32.3340, "length":  18.3373,
+         "next": [ {"name":"itm_verse1B","cost":0
+        },
+          {"name":"itm_intro1D","cost":10},{"name":"itm_intro1B","cost":50},{"name":"itm_intro1C","cost":100},{"name":"itm_intro1A","cost":1000
+          },
+          {"name":"itm_chorus1","cost":10},{"name":"itm_verse2A","cost":100},{"name":"itm_verse2B","cost":1000}]
+        },
+        
+        { "name": "itm_verse1B", "trackPos": 50.6713, "length":  18.6292,
+        "next": [ {"name":"itm_chorus1","cost":0
+        },
+          {"name":"itm_intro1D","cost":10},{"name":"itm_intro1B","cost":50},{"name":"itm_intro1C","cost":100},{"name":"itm_verse1A","cost":1000
+          },
+          {"name":"itm_verse2A","cost":10},{"name":"itm_verse2B","cost":50},{"name":"itm_chorus2","cost":500}]
+        },
+        
+        { "name": "itm_chorus1", "trackPos": 69.305, "length":  18.0735,
+        "next": [ {"name":"itm_verse2A","cost":0
+        },
+          {"name":"itm_chorus1","cost":10},{"name":"itm_intro1D","cost":50},{"name":"itm_intro1B","cost":100},{"name":"itm_verse1C","cost":1000
+          },
+          {"name":"itm_verse2B","cost":10},{"name":"itm_chorus2","cost":50},{"name":"itm_chorus3","cost":500}]
+        },
+        
+        
+        { "name": "itm_verse2A", "trackPos": 87.3740, "length":  18.3738,
+        "next": [ {"name":"itm_verse2B","cost":0
+        },
+          {"name":"itm_intro1D","cost":10},{"name":"itm_intro1B","cost":100},{"name":"itm_verse1C","cost":1000
+          },
+          {"name":"itm_chorus2","cost":10},{"name":"itm_chorus3","cost":50},{"name":"itm_bridgeA","cost":1000}]
+        },
+        
+        { "name": "itm_verse2B", "trackPos": 105.7478, "length":  18.4929,
+        "next": [ {"name":"itm_chorus2","cost":0
+        },
+          {"name":"itm_intro1D","cost":10},{"name":"itm_intro1B","cost":100},{"name":"itm_verse1C","cost":1000
+          },
+          {"name":"itm_chorus3","cost":10},{"name":"itm_bridgeA","cost":50},{"name":"itm_bridgeB","cost":1000}]
+        },
+        
+        { "name": "itm_chorus2", "trackPos": 124.247, "length":  18.0668,
+        "next": [ {"name":"itm_chorus3","cost":0
+        },
+          {"name":"itm_intro1D","cost":10},{"name":"itm_intro1B","cost":100},{"name":"itm_verse1C","cost":1000
+          },
+          {"name":"itm_bridgeA","cost":10},{"name":"itm_bridgeB","cost":50}]
+        },
+        
+        { "name": "itm_chorus3", "trackPos": 142.3075, "length":  18.2300,
+        "next": [ {"name":"itm_bridgeA","cost":0
+        },
+          {"name":"itm_chorus2","cost":10},{"name":"itm_intro1D","cost":100},{"name":"itm_intro1B","cost":1000},{"name":"itm_verse1C","cost":10000
+          },
+          {"name":"itm_bridgeB","cost":10},{"name":"itm_intro2A","cost":100},{"name":"itm_intro2B","cost":1000}]
+        },
+        
+        { "name": "itm_bridgeA", "trackPos": 160.5375, "length":  19.2026,
+        "next": [ {"name":"itm_bridgeB","cost":0
+        },
+          {"name":"itm_bridgeA","cost":10},{"name":"itm_bridgeB","cost":100},{"name":"itm_chorus2","cost":1000},{"name":"itm_chorus3","cost":10000
+          },
+          {"name":"itm_intro2A","cost":10},{"name":"itm_intro2B","cost":10},{"name":"itm_intro2C","cost":1000}]
+        },
+        
+        { "name": "itm_bridgeB", "trackPos": 179.74, "length":  13.2324,
+        "next": [ {"name":"itm_intro2A","cost":0
+        },
+          {"name":"itm_bridgeA","cost":10},{"name":"itm_bridgeB","cost":100},{"name":"itm_chorus2","cost":1000},{"name":"itm_chorus3","cost":10000
+          },
+          {"name":"itm_intro2A","cost":10},{"name":"itm_intro2B","cost":100},{"name":"itm_intro2C","cost":1000}]
+        },
+        
+        { "name": "itm_intro2A", "trackPos": 192.9725, "length":  4.6118,
+        "next": [ {"name":"itm_intro2B","cost":0
+        },
+          {"name":"itm_intro2A","cost":10},{"name":"intro1C","cost":100},{"name":"itm_intro1D","cost":1000
+          },
+          {"name":"itm_intro2A","cost":50},{"name":"itm_intro2B","cost":1000},{"name":"itm_intro2C","cost":10}]
+        },
+        
+        { "name": "itm_intro2B", "trackPos": 197.5843, "length":  4.6440,
+        "next": [ {"name":"itm_intro2C","cost":0
+        },
+          {"name":"itm_intro2A","cost":10},{"name":"intro1D","cost":100},{"name":"itm_intro1C","cost":1000
+          },
+          {"name":"itm_chorus4","cost":10},{"name":"chorus5","cost":100},{"name":"itm_playOut","cost":1000}]
+        },
+        
+        { "name": "itm_intro2C", "trackPos": 202.2283, "length":  4.1533,
+        "next": [ {"name":"itm_chorus4","cost":0
+        },
+          {"name":"itm_intro2A","cost":10},{"name":"intro2B","cost":100},{"name":"itm_intro1C","cost":1000
+          },
+          {"name":"itm_chorus4","cost":10},{"name":"chorus5","cost":100},{"name":"itm_playOut","cost":1000}]
+        },
+        
+        
+        { "name": "itm_chorus4", "trackPos": 206.3816, "length":  18.7619,
+        "next": [ {"name":"itm_chorus5","cost":0
+        },
+          {"name":"itm_chorus4","cost":10},{"name":"chorus5","cost":100},{"name":"itm_intro1D","cost":1000
+          },
+          {"name":"itm_playout","cost":10}]
+        },
+        
+        
+        { "name": "itm_chorus5", "trackPos": 225.1435, "length":  20.6006,
+        "next": [ {"name":"itm_chorus5","cost":0
+        },
+          {"name":"itm_chorus4","cost":10},{"name":"chorus5","cost":100},{"name":"itm_intro1D","cost":1000
+          },
+          {"name":"itm_playout","cost":10}]
+        },
+        
+        { "name": "itm_playOut", "trackPos": 245.7441, "length":  16.0244, "endCost": 20,
+        "next": [ {"name":"itm_playOut","cost":10},{"name":"chorus4","cost":100},{"name":"itm_chorus5","cost":1000
+        }]
+        },
+        
+        { "name": "itm_endAccent", "trackPos": 261.7685, "endCost": 10 },
+        { "name": "itm_end", "trackPos": 263.14, "endCost": 0 }
+
+      ]
+    }
+  ]
+}
