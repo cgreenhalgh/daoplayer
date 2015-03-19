@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title":  "Oxford Music Walk",
+    "description":  "Merge file or Oxford Musc Walk"
+  },
+  
+  "merge": [
+    "Oxford_contextWalk2.json",
+    "Oxford_tracksNotAlone.json",
+    "Oxford_tracksR8.json",
+    "Oxford_tracksInTheMeantime.json",
+    "Oxford_tracks2.json",
+    "Oxford_starts.json",
+    "Oxford_scenesWalk2.json"
+  ],
+  "defaultScene": "start_holdingPad"
+}

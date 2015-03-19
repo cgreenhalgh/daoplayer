@@ -100,7 +100,7 @@
       "name": "NotAlone3",
       "description": "This track initiates at end of Pit Rivers museum",
       "partial": false,
-      "onupdate": "if (waypoints['R2_9'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R2_9'].distance-10)/1.5; if (waypoints['R2_9'].distance<10) daoplayer.setScene('LeadMeMix'); }",
+      "onupdate": "if (waypoints['R2_9'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R2_9'].distance-10)/1.5; if (waypoints['R2_9'].distance<10) daoplayer.setScene('RedToBlue'); }",
       "updatePeriod":1.0,
       "tracks": [
         {
@@ -146,7 +146,6 @@
         },
         {
           "name": "RedToBlue",
-          "pos": 0,
           "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
         }
       ] 
@@ -158,6 +157,10 @@
       "onupdate": "if (waypoints['R2_12'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R2_12'].distance-10)/1.5; if (waypoints['R2_12'].distance<10) daoplayer.setScene('R8L2'; }",
       "updatePeriod":1.0,
       "tracks": [
+        {
+          "name": "R8",
+          "volume": 1
+        },
         {
           "name": "R8L1",
           "pos": 0,
@@ -173,13 +176,16 @@
       "updatePeriod":1.0,
       "tracks": [
         {
+          "name": "R8",
+          "volume": 1
+        },
+        {
           "name": "R8L2",
           "pos": 0,
           "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
         },
         {
           "name": "R8L1",
-          "pos": 0,
           "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
         }
       ] 
@@ -192,13 +198,16 @@
       "updatePeriod":1.0,
       "tracks": [
         {
+          "name": "R8",
+          "volume": 1
+        },
+        {
           "name": "R8L3",
           "pos": 0,
           "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
         },
         {
           "name": "R8L2",
-          "pos": 0,
           "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
         }
       ] 
@@ -211,13 +220,16 @@
       "updatePeriod":1.0,
       "tracks": [
         {
+          "name": "R8",
+          "volume": 1
+        },
+        {
           "name": "R8L4",
           "pos": 0,
           "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
         },
         {
           "name": "R8L3",
-          "pos": 0,
           "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
         }
       ] 
@@ -236,12 +248,10 @@
         },
         {
           "name": "R8L4",
-          "pos": 0,
           "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
         },
         {
           "name": "R8",
-          "pos": 0,
           "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
         }
       ] 
@@ -252,12 +262,7 @@
       "partial": false,
       "tracks": [
         {
-          "name": "R8",
-          "pos": 0,
-          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
-        },
-        {
-          "name": "R8",
+          "name": "R8E1",
           "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
         }
       ] 
