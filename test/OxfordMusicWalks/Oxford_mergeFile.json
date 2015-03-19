@@ -8,7 +8,7 @@
   
   "merge": [
     "Oxford_contextWalk1.json",
-    "Oxford_contextWalk2.json",
+    
     "Oxford_tracksNotAlone.json",
     "Oxford_tracksR12.json",
     "Oxford_tracksR8.json",
@@ -16,8 +16,8 @@
     "Oxford_tracksLeadMeMulti.json",
     "Oxford_tracks.json",
     "Oxford_starts.json",
-    "Oxford_scenesWalk1.json",
-    "Oxford_scenesWalk2.json"
+    "Oxford_scenesWalk1.json"
+    
   ],
-  "defaultScene": "scene1_holding1"
+  "defaultScene": "start_holdingPad"
 }

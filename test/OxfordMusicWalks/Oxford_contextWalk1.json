@@ -33,18 +33,50 @@
         "lng": -1.257832 ,
         "nearDistance": 8,
         "origin": true,
-        "description":  "Entering Park"
+        "description":  "Entering Park" 
+      },
+      {
+        "name": "R1_3a",
+        "lat": 51.760358, 
+        "lng": -1.256345 ,
+        "nearDistance": 8,
+        "origin": true,
+        "description":  "stage1" 
+      },
+      {
+        "name": "R1_3b",
+        "lat": 51.760830, 
+        "lng": -1.255075 ,
+        "nearDistance": 8,
+        "origin": true,
+        "description":  "stage2" 
+      },
+      {
+        "name": "R1_3c",
+        "lat": 51.761199, 
+        "lng": -1.253975 ,
+        "nearDistance": 8,
+        "origin": true,
+        "description":  "stage3" 
       },
       {
         "name": "R1_4",
-        "lat": 51.761817, 
-        "lng": -1.252795 ,
+        "lat": 51.761755, 
+        "lng": -1.252943 ,
         "nearDistance": 5,
         "origin": true,
-        "description":  "Crossroads in middle of park"
+        "description":  "just before crossroads in middle of park" 
       },
       {
         "name": "R1_4a",
+        "lat": 51.761929, 
+        "lng": -1.252691 ,
+        "nearDistance": 5,
+        "origin": true,
+        "description":  "just after Crossroads in middle of park" 
+      },
+      {
+        "name": "R1_4b",
         "lat": 51.762212, 
         "lng": -1.252331 ,
         "nearDistance": 5,

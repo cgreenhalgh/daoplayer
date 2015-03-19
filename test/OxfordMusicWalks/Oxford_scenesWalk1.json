@@ -10,7 +10,7 @@
     {
       "name": "start_holdingPad",
       "partial": false,
-       "onupdate": "if (waypoints['1'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['1'].distance-10)/1.5; if (waypoints['1'].distance<10) daoplayer.setScene('LeadMeMulti'); }",
+       "onupdate": "if (waypoints['R1_3'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_3'].distance-10)/1.5; if (waypoints['R1_3'].distance<10) daoplayer.setScene('R12approach1'); }",
       "updatePeriod":1.0,
       "tracks": [
         {
@@ -21,22 +21,142 @@
       ] 
     },
     {
-      "name": "some YSP files and commands!!!",
+      "name": "R12approach1",
       "partial": false,
-       "onupdate": "if (waypoints['1'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['1'].distance-10)/1.5; if (waypoints['1'].distance<10) daoplayer.setScene('LeadMeMulti'); }",
+       "onupdate": "if (waypoints['R1_3a'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_3a'].distance-10)/1.5; if (waypoints['R1_3a'].distance<10) daoplayer.setScene('R12approach2'); }",
       "updatePeriod":1.0,
       "tracks": [
         {
-          "name": "????????",
-          "volume": "[sceneTime,trackVolume,sceneTime+1,1]", 
+          "name": "R12",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,1]",
+          "pos":  0
+        },
+        {
+          "name": "R12L1",
+          "volume":  "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" ,
+          "pos":  0
+        },
+        {
+          "name": "R12L2",
+          "volume":  "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" ,
+          "pos":  0
+        },
+        {
+          "name": "R12L3",
+          "volume":  "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" , 
+          "pos":  0
+        },
+        {
+          "name": "holdingPad",
+          "volume":  "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" ,
           "pos":  0
         }
       ] 
     },
     {
+      "name": "R12approach2",
+      "partial": false,
+       "onupdate": "if (waypoints['R1_3b'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_3b'].distance-10)/1.5; if (waypoints['R1_3b'].distance<10) daoplayer.setScene('R12approach3'); }",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "R12",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" 
+        },
+        {
+          "name": "R12L1",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,1]"
+        },
+        {
+          "name": "R12L2",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" 
+        },
+        {
+          "name": "R12L3",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" 
+        }
+      ]
+    }, 
+    {
+      "name": "R12approach3",
+      "partial": false,
+       "onupdate": "if (waypoints['R1_3c'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_3c'].distance-10)/1.5; if (waypoints['R1_3c'].distance<10) daoplayer.setScene('R12approach4'); }",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "R12",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"  
+        },
+        {
+          "name": "R12L1",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" 
+        },
+        {
+          "name": "R12L2",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,1]"
+        },
+        {
+          "name": "R12L3",
+          "volume":  "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" 
+        }
+      ]
+    }, 
+    {
+      "name": "R12approach4",
+      "partial": false,
+       "onupdate": "if (waypoints['R1_4'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_4'].distance-10)/1.5; if (waypoints['R1_4'].distance<10) daoplayer.setScene('R12arrive'); }",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "R12",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"  
+        },
+        {
+          "name": "R12L1",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"  
+        },
+        {
+          "name": "R12L2",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
+        },
+        {
+          "name": "R12L3",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,1]"
+        }
+      ]
+    }, 
+    {
+      "name": "R12arrive",
+      "partial": false,
+       "onupdate": "if (waypoints['R1_4a'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_4a'].distance-10)/1.5; if (waypoints['R1_4a'].distance<10) daoplayer.setScene('LeadMeMulti1'); }",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "R12",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"  
+        },
+        {
+          "name": "R12L1",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"  
+        },
+        {
+          "name": "R12L2",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" 
+        },
+        {
+          "name": "R12L3",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
+        },
+        {
+          "name": "R12E",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,1]"
+        }
+      ]
+    }, 
+    {
       "name": "LeadMeMulti1",
       "partial": false,
-      "onupdate": "if (waypoints['R1_4a'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_4a'].distance-10)/1.5; if (waypoints['R1_4a'].distance<10) daoplayer.setScene('LeadMeMulti2'); }",
+      "onupdate": "if (waypoints['R1_5'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_5'].distance-10)/1.5; if (waypoints['R1_5'].distance<10) daoplayer.setScene('LeadMeMulti2'); }",
       "updatePeriod":1.0,
       
       "tracks": [
@@ -64,6 +184,10 @@
           "name": "LM_Vocals",
           "volume": 1,
           "pos": 0
+        },
+        {
+          "name": "R12E",
+          "volume":  "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
         }
       ]
     },
@@ -71,7 +195,7 @@
       "name": "LeadMeMulti2",
       "description": "change of instrument volumes",
       "partial": false,
-      "onupdate": "if (waypoints['R1_5a'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_5a'].distance-10)/1.5; if (waypoints['R1_5a'].distance<10) daoplayer.setScene('LeadMeMulti3'); }",
+      "onupdate": "if (waypoints['R1_6'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_6'].distance-10)/1.5; if (waypoints['R1_6'].distance<10) daoplayer.setScene('LeadMeMulti3'); }",
       "updatePeriod":1.0,
       
       "tracks": [
@@ -101,29 +225,29 @@
       "name": "LeadMeMulti3",
       "description": "volume dip at junction",
       "partial": false,
-      "onupdate": "if (waypoints['R1_6'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_6'].distance-10)/1.5; if (waypoints['R1_6'].distance<10) daoplayer.setScene('LeadMeMulti4'); }",
+      "onupdate": "if (waypoints['R1_7'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_7'].distance-10)/1.5; if (waypoints['R1_7'].distance<10) daoplayer.setScene('LeadMeMulti4'); }",
       "updatePeriod":1.0,
       
       "tracks": [
         {
           "name": "LM_Drums",
-          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
+          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['work'].distance,[4,0.3,7,1],1)]"
         },
         {
           "name": "LM_Bass",
-          "volume": 1
+          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['work'].distance,[4,0.3,7,1],1)]"
         },
         {
           "name": "LM_Guitars",
-          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
+          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['work'].distance,[4,0.3,7,1],1)]"
         },
         {
           "name": "LM_Accordian_Keys",
-          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
+          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['work'].distance,[4,0.3,7,1],1)]"
         },
         {
           "name": "LM_Vocals",
-          "volume": 0.7
+          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['work'].distance,[4,0.7,7,1],1)]"
         }
       ]
     },
@@ -131,7 +255,37 @@
       "name": "LeadMeMulti4",
       
       "partial": false,
-      "onupdate": "if (waypoints['R1_6'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_6'].distance-10)/1.5; if (waypoints['R1_6'].distance<10) daoplayer.setScene('LeadMeMulti4'); }",
+      "onupdate": "if (waypoints['R1_8'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_8'].distance-10)/1.5; if (waypoints['R1_8'].distance<10) daoplayer.setScene('LeadMeMulti5'); }",
+      "updatePeriod":1.0,
+      
+      "tracks": [
+        {
+          "name": "LM_Drums",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
+        },
+        {
+          "name": "LM_Bass",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
+        },
+        {
+          "name": "LM_Guitars",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
+        },
+        {
+          "name": "LM_Accordian_Keys",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
+        },
+        {
+          "name": "LM_Vocals",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0.7] : 0.7"
+        }
+      ]
+    },
+    {
+      "name": "LeadMeMulti5",
+      
+      "partial": false,
+      "onupdate": "if (waypoints['R1_9'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_9'].distance-10)/1.5; if (waypoints['R1_9'].distance<10) daoplayer.setScene('LeadMeMulti6'); }",
       "updatePeriod":1.0,
       
       "tracks": [
@@ -141,7 +295,7 @@
         },
         {
           "name": "LM_Bass",
-          "volume": 1
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
         },
         {
           "name": "LM_Guitars",
@@ -149,18 +303,48 @@
         },
         {
           "name": "LM_Accordian_Keys",
-          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
         },
         {
           "name": "LM_Vocals",
-          "volume": 0.7
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
+        }
+      ]
+    },
+    {
+      "name": "LeadMeMulti6",
+      
+      "partial": false,
+      "onupdate": "if (waypoints['R1_10'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_10'].distance-10)/1.5; if (waypoints['R1_10'].distance<10) daoplayer.setScene('end_holdingPad'); }",
+      "updatePeriod":1.0,
+      
+      "tracks": [
+        {
+          "name": "LM_Drums",
+          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['work'].distance,[5,0,50,1],1)]"
+        },
+        {
+          "name": "LM_Bass",
+          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['work'].distance,[5,0,50,1],1)]"
+        },
+        {
+          "name": "LM_Guitars",
+          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['work'].distance,[5,0,50,1],1)]"
+        },
+        {
+          "name": "LM_Accordian_Keys",
+          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['work'].distance,[5,0,50,1],1)]"
+        },
+        {
+          "name": "LM_Vocals",
+          "volume": "[sceneTime,trackVolume,sceneTime+1, pwl(waypoints['work'].distance,[5,0,50,0.8],0.8)]"
         }
       ]
     },
     {
       "name": "end_holdingPad",
       "partial": false,
-      "onupdate": "if (waypoints['6'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['6'].distance-10)/1.5; if (waypoints['6'].distance<10) daoplayer.setScene('PouringRoom'); }",
+      "onupdate": "if (waypoints['R1_11'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_11'].distance-10)/1.5; if (waypoints['R1_11'].distance<10) daoplayer.setScene('end'); }",
       "updatePeriod":1.0,
       
       "tracks": [
@@ -185,7 +369,7 @@
           "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
         },
         {
-          "name": "LM_end_holdingPad",
+          "name": "holdingPad",
           "pos":0,
           "volume": "[sceneTime,trackVolume,sceneTime+1,1]" 
         }
@@ -194,13 +378,13 @@
     {
       "name": "end",
       "partial": false,
-      "onupdate": "if (waypoints['6'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['6'].distance-10)/1.5; if (waypoints['6'].distance<10) daoplayer.setScene('PouringRoom'); }",
       "updatePeriod":1.0,
       
       "tracks": [
         {
-          "name": "end_holdingPad",
-          "pos":0
+          "name": "holdingPad",
+          "pos":0,
+          "length": 54.8467
         }
       ]
     }

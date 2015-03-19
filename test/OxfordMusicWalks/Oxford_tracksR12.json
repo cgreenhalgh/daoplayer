@@ -15,6 +15,7 @@
           "path": "R12.wav", 
           "trackPos": 0,
           "filePos": 0,
+          "length": 125.406,
           "repeats": -1
         }
       ]
@@ -27,6 +28,7 @@
           "path": "R12L1.wav",
           "trackPos": 0,
           "filePos": 0,
+          "length": 124.364,
           "repeats": -1
         }
       ]
@@ -39,6 +41,7 @@
           "path": "R12L2.wav",
           "trackPos": 0,
            "filePos": 0,
+           "length": 125.406,
           "repeats": -1
         }
       ]
@@ -51,6 +54,7 @@
           "path": "R12L3.wav",
           "trackPos": 0,
            "filePos": 0,
+           "length": 125.406,
           "repeats": -1
         }
       ]
@@ -63,6 +67,7 @@
           "path": "R12E.wav",
           "trackPos": 0,
            "filePos": 0,
+           "length": 140.727,
           "repeats": -1
         }
       ]
