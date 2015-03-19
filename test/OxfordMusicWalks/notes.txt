@@ -1,0 +1,39 @@
+NA multitrack
+
+First copy has endCosts on 
+NA_link1b
+NA_chorus2a	
+NA_chorus2b ...
+but no links to bridge
+
+Second copy has no links from any other section(s) to bridge
+Won't work with current version as unspecified transitions not chosen.
+(might be OK a long next default next cost is consistent?!)
+
+second copy does not have sections for first, so won't know where it is when it starts!
+
+No lengths on R12 tracks
+
+scene 'some YSP files and commands!!!' with unknown track.
+
+scene 'NotAlone2' selectSections specifies track 'NotAlone1', but this will just try to use costs associated with NotAlone1
+
+scene 'NotAlone3' starts track from beginning
+scene 'NotAlone3' doesn't take account of previous point reached
+
+
+errors on load:
+
+unknown sections: 'NA_intro2C', 'NA_intro1d' 
+
+no unit time for LM_ tracks
+
+syntax error in Oxford_scenesWalk1 (char 6740)
+- unspecified value for "length" in scene "end"
+
+unknown sections: 'LM_Vocals', 'LM_end_holdingPad'
+
+duplicate merged scene 'start_holdingPad'
+
+unknown scene 'scene1_holding1'
+

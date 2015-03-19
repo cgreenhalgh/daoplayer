@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title":  "Oxford_tracks"
+  },
+  
+  "tracks": [
+    {
+      "name": "holdingPad",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "R8E1.wav", 
+          "trackPos": 0,
+          "filePos": 0,
+          "length": 54.700,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "InTheMeantime",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "InTheMeantime.wav",
+          "trackPos": 0,
+          "filePos": 0,
+          "length": 264,
+          "repeats": -1
+        }
+      ]
+    },  
+    {
+      "name": "PouringRoom",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "PouringRoom.wav",
+          "trackPos": 0,
+           "filePos": 0,
+          "length": 215,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "LeadMeMix",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "LeadMe.wav",
+          "trackPos": 0,
+           "filePos": 0,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "RedToBlue",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "RedToBlue.wav",
+          "trackPos": 0,
+           "filePos": 0,
+          "repeats": -1
+        }
+      ]
+    }
+  ]
+}

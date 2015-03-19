@@ -1,0 +1,227 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title":  "Oxford_tracks"
+  },
+  
+  "tracks": [
+    {
+      "name": "LM_Accordian_Keys",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "LM_Accordian_Keys.wav", 
+          "trackPos": 0,
+          "filePos": 0,
+          "length": 211,
+          "repeats": -1
+        }
+      ],
+      "sections": [
+        { "name": "LMAK_intro1", "trackPos": 0 
+        },
+        { "name": "LMAK_verse1a", "trackPos": 9.4601 
+        },
+        { "name": "LMAK_verse1b", "trackPos": 27.7
+        },
+        { "name": "LMAK_chorus1", "trackPos": 44.4863
+        },
+        { "name": "LMAK_intro2a", "trackPos": 62.6046
+        },
+        { "name": "LMAK_verse2", "trackPos": 71.1744 
+        },
+        { "name": "LMAK_verse2b", "trackPos": 88.5338
+        },
+        { "name": "LMAK_chorus2", "trackPos": 105.7905
+        },
+        { "name": "LMAK_bridge1", "trackPos": 142.2761
+        },
+        { "name": "LMAK_altchorus1", "trackPos": 159.3481
+        },
+        { "name": "LMAK_altchorus2", "trackPos": 168.2045
+        },
+        { "name": "LMAK_intro3", "trackPos": 176.9232
+        },
+        { "name": "LMAK_outro", "trackPos": 185.3935
+        },
+        { "name": "LMAK_end", "trackPos": 202.9965
+        }
+        ]
+        
+    },
+    {
+      "name": "LM_Guitars",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "LM_Guitars.wav", 
+          "trackPos": 0,
+          "filePos": 0,
+          "length": 211,
+          "repeats": -1
+        }
+      ],
+      "sections": [
+        { "name": "LMG_intro1", "trackPos": 0 
+        },
+        { "name": "LMG_verse1a", "trackPos": 9.4601 
+        },
+        { "name": "LMG_verse1b", "trackPos": 27.7
+        },
+        { "name": "LMG_chorus1", "trackPos": 44.4863
+        },
+        { "name": "LMG_intro2a", "trackPos": 62.6046
+        },
+        { "name": "LMG_verse2", "trackPos": 71.1744 
+        },
+        { "name": "LMG_verse2b", "trackPos": 88.5338
+        },
+        { "name": "LMG_chorus2", "trackPos": 105.7905
+        },
+        { "name": "LMG_bridge1", "trackPos": 142.2761
+        },
+        { "name": "LMG_altchorus1", "trackPos": 159.3481
+        },
+        { "name": "LMG_altchorus2", "trackPos": 168.2045
+        },
+        { "name": "LMG_intro3", "trackPos": 176.9232
+        },
+        { "name": "LMG_outro", "trackPos": 185.3935
+        },
+        { "name": "LMG_end", "trackPos": 202.9965
+        }
+        ]
+    },
+    {
+      "name": "LM_Drums",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "LM_Drums.wav", 
+          "trackPos": 0,
+          "filePos": 0,
+          "length": 211,
+          "repeats": -1
+        }
+      ],
+      "sections": [
+        { "name": "LMD_intro1", "trackPos": 0 
+        },
+        { "name": "LMD_verse1a", "trackPos": 9.4601 
+        },
+        { "name": "LMG_verse1b", "trackPos": 27.7
+        },
+        { "name": "LMD_chorus1", "trackPos": 44.4863
+        },
+        { "name": "LMD_intro2a", "trackPos": 62.6046
+        },
+        { "name": "LMD_verse2", "trackPos": 71.1744 
+        },
+        { "name": "LMD_verse2b", "trackPos": 88.5338
+        },
+        { "name": "LMD_chorus2", "trackPos": 105.7905
+        },
+        { "name": "LMD_bridge1", "trackPos": 142.2761
+        },
+        { "name": "LMD_altchorus1", "trackPos": 159.3481
+        },
+        { "name": "LMD_altchorus2", "trackPos": 168.2045
+        },
+        { "name": "LMD_intro3", "trackPos": 176.9232
+        },
+        { "name": "LMD_outro", "trackPos": 185.3935
+        },
+        { "name": "LMD_end", "trackPos": 202.9965
+        }
+        ]
+      
+    },
+    {
+      "name": "LM_Bass",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "LM_Bass.wav", 
+          "trackPos": 0,
+          "filePos": 0,
+          "length": 211,
+          "repeats": -1
+        }
+      ],
+      "sections": [
+        { "name": "LMB_intro1", "trackPos": 0 
+        },
+        { "name": "LMB_verse1a", "trackPos": 9.4601 
+        },
+        { "name": "LMB_verse1b", "trackPos": 27.7
+        },
+        { "name": "LMB_chorus1", "trackPos": 44.4863
+        },
+        { "name": "LMB_intro2a", "trackPos": 62.6046
+        },
+        { "name": "LMB_verse2", "trackPos": 71.1744 
+        },
+        { "name": "LMB_verse2b", "trackPos": 88.5338
+        },
+        { "name": "LMB_chorus2", "trackPos": 105.7905
+        },
+        { "name": "LMB_bridge1", "trackPos": 142.2761
+        },
+        { "name": "LMB_altchorus1", "trackPos": 159.3481
+        },
+        { "name": "LMB_altchorus2", "trackPos": 168.2045
+        },
+        { "name": "LMB_intro3", "trackPos": 176.9232
+        },
+        { "name": "LMB_outro", "trackPos": 185.3935
+        },
+        { "name": "LMB_end", "trackPos": 202.9965
+        }
+        ]
+    },
+    {
+      "name": "Vocals",
+      "pauseIfSilent": false,
+      "files": [
+        { 
+          "path": "LM_Vocals.wav", 
+          "trackPos": 0,
+          "filePos": 0,
+          "length": 211,
+          "repeats": -1
+        }
+      ],
+      "sections": [
+        { "name": "LMV_intro1", "trackPos": 0 
+        },
+        { "name": "LMV_verse1a", "trackPos": 9.4601 
+        },
+        { "name": "LMV_verse1b", "trackPos": 27.7
+        },
+        { "name": "LMV_chorus1", "trackPos": 44.4863
+        },
+        { "name": "LMV_intro2a", "trackPos": 62.6046
+        },
+        { "name": "LMV_verse2", "trackPos": 71.1744 
+        },
+        { "name": "LMV_verse2b", "trackPos": 88.5338
+        },
+        { "name": "LMV_chorus2", "trackPos": 105.7905
+        },
+        { "name": "LMV_bridge1", "trackPos": 142.2761
+        },
+        { "name": "LMV_altchorus1", "trackPos": 159.3481
+        },
+        { "name": "LMV_altchorus2", "trackPos": 168.2045
+        },
+        { "name": "LMV_intro3", "trackPos": 176.9232
+        },
+        { "name": "LMV_outro", "trackPos": 185.3935
+        },
+        { "name": "LMV_end", "trackPos": 202.9965
+        }
+      ]
+    }
+  ]
+}

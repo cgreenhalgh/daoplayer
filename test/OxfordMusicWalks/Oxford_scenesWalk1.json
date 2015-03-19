@@ -1,0 +1,208 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title":  "Oxford_scenes - walk 1",
+    "description":  "walk from E-Research Cenre to Lady Margaret Hall (park)"
+  },
+  
+  "scenes": [
+    {
+      "name": "start_holdingPad",
+      "partial": false,
+       "onupdate": "if (waypoints['1'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['1'].distance-10)/1.5; if (waypoints['1'].distance<10) daoplayer.setScene('LeadMeMulti'); }",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,1]", 
+          "pos":  0
+        }
+      ] 
+    },
+    {
+      "name": "some YSP files and commands!!!",
+      "partial": false,
+       "onupdate": "if (waypoints['1'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['1'].distance-10)/1.5; if (waypoints['1'].distance<10) daoplayer.setScene('LeadMeMulti'); }",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "????????",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,1]", 
+          "pos":  0
+        }
+      ] 
+    },
+    {
+      "name": "LeadMeMulti1",
+      "partial": false,
+      "onupdate": "if (waypoints['R1_4a'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_4a'].distance-10)/1.5; if (waypoints['R1_4a'].distance<10) daoplayer.setScene('LeadMeMulti2'); }",
+      "updatePeriod":1.0,
+      
+      "tracks": [
+        {
+          "name": "LM_Drums",
+          "volume": 1,
+          "pos": 0
+        },
+        {
+          "name": "LM_Bass",
+          "volume": 1,
+          "pos": 0
+        },
+        {
+          "name": "LM_Guitars",
+          "volume": 0,
+          "pos": 0
+        },
+        {
+          "name": "LM_Accordian_Keys",
+          "volume": 0,
+          "pos": 0
+        },
+        {
+          "name": "LM_Vocals",
+          "volume": 1,
+          "pos": 0
+        }
+      ]
+    },
+    {
+      "name": "LeadMeMulti2",
+      "description": "change of instrument volumes",
+      "partial": false,
+      "onupdate": "if (waypoints['R1_5a'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_5a'].distance-10)/1.5; if (waypoints['R1_5a'].distance<10) daoplayer.setScene('LeadMeMulti3'); }",
+      "updatePeriod":1.0,
+      
+      "tracks": [
+        {
+          "name": "LM_Drums",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['R1_5'].distance,[20,0.3,40,1],1)]"
+        },
+        {
+          "name": "LM_Bass",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['R1_5'].distance,[20,0.3,40,1],1)]"
+        },
+        {
+          "name": "LM_Guitars",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['R1_5'].distance,[20,0.3,40,1],1)]"
+        },
+        {
+          "name": "LM_Accordian_Keys",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['R1_5'].distance,[20,0.3,40,1],1)]"
+        },
+        {
+          "name": "LM_Vocals",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,pwl(waypoints['R1_5'].distance,[20,0.6,40,1],1)]"
+        }
+      ]
+    },
+    {
+      "name": "LeadMeMulti3",
+      "description": "volume dip at junction",
+      "partial": false,
+      "onupdate": "if (waypoints['R1_6'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_6'].distance-10)/1.5; if (waypoints['R1_6'].distance<10) daoplayer.setScene('LeadMeMulti4'); }",
+      "updatePeriod":1.0,
+      
+      "tracks": [
+        {
+          "name": "LM_Drums",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
+        },
+        {
+          "name": "LM_Bass",
+          "volume": 1
+        },
+        {
+          "name": "LM_Guitars",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
+        },
+        {
+          "name": "LM_Accordian_Keys",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
+        },
+        {
+          "name": "LM_Vocals",
+          "volume": 0.7
+        }
+      ]
+    },
+    {
+      "name": "LeadMeMulti4",
+      
+      "partial": false,
+      "onupdate": "if (waypoints['R1_6'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_6'].distance-10)/1.5; if (waypoints['R1_6'].distance<10) daoplayer.setScene('LeadMeMulti4'); }",
+      "updatePeriod":1.0,
+      
+      "tracks": [
+        {
+          "name": "LM_Drums",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
+        },
+        {
+          "name": "LM_Bass",
+          "volume": 1
+        },
+        {
+          "name": "LM_Guitars",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,1] : 1"
+        },
+        {
+          "name": "LM_Accordian_Keys",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
+        },
+        {
+          "name": "LM_Vocals",
+          "volume": 0.7
+        }
+      ]
+    },
+    {
+      "name": "end_holdingPad",
+      "partial": false,
+      "onupdate": "if (waypoints['6'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['6'].distance-10)/1.5; if (waypoints['6'].distance<10) daoplayer.setScene('PouringRoom'); }",
+      "updatePeriod":1.0,
+      
+      "tracks": [
+        {
+          "name": "LM_Drums",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
+        },
+        {
+          "name": "LM_Bass",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" 
+        },
+        {
+          "name": "LM_Guitars",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" 
+        },
+        {
+          "name": "LM_Accordian_Keys",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
+        },
+        {
+          "name": "LM_Vocals",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0"
+        },
+        {
+          "name": "LM_end_holdingPad",
+          "pos":0,
+          "volume": "[sceneTime,trackVolume,sceneTime+1,1]" 
+        }
+      ]
+    },
+    {
+      "name": "end",
+      "partial": false,
+      "onupdate": "if (waypoints['6'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['6'].distance-10)/1.5; if (waypoints['6'].distance<10) daoplayer.setScene('PouringRoom'); }",
+      "updatePeriod":1.0,
+      
+      "tracks": [
+        {
+          "name": "end_holdingPad",
+          "pos":0
+        }
+      ]
+    }
+  ]
+}

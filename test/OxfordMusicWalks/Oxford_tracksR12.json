@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title":  "Oxford_tracksR12",
+    "description": "For use in the park - multitrack"
+  },
+  
+  "tracks": [
+    {
+      "name": "R12",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "R12.wav", 
+          "trackPos": 0,
+          "filePos": 0,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "R12L1",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "R12L1.wav",
+          "trackPos": 0,
+          "filePos": 0,
+          "repeats": -1
+        }
+      ]
+    },  
+    {
+      "name": "R12L2",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "R12L2.wav",
+          "trackPos": 0,
+           "filePos": 0,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "R12L3",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "R12L3.wav",
+          "trackPos": 0,
+           "filePos": 0,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "R12E",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "R12E.wav",
+          "trackPos": 0,
+           "filePos": 0,
+          "repeats": -1
+        }
+      ]
+    }
+  ]
+}

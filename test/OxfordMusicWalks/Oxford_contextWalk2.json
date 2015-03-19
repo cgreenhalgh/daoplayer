@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title":  "Oxford Music Walk Walk 2 - Context file",
+    "description":  "Lady Margaret Hall to Mansfield College (road)"
+  },
+  
+  "context": {
+    "title":  "Lady Margaret Hall to Mansfield College",
+    
+    "waypoints": [
+      {
+        "name": "R2_1",
+        "lat": 51.764702, 
+        "lng": -1.255189,
+        "origin": true,
+        "title":  "Start",
+        "description":  "Leave Lady Margaret Hall (gate enterance)"
+      },
+      {
+        "name": "R2_2",
+        "lat": 51.764365, 
+        "lng": -1.255099,
+        "origin": true,
+        "description":  "Fyfield Road junction"
+      },
+      {
+        "name": "R2_3",
+        "lat": 51.762893, 
+        "lng": -1.258898,
+        "origin": true,
+        "description":  "Bradmore Road junction"
+      },
+      {
+        "name": "R2_4",
+        "lat": 51.761898, 
+        "lng": -1.259892,
+        "origin": true,
+        "description":  "Parks Road / Norham Gardens Road Junction"
+      },
+      {
+        "name": "R2_5",
+        "lat": 51.759848, 
+        "lng": -1.257524 ,
+        "origin": true,
+        "description":  "Junction with Parks Road and Keble Road (Straight on)"
+      },
+      {
+        "name": "R2_6",
+        "lat": 51.759266, 
+        "lng": -1.257152 ,
+        "origin": true,
+        "description":  "Junction with Parks Road and Sherrington Rd (Straight on)"
+      },
+      {
+        "name": "R2_7",
+        "lat": 51.758745, 
+        "lng": -1.256862,
+        "origin": true,
+        "description":  "Pit Rivers Museum (first contact)"
+      },
+      {
+        "name": "R2_8",
+        "lat": 51.758119,
+        "lng": -1.256529,
+        "origin": true,
+        "description":  "Pit Rivers Museum (end contact)"
+      },
+      {
+        "name": "R2_9",
+        "lat": 51.757667, 
+        "lng": -1.256266 ,
+        "origin": true,
+        "description":  "Turn left onto South Parks Road"
+      },
+      {
+        "name": "R2_10",
+        "lat": 51.758584, 
+        "lng": -1.252894 ,
+        "origin": true,
+        "title":  "End",
+        "description":  "Turn right into Mansfield Road"
+      },
+      {
+        "name": "R2_11",
+        "lat": 51.758195,
+        "lng": -1.252629 ,
+        "origin": true,
+        "title":  "End",
+        "description":  "Stage 1 up Mansfield Road"
+      },
+      {
+        "name": "R2_12",
+        "lat": 51.757992, 
+        "lng": -1.252461 ,
+        "origin": true,
+        "title":  "End",
+        "description":  "Stage 2 up Mansfield Road"
+      },
+      {
+        "name": "R2_13",
+        "lat": 51.757751, 
+        "lng": -1.252265 ,
+        "origin": true,
+        "title":  "End",
+        "description":  "Stage 3 up Mansfield Road"
+      },
+      {
+        "name": "R2_14",
+        "lat": 51.757488, 
+        "lng": -1.252124 ,
+        "origin": true,
+        "title":  "End",
+        "description":  "Stage 4 up Mansfield Road"
+      },
+      {
+        "name": "R2_15",
+        "lat": 51.757353, 
+        "lng": -1.252332 ,
+        "origin": true,
+        "title":  "End",
+        "description":  "Turn right into Mansfield College"
+      },
+      {
+        "name": "R2_16",
+        "lat": 51.757599,
+        "lng": -1.252968 ,
+        "origin": true,
+        "title":  "End",
+        "description":  "Big enterance door in Mansfield College"
+      }
+    ],
+    "routes": [
+    ]
+  }
+}

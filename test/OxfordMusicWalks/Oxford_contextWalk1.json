@@ -1,0 +1,125 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title":  "Oxford Music Walk Route 1 - Context file",
+    "description":  "E-Research Cenre to Lady Margaret Hall (via park)"
+  },
+  
+  "context": {
+    "title":  "E-Research Cenre to Lady Margaret Hall (via park)",
+    
+    "waypoints": [
+      
+      {
+        "name": "R1_1",
+        "lat": 51.760005, 
+        "lng": -1.258284,
+        "origin": true,
+        "title":  "Start",
+        "description":  "Department of Computer Science (Parks Road Entrance)"
+      },
+      {
+        "name": "R1_2",
+        "lat": 51.759723, 
+        "lng": -1.257554 ,
+        "origin": true,
+        "description":  "Turning from Keble Road onto Parks Road"
+      },
+      {
+        "name": "R1_3",
+        "lat": 51.759997, 
+        "lng": -1.257832 ,
+        "origin": true,
+        "description":  "Entering Park"
+      },
+      {
+        "name": "R1_4",
+        "lat": 51.761817, 
+        "lng": -1.252795 ,
+        "origin": true,
+        "description":  "Crossroads in middle of park"
+      },
+      {
+        "name": "R1_4a",
+        "lat": 51.762212, 
+        "lng": -1.252331 ,
+        "origin": true,
+        "description":  "between crosroads"
+      },
+      {
+        "name": "R1_5",
+        "lat": 51.762460, 
+        "lng": -1.251719 ,
+        "origin": true,
+        "description":  "Second crossroads in Park"
+      },
+      {
+        "name": "R1_5a",
+        "lat": 51.762783, 
+        "lng": -1.250971 ,
+        "origin": true,
+        "description":  "between crosroads and river"
+      },
+      {
+        "name": "R1_6",
+        "lat": 51.762923, 
+        "lng": -1.250627 ,
+        "origin": true,
+        "description":  "Crossroads by river (turn left)"
+      },
+      {
+        "name": "R1_6a",
+        "lat": 51.762923, 
+        "lng": -1.250627 ,
+        "origin": true,
+        "description":  "nbetween river and junct)"
+      },
+      {
+        "name": "R1_7",
+        "lat": 51.763676, 
+        "lng": -1.251154 ,
+        "origin": true,
+        "description":  "Junction in park (bear left)" 
+      },
+      {
+        "name": "R1_7a",
+        "lat": 51.763858, 
+        "lng": -1.251860 ,
+        "origin": true,
+        "description":  "Junction in park (bear left)"
+      },
+      {
+        "name": "R1_8",
+        "lat": 51.764075, 
+        "lng": -1.252938 ,
+        "origin": true,
+        "description":  "Junction in park (bear left)"
+      },
+      {
+        "name": "R1_9",
+        "lat": 51.763849, 
+        "lng": -1.253841,
+        "origin": true,
+        "description":  "Junction in park (bear right)"
+      },
+      {
+        "name": "R1_10",
+        "lat": 51.764410, 
+        "lng": -1.254750,
+        "origin": true,
+        "description":  "End of park, transition into Norham Gardens (turn right)"
+      },
+      {
+        "name": "R1_11",
+        "lat": 51.764702, 
+        "lng": -1.255189,
+        "origin": true,
+        "title":  "End",
+        "description":  "Arrive at Lady Margaret Hall"
+      }
+    ],
+    "routes": [
+    ]
+  }
+}
