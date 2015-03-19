@@ -11,6 +11,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
@@ -24,9 +25,11 @@ import android.widget.Toast;
  *
  */
 @SuppressLint("Registered")
-public class BrowserActivity extends Activity {
+public class BrowserActivity extends BoundActivity {
 
 	public static final String TAG = "daoplayer-browser";
+	public static final double DEFAULT_ACCURACY = 10;
+	protected boolean mWebViewLoaded;
 
 	@SuppressLint({ "SetJavaScriptEnabled", "NewApi" })
 	@Override
@@ -77,13 +80,56 @@ public class BrowserActivity extends Activity {
 			// onReceivedLoginRequest - level 12
 			// onReceivedSslError - level 8
 			// shouldInterceptRequest - level 11
+			@Override
+			public void onPageFinished(WebView view, String url) {
+				Log.d(TAG,"browser activity webview loaded");
+				mWebViewLoaded = true;
+				super.onPageFinished(view, url);
+			}
         });
 
         String url = getString(R.string.webui_default_url);
         Log.d(TAG,"load default url "+url);
         webView.loadUrl(url);
     }
-
+	protected void onBind() {
+		// get context model
+		mHandler.post(mPoll);
+	}
+	private Handler mHandler = new Handler();
+	private Runnable mPoll = new Runnable() {
+		public void run() {
+			if (mBound)
+				mHandler.postDelayed(mPoll, 1000);
+			Log.d(TAG,"poll status");
+			loadStatus();
+		}
+	};
+	private void loadStatus() {
+		if (!mBound) {
+			Log.e(TAG,"loadStatus called when not bound");
+			return;
+		}
+		if (!mWebViewLoaded){
+			Log.e(TAG,"loadStatus called when webview not loaded - ignored");
+			return;			
+		}
+        WebView webView = (WebView)findViewById(R.id.webView);
+        if (webView==null) {
+			Log.e(TAG,"loadStatus called with not webview");
+			return;        	
+        }
+		String jstatus = mLocal.getUserModel();
+		StringBuilder sb = new StringBuilder();
+		sb.append("javascript:(function(){");
+		sb.append(jstatus);
+		sb.append(";try {window.onstatus(position,waypoints);} "+
+				"catch (err) {console.log('error onstatus: '+err.message);}");
+		sb.append("})();");
+		String s = sb.toString();
+		Log.d(TAG,"Browser view, load: "+s);
+		webView.loadUrl(s);
+	}
 	protected void reload() {
         WebView webView = (WebView)findViewById(R.id.webView);
         if (webView!=null) {
@@ -124,6 +170,7 @@ public class BrowserActivity extends Activity {
 			i.setClass(getApplicationContext(), Service.class);
 			i.putExtra(Service.EXTRA_LAT, lat);
 			i.putExtra(Service.EXTRA_LNG, lng);
+			i.putExtra(Service.EXTRA_ACCURACY, DEFAULT_ACCURACY);
 			startService(i);
 		}
 

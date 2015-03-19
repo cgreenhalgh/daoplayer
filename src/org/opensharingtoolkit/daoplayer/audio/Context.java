@@ -284,6 +284,12 @@ public class Context {
 	public double lat2y(double lat) {
 		return (Utils.mercY(lat)-mRefY)/mRefMetre;
 	}
+	public double x2lng(double x) {
+		return Utils.mercLon((x*mRefMetre)+mRefX);
+	}
+	public double y2lat(double y) {
+		return Utils.mercLat((y*mRefMetre)+mRefY);
+	}
 	public Map<String,Waypoint> getWaypoints() {
 		return mWaypoints;
 	}

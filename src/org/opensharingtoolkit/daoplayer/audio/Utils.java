@@ -17,7 +17,10 @@ public class Utils {
 	// http://wiki.openstreetmap.org/wiki/Mercator#Java_Implementation
     final private static double R_MAJOR = 6378137.0;
     final private static double R_MINOR = 6356752.3142;
- 
+    final private static double RATIO = R_MINOR / R_MAJOR;
+    final private static double ECCENT = Math.sqrt(1.0 - (RATIO * RATIO));
+    final private static double COM = 0.5 * ECCENT;
+    
     public static double[] merc(double x, double y) {
         return new double[] {mercX(x), mercY(y)};
     }
@@ -61,5 +64,21 @@ public class Utils {
             dmy = -dmy;
         Log.d("utils", "at "+lat+","+lon+" angle "+angle+" is delta "+dsx+","+dsy+" ("+d+"m), while mercator dY="+dmy);
         return dmy/d;
+    }
+    public static double mercLon (double x) {
+        return Math.toDegrees(x) / R_MAJOR;
+    }
+ 
+    public static double mercLat (double y) {
+        double ts = Math.exp ( -y / R_MAJOR);
+        double phi = Math.PI/2 - 2 * Math.atan(ts);
+        double dphi = 1.0;
+        int i;
+        for (i = 0; Math.abs(dphi) > 0.000000001 && i < 15; i++) {
+        	double con = ECCENT * Math.sin (phi);
+        	dphi = Math.PI/2 - 2 * Math.atan (ts * Math.pow((1.0 - con) / (1.0 + con), COM)) - phi;
+        	phi += dphi;
+        }
+        return Math.toDegrees(phi);
     }
 }

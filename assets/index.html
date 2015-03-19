@@ -18,44 +18,71 @@
 </head>
 <body ontouchstart="">
 <h1>DaoPlayer</h1>
-  <input type="button" value="Next scene" onclick="daoplayer.signalService('org.opensharingtoolkit.daoplayer.NEXT_SCENE');"/>
-  <br/>
-  <input type="checkbox" name="manual" id="manual"/>Manual position
-  Lat:<input type="number" name="lat" id="lat"/>
+  <!-- <input type="button" value="Next scene" onclick="daoplayer.signalService('org.opensharingtoolkit.daoplayer.NEXT_SCENE');"/>
+  <br/> -->
+  <input type="checkbox" name="follow" id="follow" checked/>Map follow position<br/>
+  <input type="checkbox" name="manual" id="manual"/>Manual position<br/>
+  Lat:<input type="number" name="lat" id="lat"/><br/>
   Lng:<input type="number" name="lng" id="lng"/>
-  <input type="button" id="setpos" value="Set"/>
-  <br/>
+  <input type="button" id="setpos" value="Set"/><br/>
   <div id="map" style="width:240px;height:240px"></div>
   <script src="vendor/leaflet/leaflet.js"></script>
   <script src="vendor/jquery/dist/jquery.min.js"></script>
   <script>
     var map = L.map('map').setView([52.953685,-1.188429],14);
     L.tileLayer( 'http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
+        maxZoom: 19,
         attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
     }).addTo(map);
-    var marker = L.marker([52.953685,-1.188429], { opacity: 0.0 });
+    var marker = L.marker([51.7593316,-1.2581625], { opacity: 0.0 });
     marker.addTo(map);
-    function setPos(lat, lng) {
+    var manualMarker = L.marker([0,0], { opacity: 0.0 });
+    manualMarker.addTo(map);
+    function setPos(lat, lng, send) {
         lat = Number(lat);
         lng = Number(lng);
         var latlng = L.latLng(lat,lng);
-        map.panTo(latlng);
-        marker.setOpacity(1.0);
-        marker.setLatLng(latlng);
-        $('#lat').val(lat);
-        $('#lng').val(lng);
-        daoplayer.setLatLng(lat,lng);
+	    if (send) {
+	        $('#lat').val(lat);
+    	    $('#lng').val(lng);
+	        manualMarker.setOpacity(0.3);
+    	    manualMarker.setLatLng(latlng);
+        	daoplayer.setLatLng(lat,lng);
+        } else {
+	        marker.setOpacity(1.0);
+    	    marker.setLatLng(latlng);
+	        if ($('#follow').prop('checked')) 
+		        map.panTo(latlng);
+		}
     }
     function onMapClick(e) {
       console.log("Click map "+e.latlng);
       if ($('#manual').prop('checked')) {
-        setPos(e.latlng.lat, e.latlng.lng);
+        setPos(e.latlng.lat, e.latlng.lng, true);
       }
     }
     map.on('click',onMapClick);
     $('#setpos').on('click', function() {
-      setPos($('#lat').val(), $('#lng').val());
+      setPos($('#lat').val(), $('#lng').val(), true);
     });
+    var waypoints = {};
+    window.onstatus = function(position,wps) {
+        if(position!==null)
+	        setPos(position.lat, position.lng, false);    
+     	var i;
+     	for (i in wps) {
+     	 	//console.log("check waypoint "+i);
+     		var wp=wps[i];
+     		if(waypoints[wp.name]===undefined) {
+     		    console.log("add waypoint "+wp.name);
+     			waypoints[wp.name] = wp;
+			    var marker = L.circleMarker([wp.lat,wp.lng], { opacity: 0.5, color: '#a00', title: wp.name });
+    			marker.addTo(map);
+				marker.bindPopup('<p>waypoint '+wp.name+'</p>');
+   		        var latlng = L.latLng(wp.lat,wp.lng);
+		        map.panTo(latlng);
+     		}
+     	}
+    };
   </script>
 </body></html>

@@ -79,7 +79,11 @@ public class UserModel {
 	private double mEstimatedCurrentSpeed = 0;
 	private long mLastElapsedtime;
 	private KalmanFilter mKalmanFilter = new KalmanFilter();
-	private double mEstimatedX, mEstimatedY, mEstimatedAccuracy, mEstimatedSpeedAccuracy;
+	private double mEstimatedX, mEstimatedY;
+	// :-)
+	private double mEstimatedAccuracy = 100000000;
+	private double mEstimatedSpeedAccuracy = 100;
+	private double mEstimatedLat, mEstimatedLng;
 	private double mEstimatedXSpeed, mEstimatedYSpeed;
 	private int mUpdateNoLocationCount;
 	
@@ -137,6 +141,8 @@ public class UserModel {
 		mEstimatedAccuracy = Math.sqrt(cov.get(0,0)+cov.get(1,1));
 		mEstimatedX = state.get(0);
 		mEstimatedY = state.get(1);
+		mEstimatedLat = mContext.y2lat(mEstimatedY);
+		mEstimatedLng = mContext.x2lng(mEstimatedX);
 		
 		if (mContext==null) {
 			Log.w(TAG,"updateEstimates with no context");
@@ -186,6 +192,12 @@ public class UserModel {
 	public double getY() {
 		return mEstimatedY;
 	}
+	public double getLat() {
+		return mEstimatedLat;
+	}
+	public double getLng() {
+		return mEstimatedLng;
+	}
 	public double getAccuracy() {
 		return mEstimatedAccuracy;
 	}
@@ -225,6 +237,10 @@ public class UserModel {
 			sb.append(mEstimatedAccuracy);
 			sb.append(",age:");
 			sb.append(mUpdateNoLocationCount);
+			sb.append(",lat:");
+			sb.append(mEstimatedLat);
+			sb.append(",lng:");
+			sb.append(mEstimatedLng);
 			sb.append("}");
 		}
 		else
@@ -286,8 +302,10 @@ public class UserModel {
 			waypointInfos = mWaypointInfos;
 		}
 		// waypoints
-		if (waypointInfos==null) 
+		if (waypointInfos==null) {
+			sb.append("var waypoints={}\n");
 			return;
+		}
 		sb.append("var waypoints={\n");
 		WaypointInfo nearest = null;
 		String nearestName = null;

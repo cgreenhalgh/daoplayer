@@ -181,6 +181,24 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				return "\"Error returning status\"";
 			}
 		}
+		public String getUserModel() {
+			try {
+				if (Service.this.mUserModel!=null) {
+					StringBuilder sb = new StringBuilder();
+					String scene = Service.this.mScene;
+					Map<String,String> waypoints = null;
+					if (Service.this.mComposition!=null) {
+						waypoints = mComposition.getWaypoints(scene);
+					}					
+					mUserModel.toJavascript(sb, waypoints);
+					return sb.toString();
+				}
+			}
+			catch (Exception e) {
+				Log.w(TAG,"Error getting usermodel", e);
+			}
+			return "\"Error getting usermodel\"";
+		}
 	}
 	public void log(String message) {
 		log(LogEntryType.LOG_INFO, message);
