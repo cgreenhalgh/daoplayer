@@ -12,7 +12,7 @@
       "waypoints":{"R2_2":"R2_2"},
       "description":  "From Lady Margaret Hall to First change of course - turn left from Fyfield Road onto Norham Gardens",
       "partial": false,
-       "onupdate": "if (waypoints['R2_2'].near) { daoplayer.setScene('InTheMeantime; }",
+       "onupdate": "if (waypoints['R2_2'].near) { daoplayer.setScene('InTheMeantime'); }",
       "updatePeriod":1.0,
       "tracks": [
         {
@@ -53,8 +53,8 @@
       "tracks": [
         {
           "name": "PouringRoom",
-          "pos":"(function(){if(window.pausePouringRoom){return [sceneTime,trackTime,sceneTime+0.1,window.posPouringRoom]} else {window.posPouringRoom=trackTime;}})()",
-          "volume": "(window.pausePouringRoom) ? [sceneTime,trackVolume,sceneTime+0.1,0,sceneTime+0.2,0.3] : [sceneTime,trackVolume,sceneTime+1,1])"
+          "pos":"(function(){if(window.pausePouringRoom){return [sceneTime,trackTime,sceneTime+0.1,window.posPouringRoom];} else {window.posPouringRoom=trackTime;}})()",
+          "volume": "(window.pausePouringRoom) ? [sceneTime,trackVolume,sceneTime+0.1,0,sceneTime+0.2,0.3] : [sceneTime,trackVolume,sceneTime+1,1]"
         },
         {
           "name": "InTheMeantime",
@@ -68,7 +68,7 @@
       "description": "This track initiates at junction of Parks Road and Keble Road",
       "partial": false,
       "onload": "if (waypoints['R2_7'].distance!==undefined) window.estimatedEnd=totalTime+(waypoints['R2_7'].distance-10)/1.5; else window.estimatedEnd=300;",
-      "onupdate": "if (waypoints['R2_7'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R2_7'].distance-10)/1.5; if (waypoints['R2_7'].distance<10) daoplayer.setScene('NotAlone2 }",
+      "onupdate": "if (waypoints['R2_7'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R2_7'].distance-10)/1.5; if (waypoints['R2_7'].near) daoplayer.setScene('NotAlone2'); }",
       "updatePeriod": 1,
       "tracks": [
         {
@@ -88,12 +88,12 @@
       "description": "This track initiates at Pit Rivers museum",
       "partial": false,
       "onload": "if (waypoints['R2_8'].distance!==undefined) window.estimatedEnd=totalTime+(waypoints['R2_8'].distance-10)/1.5; else window.estimatedEnd=300;",
-      "onupdate": "if (waypoints['R2_8'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R2_8'].distance-10)/1.5; if (waypoints['R2_8'].distance<10) daoplayer.setScene('NotAlone3'); }",
+      "onupdate": "if (waypoints['R2_8'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R2_8'].distance-10)/1.5; if (waypoints['R2_8'].near) daoplayer.setScene('NotAlone3'); }",
       "updatePeriod": 1,
       "tracks": [
         {
           "name": "NotAlone2",
-          "pos":"daoplayer.selectSections('NotAlone1',currentSection,sceneTime,window.estimatedEnd-totalTime)",
+          "pos":"daoplayer.selectSections('NotAlone2',currentSection,sceneTime,window.estimatedEnd-totalTime)",
           "volume": 1
         },
         {
@@ -107,7 +107,7 @@
       "waypoints":{"R2_9":"R2_9"},
       "description": "This track initiates at end of Pit Rivers museum",
       "partial": false,
-      "onupdate": "if (waypoints['R2_9'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R2_9'].distance-10)/1.5; if (waypoints['R2_9'].distance<10) daoplayer.setScene('LeadMeMix'); }",
+      "onupdate": "if (waypoints['R2_9'].near) { daoplayer.setScene('RedToBlue'); }",
       "updatePeriod":1.0,
       "tracks": [
         {
@@ -145,7 +145,7 @@
       "waypoints":{"R2_11":"R2_11"},
       "description": "This track initiates at lefthand turn onto Mansfield Road",
       "partial": false,
-      "onupdate": "if (waypoints['R2_11'].near) { daoplayer.setScene('R8L1'; }",
+      "onupdate": "if (waypoints['R2_11'].near) { daoplayer.setScene('R8L1'); }",
       "updatePeriod":1.0,
       "tracks": [
         {
@@ -165,7 +165,7 @@
       "waypoints":{"R2_12":"R2_12"},
       "description": "This track initiates at lefthand turn onto Mansfield Road",
       "partial": false,
-      "onupdate": "if (waypoints['R2_12'].near) { daoplayer.setScene('R8L2'; }",
+      "onupdate": "if (waypoints['R2_12'].near) { daoplayer.setScene('R8L2'); }",
       "updatePeriod":1.0,
       "tracks": [
         {
@@ -180,7 +180,7 @@
       "waypoints":{"R2_13":"R2_13"},
       "description": "This track initiates at lefthand turn onto Mansfield Road",
       "partial": false,
-      "onupdate": "if (waypoints['R2_13'].near) { daoplayer.setScene('R8L3'; }",
+      "onupdate": "if (waypoints['R2_13'].near) { daoplayer.setScene('R8L3'); }",
       "updatePeriod":1.0,
       "tracks": [
         {
@@ -200,7 +200,7 @@
       "waypoints":{"R2_14":"R2_14"},
       "description": "This track initiates at lefthand turn onto Mansfield Road",
       "partial": false,
-      "onupdate": "if (waypoints['R2_14'].near) { daoplayer.setScene('R8L4'; }",
+      "onupdate": "if (waypoints['R2_14'].near) { daoplayer.setScene('R8L4'); }",
       "updatePeriod":1.0,
       "tracks": [
         {
@@ -220,7 +220,7 @@
       "waypoints":{"R2_15":"R2_15"},
       "description": "This track initiates at lefthand turn onto Mansfield Road",
       "partial": false,
-      "onupdate": "if (waypoints['R2_15'].near) { daoplayer.setScene('R8arrive'; }",
+      "onupdate": "if (waypoints['R2_15'].near) { daoplayer.setScene('R8arrive'); }",
       "updatePeriod":1.0,
       "tracks": [
         {
@@ -240,7 +240,7 @@
       "waypoints":{"R2_16":"R2_16"},
       "description": "This track initiates at lefthand turn onto Mansfield Road",
       "partial": false,
-      "onupdate": "if (waypoints['R2_16'].near) { daoplayer.setScene('R8end'; }",
+      "onupdate": "if (waypoints['R2_16'].near) { daoplayer.setScene('R8end'); }",
       "updatePeriod":1.0,
       "tracks": [
         {

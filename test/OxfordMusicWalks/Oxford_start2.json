@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "oxford starting points/scenes",
+    "description" : "walk 2 start"
+  },
+  "context": {
+    "title":  "E-Research Cenre to Lady Margaret Hall (via park)",
+    
+    "waypoints": [      
+      {
+        "name": "S2_1",
+        "lat": 51.764795,  
+        "lng":  -1.255292,
+        "nearDistance": 60,
+        "origin": true,
+        "title":  "Lady Margaret Hal",
+        "description": "LMH start region"
+      },
+      {
+        "name": "S2_2",
+        "lat": 51.764322,   
+        "lng": -1.255062,
+        "nearDistance": 15,
+        "origin": true,
+        "title":  "Norham Gardens (top)",
+        "description": "dinner walk start"
+      }
+    ]
+  },
+  "defaultScene": "Start2",
+  "scenes": [
+    {
+      "name": "Start2",
+      "waypoints":{},
+      "partial": false,
+      "onload": "window.lastWarning=(-10); window.lastGpsWarning=(-10); daoplayer.speak('Waiting for G P S.',true);",
+      "onupdate": "if (activity!=null && activity!='NOGPS') {daoplayer.speak('OK, G P S is working',true); daoplayer.setScene('Start/any2');}",
+      "updatePeriod":1.0,
+      "description": "wait for gps",
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": 1
+        }
+      ]
+    },
+    {
+      "name": "Start/any2",
+      "partial": true,
+      "waypoints":{"S2_1":"S2_1","S2_2":"S2_2"},
+      "onupdate": "if (waypoints['S2_2'].near) { daoplayer.speak('starting walk 2', true); daoplayer.setScene('Start/walk2'); } else if (waypoints['S2_1'].near) daoplayer.setScene('Start/lmh'); else if (totalTime-window.lastWarning>20) { window.lastWarning=totalTime; daoplayer.speak('This walk starts Lady Margaret Hall, but you seem to be somewhere else', true); }",
+      "updatePeriod":1.0,
+      "description": "where are we??",
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": 1
+        }
+      ]
+    },
+    {
+      "name": "Start/lmh",
+      "partial": true,
+      "waypoints":{"S2_1":"S2_1","S2_2":"S2_2"},
+      "onload": "daoplayer.speak('Please walk along Fyfield Road and turn right onto Norham Gardens', false);",
+      "onupdate": "if (waypoints['S2_2'].near) { daoplayer.speak('starting walk 2', true); daoplayer.setScene('Start/walk2'); } else if (position!=null && !waypoints['S2_1'].near) daoplayer.setScene('Start/any');",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": 1
+        }
+      ]
+    },
+    {
+      "name": "Start/walk2",
+      "partial": true,
+      "onupdate": "daoplayer.setScene('InTheMeantime');",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,0]"
+        }
+      ]
+    }
+  ]
+}
+

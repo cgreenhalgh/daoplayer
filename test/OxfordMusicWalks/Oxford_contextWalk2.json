@@ -78,7 +78,7 @@
         "name": "R2_9",
         "lat": 51.757667, 
         "lng": -1.256266 ,
-        "nearDistance": 10,
+        "nearDistance": 15,
         "origin": true,
         "description":  "Turn left onto South Parks Road"
       },
@@ -86,7 +86,7 @@
         "name": "R2_10",
         "lat": 51.758584, 
         "lng": -1.252894 ,
-        "nearDistance": 10,
+        "nearDistance": 15,
         "origin": true,
         "title":  "End",
         "description":  "Turn right into Mansfield Road"

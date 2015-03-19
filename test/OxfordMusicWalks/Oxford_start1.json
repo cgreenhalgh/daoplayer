@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "oxford starting points/scenes",
+    "description" : "walk 1 start"
+  },
+  "context": {
+    "title":  "E-Research Cenre to Lady Margaret Hall (via park)",
+    
+    "waypoints": [      
+      {
+        "name": "S1_1",
+        "lat": 51.759526,  
+        "lng": -1.258396,
+        "nearDistance": 60,
+        "origin": true,
+        "title":  "OERC main entrance",
+        "description": "oerc start region"
+      },
+      {
+        "name": "S1_2",
+        "lat": 51.759956,  
+        "lng": -1.257709,
+        "nearDistance": 7,
+        "origin": true,
+        "title":  "Inside park gates",
+        "description": "cross-park start"
+      }
+    ]
+  },
+  "defaultScene": "Start1",
+  "scenes": [
+    {
+      "name": "Start1",
+      "waypoints":{},
+      "partial": false,
+      "onload": "window.lastWarning=(-10); window.lastGpsWarning=(-10); daoplayer.speak('Waiting for G P S.',true);",
+      "onupdate": "if (activity!=null && activity!='NOGPS') {daoplayer.speak('OK, G P S is working',true); daoplayer.setScene('Start/any');}",
+      "updatePeriod":1.0,
+      "description": "wait for gps",
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": 1
+        }
+      ]
+    },
+    {
+      "name": "Start/any",
+      "partial": true,
+      "waypoints":{"S1_1":"S1_1","S1_2":"S1_2"},
+      "onupdate": "if (waypoints['S1_2'].near) { daoplayer.speak('starting Walk 1', true); daoplayer.setScene('Start/walk1'); } else if (waypoints['S1_1'].near) daoplayer.setScene('Start/oerc'); else if (totalTime-window.lastWarning>20) { window.lastWarning=totalTime; daoplayer.speak('This walk start from the Oxford e-Research Centre, but you seem to be somewhere else', true); }",
+      "updatePeriod":1.0,
+      "description": "where are we??",
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": 1
+        }
+      ]
+    },
+    {
+      "name": "Start/oerc",
+      "partial": true,
+      "waypoints":{"S1_1":"S1_1","S1_2":"S1_2"},
+      "onload": "daoplayer.speak('Please walk along keble road and into the park', false);",
+      "onupdate": "if (waypoints['S1_2'].near) { daoplayer.speak('starting walk 1', true); daoplayer.setScene('Start/walk1'); } else if (position!=null && !waypoints['S1_1'].near) daoplayer.setScene('Start/any');",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": 1
+        }
+      ]
+    },
+    {
+      "name": "Start/walk1",
+      "partial": true,
+      "onupdate": "daoplayer.setScene('LeadMeMulti1');",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": "[sceneTime,trackVolume,sceneTime+1,0]"
+        }
+      ]
+    }
+  ]
+}
+
