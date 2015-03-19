@@ -1,0 +1,127 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title":  "Oxford_tracks"
+  },
+  
+  "tracks": [
+    {
+      "name": "holdingPad",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "R8E1.wav", 
+          "trackPos": 0,
+          "filePos": 0,
+          "length": 54.700,
+          "repeats": -1
+        }
+      ]
+    }, 
+    {
+      "name": "PouringRoom",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "PouringRoom.wav",
+          "trackPos": 0,
+           "filePos": 0,
+          "length": 215,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "RedToBlue",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "RedToBlue.wav",
+          "trackPos": 0,
+           "filePos": 0,
+           "length": 322,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "R8",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "R8.wav", 
+          "trackPos": 0,
+          "filePos": 0,
+          "lentgth": 219,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "R8L1",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "R8L1.wav",
+          "trackPos": 0,
+          "filePos": 0,
+          "lentgth": 219,
+          "repeats": -1
+        }
+      ]
+    },  
+    {
+      "name": "R8L2",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "R8L2.wav",
+          "trackPos": 0,
+           "filePos": 0,
+           "lentgth": 219,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "R8L3",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "R8L3.wav",
+          "trackPos": 0,
+           "filePos": 0,
+           "lentgth": 219,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "R8L4",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "R8L4.wav",
+          "trackPos": 0,
+           "filePos": 0,
+           "lentgth": 219,
+          "repeats": -1
+        }
+      ]
+    },
+    {
+      "name": "R8E1",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "R8E1.wav",
+          "trackPos": 0,
+           "filePos": 0,
+           "lentgth": 54,
+          "repeats": -1
+        }
+      ]
+    }
+  ]
+}
