@@ -1,3 +1,25 @@
+
+# Thursday am
+
+white noise in pouring room -error in audio file?? - re-encode
+
+added dips in R2_3
+
+added stationary in pouring room
+
+used near in scripts
+
+used local waypoints
+
+fixed scene names in starts
+
+? doesn't always play padding track on start
+
+
+
+
+# Wednesday night
+
 NA multitrack
 
 First copy has endCosts on 

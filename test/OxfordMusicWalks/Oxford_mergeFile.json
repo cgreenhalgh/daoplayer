@@ -19,5 +19,5 @@
     "Oxford_scenesWalk1.json",
     "Oxford_scenesWalk2.json"
   ],
-  "defaultScene": "scene1_holding1"
+  "defaultScene": "Start"
 }

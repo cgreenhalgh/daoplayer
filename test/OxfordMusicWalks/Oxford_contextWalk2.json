@@ -46,7 +46,7 @@
         "name": "R2_5",
         "lat": 51.759848, 
         "lng": -1.257524 ,
-        "nearDistance": 10,
+        "nearDistance": 13,
         "origin": true,
         "description":  "Junction with Parks Road and Keble Road (Straight on)"
       },

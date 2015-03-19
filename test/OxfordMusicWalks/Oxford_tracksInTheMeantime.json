@@ -126,7 +126,7 @@
         { "name": "itm_intro2A", "trackPos": 192.9725, "length":  4.6118,
         "next": [ {"name":"itm_intro2B","cost":0
         },
-          {"name":"itm_intro2A","cost":10},{"name":"intro1C","cost":100},{"name":"itm_intro1D","cost":1000
+          {"name":"itm_intro2A","cost":10},{"name":"itm_intro1C","cost":100},{"name":"itm_intro1D","cost":1000
           },
           {"name":"itm_intro2A","cost":50},{"name":"itm_intro2B","cost":1000},{"name":"itm_intro2C","cost":10}]
         },
@@ -134,24 +134,24 @@
         { "name": "itm_intro2B", "trackPos": 197.5843, "length":  4.6440,
         "next": [ {"name":"itm_intro2C","cost":0
         },
-          {"name":"itm_intro2A","cost":10},{"name":"intro1D","cost":100},{"name":"itm_intro1C","cost":1000
+          {"name":"itm_intro2A","cost":10},{"name":"itm_intro1D","cost":100},{"name":"itm_intro1C","cost":1000
           },
-          {"name":"itm_chorus4","cost":10},{"name":"chorus5","cost":100},{"name":"itm_playOut","cost":1000}]
+          {"name":"itm_chorus4","cost":10},{"name":"itm_chorus5","cost":100},{"name":"itm_playOut","cost":1000}]
         },
         
         { "name": "itm_intro2C", "trackPos": 202.2283, "length":  4.1533,
         "next": [ {"name":"itm_chorus4","cost":0
         },
-          {"name":"itm_intro2A","cost":10},{"name":"intro2B","cost":100},{"name":"itm_intro1C","cost":1000
+          {"name":"itm_intro2A","cost":10},{"name":"itm_intro2B","cost":100},{"name":"itm_intro1C","cost":1000
           },
-          {"name":"itm_chorus4","cost":10},{"name":"chorus5","cost":100},{"name":"itm_playOut","cost":1000}]
+          {"name":"itm_chorus4","cost":10},{"name":"itm_chorus5","cost":100},{"name":"itm_playOut","cost":1000}]
         },
         
         
         { "name": "itm_chorus4", "trackPos": 206.3816, "length":  18.7619,
         "next": [ {"name":"itm_chorus5","cost":0
         },
-          {"name":"itm_chorus4","cost":10},{"name":"chorus5","cost":100},{"name":"itm_intro1D","cost":1000
+          {"name":"itm_chorus4","cost":10},{"name":"itm_chorus5","cost":100},{"name":"itm_intro1D","cost":1000
           },
           {"name":"itm_playout","cost":10}]
         },
@@ -160,13 +160,13 @@
         { "name": "itm_chorus5", "trackPos": 225.1435, "length":  20.6006,
         "next": [ {"name":"itm_chorus5","cost":0
         },
-          {"name":"itm_chorus4","cost":10},{"name":"chorus5","cost":100},{"name":"itm_intro1D","cost":1000
+          {"name":"itm_chorus4","cost":10},{"name":"itm_chorus5","cost":100},{"name":"itm_intro1D","cost":1000
           },
           {"name":"itm_playout","cost":10}]
         },
         
         { "name": "itm_playOut", "trackPos": 245.7441, "length":  16.0244, "endCost": 20,
-        "next": [ {"name":"itm_playOut","cost":10},{"name":"chorus4","cost":100},{"name":"itm_chorus5","cost":1000
+        "next": [ {"name":"itm_playOut","cost":10},{"name":"itm_chorus4","cost":100},{"name":"itm_chorus5","cost":1000
         }]
         },
         

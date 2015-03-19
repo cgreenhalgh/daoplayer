@@ -5,9 +5,6 @@
     "title": "oxford starting points/scenes",
     "description" : "requires Oxford_tracksR8.json"
   },
-  "merge": [
-    "Oxford_tracksR8.json"
-  ],
   "context": {
     "title":  "E-Research Cenre to Lady Margaret Hall (via park)",
     
@@ -43,7 +40,7 @@
         "name": "S2_2",
         "lat": 51.764322,   
         "lng": -1.255062,
-        "nearDistance": 10,
+        "nearDistance": 15,
         "origin": true,
         "title":  "Norham Gardens (top)",
         "description": "dinner walk start"
@@ -54,6 +51,7 @@
   "scenes": [
     {
       "name": "Start",
+      "waypoints":{},
       "partial": false,
       "onload": "window.lastWarning=(-10); window.lastGpsWarning=(-10); daoplayer.speak('Waiting for G P S.',true);",
       "onupdate": "if (activity!=null && activity!='NOGPS') {daoplayer.speak('OK, G P S is working',true); daoplayer.setScene('Start/any');}",
@@ -61,7 +59,7 @@
       "description": "wait for gps",
       "tracks": [
         {
-          "name": "R8L1",
+          "name": "holdingPad",
           "volume": 1
         }
       ]
@@ -75,7 +73,7 @@
       "description": "where are we??",
       "tracks": [
         {
-          "name": "R8L1",
+          "name": "holdingPad",
           "volume": 1
         }
       ]
@@ -83,12 +81,13 @@
     {
       "name": "Start/oerc",
       "partial": true,
-      "onload": "daoplayer.speak('Please walk along keble road and into the park', true);",
+      "waypoints":{"S1_1":"S1_1","S1_2":"S1_2"},
+      "onload": "daoplayer.speak('Please walk along keble road and into the park', false);",
       "onupdate": "if (waypoints['S1_2'].near) { daoplayer.speak('starting walk 1', true); daoplayer.setScene('Start/walk1'); } else if (position!=null && !waypoints['S1_1'].near) daoplayer.setScene('Start/any');",
       "updatePeriod":1.0,
       "tracks": [
         {
-          "name": "R8L1",
+          "name": "holdingPad",
           "volume": 1
         }
       ]
@@ -96,11 +95,11 @@
     {
       "name": "Start/walk1",
       "partial": true,
-      "onupdate": "daoplayer.setScene('X real walk 1 X');",
+      "onupdate": "daoplayer.setScene('LeadMeMulti1');",
       "updatePeriod":1.0,
       "tracks": [
         {
-          "name": "R8L1",
+          "name": "holdingPad",
           "volume": "[sceneTime,trackVolume,sceneTime+1,0]"
         }
       ]
@@ -108,12 +107,13 @@
     {
       "name": "Start/lmh",
       "partial": true,
-      "onload": "daoplayer.speak('Please walk along Fyfield Road and turn right onto Norham Gardens', true);",
-      "onupdate": "if (waypoints['S2_2'].near) { daoplayer.speak('starting walk 1', true); daoplayer.setScene('Start/walk1'); } else if (position!=null && !waypoints['S2_1'].near) daoplayer.setScene('Start/any');",
+      "waypoints":{"S2_1":"S2_1","S2_2":"S2_2"},
+      "onload": "daoplayer.speak('Please walk along Fyfield Road and turn right onto Norham Gardens', false);",
+      "onupdate": "if (waypoints['S2_2'].near) { daoplayer.speak('starting walk 2', true); daoplayer.setScene('Start/walk2'); } else if (position!=null && !waypoints['S2_1'].near) daoplayer.setScene('Start/any');",
       "updatePeriod":1.0,
       "tracks": [
         {
-          "name": "R8L1",
+          "name": "holdingPad",
           "volume": 1
         }
       ]
@@ -121,11 +121,11 @@
     {
       "name": "Start/walk2",
       "partial": true,
-      "onupdate": "daoplayer.setScene('X real walk 2 X');",
+      "onupdate": "daoplayer.setScene('InTheMeantime');",
       "updatePeriod":1.0,
       "tracks": [
         {
-          "name": "R8L1",
+          "name": "holdingPad",
           "volume": "[sceneTime,trackVolume,sceneTime+1,0]"
         }
       ]

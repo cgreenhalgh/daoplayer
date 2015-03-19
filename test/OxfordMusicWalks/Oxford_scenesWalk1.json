@@ -8,7 +8,7 @@
   
   "scenes": [
     {
-      "name": "start_holdingPad",
+      "name": "start_holding1",
       "partial": false,
        "onupdate": "if (waypoints['1'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['1'].distance-10)/1.5; if (waypoints['1'].distance<10) daoplayer.setScene('LeadMeMulti'); }",
       "updatePeriod":1.0,
@@ -35,8 +35,9 @@
     },
     {
       "name": "LeadMeMulti1",
+      "waypoints":{"R1_4a":"R1_4a"},
       "partial": false,
-      "onupdate": "if (waypoints['R1_4a'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_4a'].distance-10)/1.5; if (waypoints['R1_4a'].distance<10) daoplayer.setScene('LeadMeMulti2'); }",
+      "onupdate": "if (waypoints['R1_4a'].near) { daoplayer.setScene('LeadMeMulti2'); }",
       "updatePeriod":1.0,
       
       "tracks": [
@@ -69,6 +70,7 @@
     },
     {
       "name": "LeadMeMulti2",
+      "waypoints":{"R1_5a":"R1_5a","R1_5":"R1_5"},
       "description": "change of instrument volumes",
       "partial": false,
       "onupdate": "if (waypoints['R1_5a'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_5a'].distance-10)/1.5; if (waypoints['R1_5a'].distance<10) daoplayer.setScene('LeadMeMulti3'); }",
@@ -99,6 +101,7 @@
     },
     {
       "name": "LeadMeMulti3",
+      "waypoints":{"R1_6":"R1_6"},
       "description": "volume dip at junction",
       "partial": false,
       "onupdate": "if (waypoints['R1_6'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_6'].distance-10)/1.5; if (waypoints['R1_6'].distance<10) daoplayer.setScene('LeadMeMulti4'); }",
@@ -129,6 +132,7 @@
     },
     {
       "name": "LeadMeMulti4",
+      "waypoints":{"R1_6":"R1_6"},
       
       "partial": false,
       "onupdate": "if (waypoints['R1_6'].distance!==undefined) { window.estimatedEnd=totalTime+(waypoints['R1_6'].distance-10)/1.5; if (waypoints['R1_6'].distance<10) daoplayer.setScene('LeadMeMulti4'); }",

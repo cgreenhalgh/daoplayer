@@ -181,7 +181,7 @@
         ]
     },
     {
-      "name": "Vocals",
+      "name": "LM_Vocals",
       "pauseIfSilent": false,
       "files": [
         { 
