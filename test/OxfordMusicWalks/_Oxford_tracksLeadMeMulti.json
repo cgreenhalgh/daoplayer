@@ -14,7 +14,7 @@
           "path": "LM_Accordian_Keys.wav", 
           "trackPos": 0,
           "filePos": 0,
-          "length": 211,
+          "length": 185.3935,
           "repeats": -1
         }
       ],
@@ -44,8 +44,6 @@
         { "name": "LMAK_intro3", "trackPos": 176.9232
         },
         { "name": "LMAK_outro", "trackPos": 185.3935
-        },
-        { "name": "LMAK_end", "trackPos": 202.9965
         }
         ]
         
@@ -58,7 +56,7 @@
           "path": "LM_Guitars.wav", 
           "trackPos": 0,
           "filePos": 0,
-          "length": 211,
+          "length": 185.3935,
           "repeats": -1
         }
       ],
@@ -88,8 +86,6 @@
         { "name": "LMG_intro3", "trackPos": 176.9232
         },
         { "name": "LMG_outro", "trackPos": 185.3935
-        },
-        { "name": "LMG_end", "trackPos": 202.9965
         }
         ]
     },
@@ -101,7 +97,7 @@
           "path": "LM_Drums.wav", 
           "trackPos": 0,
           "filePos": 0,
-          "length": 211,
+          "length": 185.3935,
           "repeats": -1
         }
       ],
@@ -131,8 +127,6 @@
         { "name": "LMD_intro3", "trackPos": 176.9232
         },
         { "name": "LMD_outro", "trackPos": 185.3935
-        },
-        { "name": "LMD_end", "trackPos": 202.9965
         }
         ]
       
@@ -145,7 +139,7 @@
           "path": "LM_Bass.wav", 
           "trackPos": 0,
           "filePos": 0,
-          "length": 211,
+          "length": 185.3935,
           "repeats": -1
         }
       ],
@@ -175,8 +169,6 @@
         { "name": "LMB_intro3", "trackPos": 176.9232
         },
         { "name": "LMB_outro", "trackPos": 185.3935
-        },
-        { "name": "LMB_end", "trackPos": 202.9965
         }
         ]
     },
@@ -188,7 +180,7 @@
           "path": "LM_Vocals.wav", 
           "trackPos": 0,
           "filePos": 0,
-          "length": 211,
+          "length": 185.3935,
           "repeats": -1
         }
       ],
@@ -218,8 +210,6 @@
         { "name": "LMV_intro3", "trackPos": 176.9232
         },
         { "name": "LMV_outro", "trackPos": 185.3935
-        },
-        { "name": "LMV_end", "trackPos": 202.9965
         }
       ]
     }
