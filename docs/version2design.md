@@ -1,23 +1,23 @@
 # DaoPlayer Version 2 Design
 
-In version 2 the primary change is that the individual songs ("geo-tracks") are separate from the overall experience. 
+In version 2 the primary change is that the individual songs (`dmo`s) are separate from the overall experience, and that the placement of each `dmo` is made explicit and coherent as a `geotrack`. 
 
-Nominally each song or `geotrack` is an Audio Object (or Digital Music Object), which could be used in a range of experiences; the `composition` defines how a set of geo-tracks are combined and situated for a /specific/ experience. 
+Nominally each song or `dmo` is an Audio Object (or Digital Music Object), which could be used in a range of experiences; the `composition` defines how a set of `dmo`s become `geotrack`s by being situated and tailored for a /specific/ experience. 
 
-Often only a single `geotrack` will be active at any particular moment. The player, based on the `composition`, will handle playing, pausing and stopping `geotrack`s, and will also provide appropriate control inputs for active geotracks, typically based on sensor inputs.
+Often only a single `dmo`/`geotrack` will be active at any particular moment. The player, based on the `composition`, will handle playing, pausing and stopping `dmo`s, and will also provide appropriate control inputs for active `dmo`s, typically based on sensor inputs.
 
-## GeoTrack Interface
+## `DMO` Interface
 
-From the perspective of a composition a `geotrack` would be seen in terms of a public interface including:
+From the perspective of a composition a `dmo` would be seen in terms of a public interface including:
 
 - a unique ID;
 - metadata, e.g. title, key, time signature, tempo, genre, author, license
-- a set of one or more externally visible `sections`s (or states) and their relationships and characteristics;
-- a set of zero or more control or input parameters.
+- a set of one (v2.0) or more (v2.2) externally visible `sections`s (or states) and their relationships and characteristics;
+- a set of zero (v2.0) or more control (v2.1) or input parameters.
 
-A `geotrack` might have only a single external `section` (e.g. "the whole song"), even if it has more sub-sections/scenes internally.
+A `dmo` might have only a single external `section` (e.g. "the whole song"), even if it has more sub-sections/scenes internally.
 
-A `geotrack` may be in one of the following overall states:
+A `dmo` may be in one of the following overall states:
 - `unprepared`
 - `preparing`
 - `prepared`
@@ -27,11 +27,11 @@ A `geotrack` may be in one of the following overall states:
 At any moment in time a track may have a current section (and time within that section) and/or a next section (and time of transition).
 
 Each section may have the following public properties:
-- ID (unique within this `geotrack`)
-- metadata, e.g. title, key, time signature, tempo
-- minimum duration
-- maximum duration
-- valid start, i.e. whether you can start with this section
+- ID (unique within this `dmo`) (v2.0)
+- metadata, e.g. title, key, time signature, tempo (v2.0)
+- minimum duration (v2.0)
+- maximum duration (v2.0)
+- valid start, i.e. whether you can start with this section (v2.0)
 - start cost envelope, i.e. how "bad" it would be to start/fade in this geotrack during this section as a function of time
 - start fade duration, i.e. how long to fade in over
 - end cost envelope, i.e. how "bad" it would be to end/fade out this geotrack during this section as a function of time
@@ -45,25 +45,94 @@ Each section may have the following public properties:
   - timing of transition (TBD)
   - cause of transition: automatic (time), automatic (control input), on-request
 
-Controls are defined at the `geotrack` level, but may only apply to a subset of `section`s (section controls).
+Controls are defined at the `dmo` level, but may only apply to a subset of `section`s (section controls).
 
-Control is defined as:
+Control is defined as (v2.1):
 - TODO
 
 ## Composition Model
 
 A composition includes:
 
-- an abstract graph of `geotracks` and transitions that comprise the whole experience, including their non-location controls
 - a set of `waypoint`s and a graph of `route`s over those `waypoint`s
-- a linkage from the `route` graph to the `geotrack` graph which specifies placement
-- specification of contingencies, esp. loss of GPS, divergence from `route`s.
+- a set of `geotrack`s, each of which is a reference to a `dmo` plus its placement and location-adaptive characteristics defined with reference to the `waypoint`s and `route`s.
 
-TODO...
+Example: single path, single geotrack...
 
-## GeoTrack Definition / Implementation
+- `path` = set of `route`s
+- `route` = pair of `waypoint`s and proximity
+- `waypoint` = lat/long and proximity
 
-Internally, a `geotrack` would comprise or be realised as:
+Start options:
+
+- route (i.e. any point along it) 
+- (later) waypoint(s) (selected)
+- (later) last active location
+
+Pre-conditions:
+
+- enabled (initially, vs currently...)
+- required position accuracy (hysteresis)
+- proximity (hysteresis) (to above)
+- (later) accuracy of current speed estimate (hysteresis)
+- (later) direction/speed along route (hysteresis)
+
+Scripts:
+
+- onactivate
+- ondeactivate
+
+In general hystersis can be:
+
+- (relative) on condition
+- on time
+- (relative) off condition
+- off time
+
+E.g. 10m (+/-2@3s) => within 10-2=8m for 3s to start / beyond 10+2=12m for 3s to stop
+
+Other properties:
+
+- priority (of geotrack)
+- (later) fadeintime
+- (later) fadeouttime
+
+Relationship =~contingencies, e.g.:
+
+- active, active-warning, inactive
+
+Contingency/warning factors, as for activate (minus enabled), but plus:
+
+- track time
+- (later) distance along route - starting, esp. ending
+- (later) distance along route vs time
+
+Other properties:
+
+- Priority
+- (later) min time
+- (later) hysteresis
+
+Contingency actions:
+
+- fade
+- play pad/volume
+- (later) TTS
+- (later?) pause
+- disable
+- (later) rewind / jump to section / reset
+- (later) consider also (other contingencies)
+- (later) recoveries... (factor & action)
+
+## Default / Background
+
+Perhaps a very-low priority `geotrack`, which may also provide audio/TTS feedback on e.g. GPS problems, nearby `geotracks`.
+
+Perhaps (effectively) a build-in fallback `geotrack` as above.
+
+## DMO Definition / Implementation
+
+Internally, a `dmo` would comprise or be realised as:
 
 - a header (metadata)
 - some configuration parameters
