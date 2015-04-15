@@ -24,7 +24,8 @@ public class DynScene implements IAudio.IScene {
 	private DynConstants mVars;
 	private Double mUpdatePeriod;
 	private Map<String,String> mWaypoints;
-	
+	private Map<String, String> mRoutes;
+
 	public DynScene(boolean mPartial) {
 		super();
 		this.mPartial = mPartial;
@@ -198,6 +199,15 @@ public class DynScene implements IAudio.IScene {
 	 */
 	public void setWaypoints(Map<String, String> mWaypoints) {
 		this.mWaypoints = mWaypoints;
+	}
+	public void setRoutes(Map<String, String> routes) {
+		this.mRoutes = routes;
+	}
+	/**
+	 * @return the mRoutes
+	 */
+	public Map<String, String> getRoutes() {
+		return mRoutes;
 	}
 
 }

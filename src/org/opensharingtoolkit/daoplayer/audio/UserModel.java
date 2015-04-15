@@ -4,10 +4,12 @@
 package org.opensharingtoolkit.daoplayer.audio;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Vector;
 
 import org.ejml.data.DenseMatrix64F;
+import org.opensharingtoolkit.daoplayer.audio.Context.Route;
 import org.opensharingtoolkit.daoplayer.audio.Context.Waypoint;
 
 import android.util.Log;
@@ -86,6 +88,7 @@ public class UserModel {
 	private double mEstimatedLat, mEstimatedLng;
 	private double mEstimatedXSpeed, mEstimatedYSpeed;
 	private int mUpdateNoLocationCount;
+	private Map<String, RouteInfo> mRouteInfos = new HashMap<String,RouteInfo>();
 	
 	public void setLocation(double lat, double lng, double accuracy, long time, long elapsedtime) {
 		mKalmanFilter.predict();
@@ -159,7 +162,8 @@ public class UserModel {
 		else
 			mEstimatedActivity = Activity.WALKING;
 
-		updateWaypointInfos();		
+		updateWaypointInfos();
+		updateRouteInfos();
 	}
 	/* note elapsedtime should be comparable with gps elapsedTimeNanos mapped to ms */
 	public void updateNoLocation(long time, long elapsedtime) {
@@ -214,9 +218,18 @@ public class UserModel {
 		for (Map.Entry<String, Waypoint> entry : waypoints.entrySet()) {
 			mWaypointInfos.put(entry.getKey(), new WaypointInfo(entry.getValue()));				
 		}
+		Vector<Route> routes = mContext.getRoutes();
+		for (Route route : routes) {
+			if (route.getName()!=null) {
+				if (route.getFromWaypoint()!=null && route.getToWaypoint()!=null)
+					mRouteInfos.put(route.getName(), new RouteInfo(route));				
+				else
+					Log.w(TAG,"Ignore route "+route.getName()+" with missing from/to");
+			}
+		}
 	}
 
-	public synchronized void toJavascript(StringBuilder sb, Map<String,String> localWaypoints) {
+	public synchronized void toJavascript(StringBuilder sb, Map<String,String> localWaypoints, Map<String,String> localRoutes) {
 		mLocalWaypoints = localWaypoints;
 		Activity activity = getActivity();
 		double currentSpeed = getCurrentSpeed();
@@ -275,7 +288,7 @@ public class UserModel {
 		}
 		// which waypoints? local plus last, or all if no local
 		Map<String,WaypointInfo> waypointInfos = null;
-		if (mContext!=null && localWaypoints!=null && localWaypoints.size()>0) {
+		if (mContext!=null && localWaypoints!=null) {
 			boolean lastWaypointIsLocal = false;
 			waypointInfos = new HashMap<String,WaypointInfo>();
 			for (Map.Entry<String,String> entry: localWaypoints.entrySet()) {
@@ -286,8 +299,27 @@ public class UserModel {
 				WaypointInfo wi = mWaypointInfos.get(entry.getValue());
 				if (wi!=null)
 					waypointInfos.put(entry.getKey(), wi);
-				else
-					Log.w(TAG,"Cannot find waypoint "+entry.getValue()+" (local name "+entry.getKey()+")");
+				else {
+					// route as waypoint?
+					Context.Route route = mContext.getRoute(entry.getValue());
+					if (route!=null) {
+						if (route.getFromWaypoint()!=null && route.getToWaypoint()!=null) {							
+							Log.i(TAG,"Create waypoint from route "+route.getName());
+							double nearDistance = Utils.distance(route.getFromWaypoint().getLat(), route.getFromWaypoint().getLng(), route.getToWaypoint().getLat(), route.getFromWaypoint().getLng())/2+route.getNearDistance();
+							// Note: average lat/lng as centre of line is not correct, but should be OK for a few miles
+							Waypoint waypoint = new Waypoint(route.getName(), (route.getFromWaypoint().getLat()+route.getToWaypoint().getLat())/2, (route.getFromWaypoint().getLng()+route.getToWaypoint().getLng())/2, nearDistance, new HashSet<String>(), false);
+							wi = new WaypointInfo(waypoint);
+							mWaypointInfos.put(route.getName(), wi);
+							updateWaypointInfo(wi);
+							waypointInfos.put(entry.getKey(), wi);
+						}
+						else
+							Log.w(TAG,"Cannot make waypoint from route "+entry.getValue()+" - missing from or to (local name "+entry.getKey()+")");
+							
+					}
+					else 
+						Log.w(TAG,"Cannot find waypoint or route "+entry.getValue()+" (local name "+entry.getKey()+")");
+				}
 			}
 			if (mLastWaypoint!=null && !lastWaypointIsLocal) {
 				// extra!
@@ -304,73 +336,124 @@ public class UserModel {
 		// waypoints
 		if (waypointInfos==null) {
 			sb.append("var waypoints={}\n");
-			return;
-		}
-		sb.append("var waypoints={\n");
-		WaypointInfo nearest = null;
-		String nearestName = null;
-		boolean first = true;
-		for(Map.Entry<String, WaypointInfo> entry: waypointInfos.entrySet()) {
-			if (first)
-				first = false;
-			else
-				sb.append(",\n");
-			sb.append("'");
-			sb.append(entry.getKey());
-			sb.append("':{ name: '");
-			WaypointInfo wi = entry.getValue();
-			sb.append(wi.waypoint.getName());
-			sb.append("', lat: ");
-			sb.append(wi.waypoint.getLat());
-			sb.append(", lng: ");
-			sb.append(wi.waypoint.getLng());
-			sb.append(", x: ");
-			sb.append(wi.waypoint.getX());
-			sb.append(", y: ");
-			sb.append(wi.waypoint.getY());
-			sb.append(", near: ");
-			if (wi.valid) {
-				sb.append(wi.near ? "true" : "false");
-				sb.append(", distance: ");
-				sb.append(wi.distance);
-				sb.append(", relativeBearing: ");
-				sb.append(wi.relativeBearing);
-				sb.append(", timeAtCurrentSpeed: ");
-				sb.append(wi.timeAtCurrentSpeed);
-				sb.append(", timeAtWalkingSpeed: ");
-				sb.append(wi.timeAtWalkingSpeed);
+		} else {
+			sb.append("var waypoints={\n");
+			WaypointInfo nearest = null;
+			String nearestName = null;
+			boolean first = true;
+			for(Map.Entry<String, WaypointInfo> entry: waypointInfos.entrySet()) {
+				if (first)
+					first = false;
+				else
+					sb.append(",\n");
+				sb.append("'");
+				sb.append(entry.getKey());
+				sb.append("':{ name: '");
+				WaypointInfo wi = entry.getValue();
+				sb.append(wi.waypoint.getName());
+				sb.append("', lat: ");
+				sb.append(wi.waypoint.getLat());
+				sb.append(", lng: ");
+				sb.append(wi.waypoint.getLng());
+				sb.append(", x: ");
+				sb.append(wi.waypoint.getX());
+				sb.append(", y: ");
+				sb.append(wi.waypoint.getY());
+				sb.append(", near: ");
+				if (wi.valid) {
+					sb.append(wi.near ? "true" : "false");
+					sb.append(", distance: ");
+					sb.append(wi.distance);
+					sb.append(", relativeBearing: ");
+					sb.append(wi.relativeBearing);
+					sb.append(", timeAtCurrentSpeed: ");
+					sb.append(wi.timeAtCurrentSpeed);
+					sb.append(", timeAtWalkingSpeed: ");
+					sb.append(wi.timeAtWalkingSpeed);
+				}
+				else
+					sb.append("false");
+				if (wi.waypoint==mLastWaypoint) {
+					sb.append(", nearTime: ");
+					sb.append(mLastWaypointNearTime/1000);
+					sb.append(", notNearTime: ");
+					sb.append(mLastWaypointNotNearTime/1000);
+				}
+				sb.append(" }");
+				
+				if (wi.waypoint!=mLastWaypoint && (nearest==null || wi.distance<nearest.distance)) {
+					nearestName = entry.getKey();
+					nearest = wi;
+				}
 			}
-			else
-				sb.append("false");
-			if (wi.waypoint==mLastWaypoint) {
-				sb.append(", nearTime: ");
-				sb.append(mLastWaypointNearTime/1000);
-				sb.append(", notNearTime: ");
-				sb.append(mLastWaypointNotNearTime/1000);
+			sb.append("\n};\n");
+		
+			// lastWaypoint
+			if (lastWaypointName!=null) {
+				sb.append("var lastWaypoint='");
+				sb.append(lastWaypointName);
+				sb.append("';\n");
 			}
-			sb.append(" }");
-			
-			if (wi.waypoint!=mLastWaypoint && (nearest==null || wi.distance<nearest.distance)) {
-				nearestName = entry.getKey();
-				nearest = wi;
+			// nextWaypoint
+			// TODO not just nearest?!
+			if (nearestName!=null) {
+				sb.append("var nextWaypoint='");
+				sb.append(nearestName);
+				sb.append("';\n");
 			}
 		}
-		sb.append("\n};\n");
-		// lastWaypoint
-		if (lastWaypointName!=null) {
-			sb.append("var lastWaypoint='");
-			sb.append(lastWaypointName);
-			sb.append("';\n");
+		// which routes? local , or all if no local
+		Map<String,RouteInfo> routeInfos = null;
+		if (mContext!=null && localRoutes!=null) {
+			routeInfos = new HashMap<String,RouteInfo>();
+			for (Map.Entry<String,String> entry: localRoutes.entrySet()) {
+				RouteInfo ri = mRouteInfos.get(entry.getValue());
+				if (ri!=null)
+					routeInfos.put(entry.getKey(), ri);
+				else 
+					Log.w(TAG,"Cannot find route "+entry.getValue()+" (local name "+entry.getKey()+")");
+			}
+		} else if (mContext!=null) {
+			// all...
+			routeInfos = mRouteInfos;
 		}
-		// nextWaypoint
-		// TODO not just nearest?!
-		if (nearestName!=null) {
-			sb.append("var nextWaypoint='");
-			sb.append(nearestName);
-			sb.append("';\n");
+		// routes
+		if (routeInfos==null) {
+			sb.append("var routes={}\n");
+		} else {
+			sb.append("var routes={\n");
+			boolean first = true;
+			for(Map.Entry<String, RouteInfo> entry: routeInfos.entrySet()) {
+				if (first)
+					first = false;
+				else
+					sb.append(",\n");
+				sb.append("'");
+				sb.append(entry.getKey());
+				sb.append("':{ name: '");
+				RouteInfo ri = entry.getValue();
+				sb.append(ri.route.getName());
+				sb.append("', near: ");
+				if (ri.valid) {
+					sb.append(ri.near ? "true" : "false");
+					sb.append(", distanceAlong: ");
+					sb.append(ri.distanceAlong);
+					sb.append(", distanceFrom: ");
+					sb.append(ri.distanceFrom);
+					sb.append(", length: ");
+					sb.append(ri.length);
+					sb.append(", nearest: ");
+					sb.append(ri.nearest);
+				}
+				else
+					sb.append("false");
+				sb.append(" }");
+			}
+			sb.append("\n};\n");
 		}
 	}
 	private void updateWaypointInfos() {
+		// NOTE: sync with updateWaypointInfo
 		if (mContext==null)
 			return;
 		if (mEstimatedAccuracy > mContext.getRequiredAccuracy() || mEstimatedAccuracy>MAX_REQUIRED_ACCURACY) {
@@ -398,6 +481,75 @@ public class UserModel {
 			}		
 		}
 	}
+	private void updateWaypointInfo(WaypointInfo wi) {
+		// NOTE: sync with updateWaypointInfos
+		if (mContext==null)
+			return;
+		if (mEstimatedAccuracy > mContext.getRequiredAccuracy() || mEstimatedAccuracy>MAX_REQUIRED_ACCURACY) {
+			wi.valid = false;
+			wi.near = false;
+		} else {
+			double currentSpeed = getCurrentSpeed();
+			double walkingSpeed = getWalkingSpeed();
+			// TODO route and distance along route!
+			double dx = wi.waypoint.getX()-mEstimatedX;
+			double dy = wi.waypoint.getY()-mEstimatedY;
+			wi.distance = Math.sqrt(dx*dx+dy*dy);
+			wi.relativeBearing = Math.atan2(-mEstimatedYSpeed*dx+mEstimatedXSpeed*dy, mEstimatedXSpeed*dx+mEstimatedYSpeed*dy)*180/Math.PI;
+			wi.near = wi.distance < wi.waypoint.getNearDistance();
+			if (currentSpeed>=0)
+				wi.timeAtCurrentSpeed = wi.distance / currentSpeed;
+			if (walkingSpeed>=0)
+				wi.timeAtWalkingSpeed = wi.distance / walkingSpeed;
+			wi.valid = true;
+		}
+	}
+	private void updateRouteInfos() {
+		if (mContext==null)
+			return;
+		if (mEstimatedAccuracy > mContext.getRequiredAccuracy() || mEstimatedAccuracy>MAX_REQUIRED_ACCURACY) {
+			for(Map.Entry<String, RouteInfo> entry: mRouteInfos.entrySet()) {
+				RouteInfo ri = entry.getValue();
+				ri.valid = false;
+				ri.near = false;
+			}
+		} else {
+			RouteInfo nearest = null;
+			for(Map.Entry<String, RouteInfo> entry: mRouteInfos.entrySet()) {
+				RouteInfo ri = entry.getValue();
+				double dx = mEstimatedX-ri.route.getFromWaypoint().getX();
+				double dy = mEstimatedY-ri.route.getFromWaypoint().getY();
+				double rx = ri.route.getToWaypoint().getX()-ri.route.getFromWaypoint().getX();
+				double ry = ri.route.getToWaypoint().getY()-ri.route.getFromWaypoint().getY();
+				if (ri.length<=0)
+					ri.length = Math.sqrt(rx*rx+ry*ry);
+				if (ri.length>0) {
+					double dot = dx*rx/ri.length+dy*ry/ri.length;
+					if (dot<0)
+						ri.distanceAlong = 0;
+					else if (dot>ri.length) 
+						ri.distanceAlong = ri.length;
+					else
+						ri.distanceAlong = dot;
+					double onx = ri.distanceAlong*rx/ri.length;
+					double ony = ri.distanceAlong*ry/ri.length;
+					ri.distanceFrom = Math.sqrt((dx-onx)*(dx-onx)+(dy-ony)*(dy-ony));
+				} else {
+					// zero length
+					ri.distanceFrom = Math.sqrt(dx*dx+dy*dy);
+					ri.distanceAlong = 0;
+				}
+					
+				ri.near = ri.distanceFrom < ri.route.getNearDistance();
+				ri.valid = true;
+				ri.nearest = false;
+				if (ri.near && (nearest==null || ri.distanceFrom<nearest.distanceFrom))
+					nearest = ri;
+			}		
+			if (nearest!=null)
+				nearest.nearest = true;
+		}
+	}
 	static class WaypointInfo {
 		private Context.Waypoint waypoint;
 		private boolean near = false;
@@ -414,6 +566,18 @@ public class UserModel {
 			super();
 			this.waypoint = waypoint;
 		}
+	}
+	static class RouteInfo {
+		public RouteInfo(Route route) {
+			this.route = route;
+		}
+		private Context.Route route;
+		private boolean near = false;
+		private boolean valid = false;
+		private boolean nearest = false;
+		private double distanceFrom;
+		private double distanceAlong;
+		private double length;
 	}
 	public synchronized void setLastWaypoint(String name) {
 		// WARNING: called on an internal javascript thread - be careful!

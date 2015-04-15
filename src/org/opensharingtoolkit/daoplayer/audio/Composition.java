@@ -80,6 +80,7 @@ public class Composition {
 	private static final String VERSION = "version";
 	private static final String VOLUME = "volume";
 	private static final String WAYPOINTS = "waypoints";
+	private static final String ROUTES = "routes";
 
 	private static final String COMPOSITION_MIMETYPE = "application/x-daoplayer-composition";
 	private static final int MAJOR_VERSION = 1;
@@ -348,8 +349,8 @@ public class Composition {
 					ascene.setOnload(jscene.getString(ONLOAD));
 				if (jscene.has(ONUPDATE))
 					ascene.setOnupdate(jscene.getString(ONUPDATE));
-				Map<String,String> waypoints = new HashMap<String,String>();
 				if (jscene.has(WAYPOINTS)) {
+					Map<String,String> waypoints = new HashMap<String,String>();
 					JSONObject jwaypoints = jscene.getJSONObject(WAYPOINTS);
 					Iterator<String> keys = jwaypoints.keys();
 					while (keys.hasNext()) {
@@ -357,8 +358,19 @@ public class Composition {
 						String value = jwaypoints.getString(key);
 						waypoints.put(key, value);
 					}
+					ascene.setWaypoints(waypoints);
 				}
-				ascene.setWaypoints(waypoints);
+				if (jscene.has(ROUTES)) {
+					Map<String,String> routes = new HashMap<String,String>();
+					JSONObject jroutes = jscene.getJSONObject(ROUTES);
+					Iterator<String> keys = jroutes.keys();
+					while (keys.hasNext()) {
+						String key = keys.next();
+						String value = jroutes.getString(key);
+						routes.put(key, value);
+					}
+					ascene.setRoutes(routes);
+				}
 				if (jscene.has(TRACKS)) {
 					JSONArray jtracks = jscene.getJSONArray(TRACKS);
 					for (int ti=0; ti<jtracks.length(); ti++) {
@@ -518,7 +530,7 @@ public class Composition {
 		}
 		sb.append(";\n");
 		StringBuilder umsb = new StringBuilder();
-		mUserModel.toJavascript(umsb, scene.getWaypoints());
+		mUserModel.toJavascript(umsb, scene.getWaypoints(), scene.getRoutes());
 		String ums = umsb.toString();
 		sb.append(ums);
 		try {
@@ -950,5 +962,13 @@ public class Composition {
 			return null;
 		}
 		return selector.selectSections(currentSectionName, currentSectionTime, sceneTime, targetDuration);
+	}
+	public Map<String, String> getRoutes(String sceneName) {
+		DynScene scene = mScenes.get(sceneName);
+		if (scene==null) {
+			Log.w(TAG, "getRoutes: scene unknown "+sceneName);
+			return null;			
+		}
+		return scene.getRoutes();		
 	}
 }

@@ -72,6 +72,7 @@ Array of scene objects with:
 - `onupdate` - Javascript code to execute (after onany) when this scene is updated, e.g. when time or position changes (string, see dynamic scenes, below).
 - `updatePeriod` - regular period in seconds after which the scene should be updated (float, default undefined => never, see dynamic scenes, below). E.g. `3.0` implies update the scene every 3 seconds.
 - `waypoints` - map (object) from scene-specific waypoint name to global waypoint name or alias (as used in `context` waypoint list)
+- `routes` - map (object) from scene-specific route name to global route name or alias (as used in `context` route list)
 - `title` - descriptive, for human consumption only (string, optional)
 - `description` - descriptive, for human consumption only (string, optional)
 
@@ -91,7 +92,7 @@ Object with:
 - `description` - descriptive, for human consumption only (string, optional)
 - `requiredAccuracy` - location accuracy required for GPS updates to be used (metres, default unlimited)
 
-Waypoint (todo) is object with:
+Waypoint is object with:
 - `name` - name of waypoint (global name), used to refer to the waypoint within the composition
 - `aliases` - array of alternative names for waypoint (e.g. 'start')
 - `lat` - latitude, degrees (float)
@@ -102,7 +103,8 @@ Waypoint (todo) is object with:
 - `description` - descriptive, for human consumption only (string, optional)
 (future: polyline or other geometry)
 
-Route (todo) is object with
+Route is object with:
+- `name` - name of route (optional, e.g. if used as local waypoint)
 - `from` - name of origin waypoint
 - `to` - name of destination waypoint
 - `nearDistance` - how far off the direct route is 'near' to it, metres (float, default provisionally 5m, may change)
@@ -162,8 +164,8 @@ Note that volume and pos functions are always called on scene load, but only cal
 
 `activity`: one of `NOGPS`, `STATIONARY`, `WALKING`, `UNCERTAIN` (future?: `RUNNING`, `FASTD`)
 
-`waypoints` (todo): map from local name of waypoint to objects, each with:
-- `name` - global name of waypoint -->
+`waypoints`: map from local name of waypoint (or route) to objects, each with:
+- `name` - global name of waypoint 
 - `lat`, `lng` of waypoint - see waypoint
 - `x`, `y` of waypoint, metres, relative to origin waypoint (if defined)
 - `distance` - direct distance from waypoint, metres (float), based on last known location (undefined if no location)
@@ -178,7 +180,17 @@ and in the last waypoint only:
 - `nearTime` - time while (still) near, 
 - `notNearTime` - since waypoint was near
 
-`lastWaypoint` (todo): if not null then name of the "last" visited waypoint, as set with `setLastWaypoint`
+Note: for a route used as a waypoint the lat/lng is the centre of the route and the nearDistance is the distance between the ends plus the route's `nearDistance`.
+
+`routes`: map from local name of route to objects, each with:
+- `name` - global name of route
+- `near` - near to route? (boolean)
+- `nearest` - route is nearest? (boolean)
+- `distanceFrom` - direct distance from route, e.g. to side, metres (float), based on last known location (undefined if no location)
+- `distanceAlong` - distance along route ignoring `distanceFrom`, metres (float), based on last known location (undefined if no location)
+- `length` - length of route, metres (float)
+
+`lastWaypoint`: if not null then name of the "last" visited waypoint, as set with `setLastWaypoint`
 
 `nextWaypoint` (todo): name of closest/closest to route waypoint, which will be in `waypoints`
 
@@ -205,5 +217,5 @@ and in the last waypoint only:
 
 Note: selectSections is a work in progress!
 
-`daoplayer.selectSections(trackName,currentSectionName,currentSectionTime,targetDuration)`: return a value suitable to be returned from dynamic position, i.e. an array of names of sections of the specified track `trackName` to play in order to take approximately the `targetDuration` (seconds). If the current section has not finished then the first value in the array is the end time of the current section. If `currentSectionName` is `null` then the sequence will be from the track (a valid starting section). If not null, `currentSectionName` specifies the current/starting point (typically this is the variable `currentSection.name`) and `currentSectionTime` is the elapsed time in that sections, typically `sceneTime-currentSection.startTime`) 
+`daoplayer.selectSections(trackName,currentSection,SceneTime,targetDuration)`: return a value suitable to be returned from dynamic position, i.e. an array of names of sections of the specified track `trackName` to play in order to take approximately the `targetDuration` (seconds). If `currentSection` is not `null` then the first values in the array will be the name and (historical) start time of the current section. Otherwise a valid start section will be chosen. 
 

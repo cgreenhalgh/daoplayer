@@ -159,12 +159,14 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 					String scene = Service.this.mScene;
 					jstatus.put("scene", scene);
 					Map<String,String> waypoints = null;
+					Map<String,String> routes = null;
 					if (Service.this.mComposition!=null) {
 						waypoints = mComposition.getWaypoints(scene);
+						routes = mComposition.getRoutes(scene);
 					}					
 					if (Service.this.mUserModel!=null) {
 						StringBuilder sb = new StringBuilder();
-						mUserModel.toJavascript(sb, waypoints);
+						mUserModel.toJavascript(sb, waypoints, routes);
 						jstatus.put("userModel", sb.toString());
 					}
 					jstatus.put("speechReady", mSpeechReady);
@@ -187,10 +189,12 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 					StringBuilder sb = new StringBuilder();
 					String scene = Service.this.mScene;
 					Map<String,String> waypoints = null;
+					Map<String,String> routes = null;
 					if (Service.this.mComposition!=null) {
 						waypoints = mComposition.getWaypoints(scene);
+						routes = mComposition.getRoutes(scene);
 					}					
-					mUserModel.toJavascript(sb, waypoints);
+					mUserModel.toJavascript(sb, waypoints, routes);
 					return sb.toString();
 				}
 			}

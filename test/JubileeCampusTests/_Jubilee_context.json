@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "Jubilee Campus Tests context"
+  },
+  "context": {
+    "waypoints": [
+      {
+        "name": "CS_NW",
+        "lat": 52.9535635, 
+        "lng": -1.1877358,
+        "description": "Lakeside path north side of CS",
+        "origin": true
+      },
+      {
+        "name": "CS_NE",
+        "lat": 52.9537833, 
+        "lng": -1.1870974,
+        "description": "Roadside path north of CS"
+      },
+      {
+        "name": "AT_E",
+        "lat": 52.9529689, 
+        "lng": -1.1866629,
+        "description": "Path to east of main Atrium"
+      },
+      {
+        "name": "ED_SE",
+        "lat": 52.9522384, 
+        "lng": -1.1862284,
+        "description": "Roadside path SE of Education"
+      },
+      {
+        "name": "ED_SW",
+        "lat": 52.9521156, 
+        "lng": -1.1869848,
+        "description": "Lakeside path SW of Education"
+      }
+    ],
+    "routes": [
+      {
+        "name": "CS_NW-CS_NE",
+        "from": "CS_NW",
+        "to": "CS_NE",
+        "nearDistance": "15"
+      },
+      {
+        "name": "CS_NE-AT_E",
+        "from": "CS_NE",
+        "to": "AT_E",
+        "nearDistance": "10"
+      },
+      {
+        "name": "AT_E-ED_SE",
+        "from": "AT_E",
+        "to": "ED_SE",
+        "nearDistance": "10"
+      },
+      {
+        "name": "ED_SE-ED_SW",
+        "from": "ED_SE",
+        "to": "ED_SW",
+        "nearDistance": "10"
+      },
+      {
+        "name": "ED_SW-CS_NW",
+        "from": "ED_SW",
+        "to": "CS_NW",
+        "nearDistance": "20"
+      }
+    ]
+  }
+}
+

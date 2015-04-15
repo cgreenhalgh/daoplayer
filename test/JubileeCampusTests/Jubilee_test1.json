@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title":  "Jubilee Campus Tests 1",
+    "description":  "Merge file for Jubilee Campus Tests 1"
+  },
+  
+  "merge": [
+    "_Jubilee_context.json",
+    "_Jubilee_start1.json",
+    "_Jubilee_scenes1.json"
+    
+  ],
+  "defaultScene": "Start"
+}
+

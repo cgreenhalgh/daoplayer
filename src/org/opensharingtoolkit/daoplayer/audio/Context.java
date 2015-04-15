@@ -138,6 +138,7 @@ public class Context {
 	}
 	
 	public static class Route {
+		private String name;
 		private String from;
 		private String to;
 		private Waypoint fromWaypoint;
@@ -146,13 +147,15 @@ public class Context {
 		/**
 		 * @param from
 		 * @param to
+		 * @param to2 
 		 * @param fromWaypoint
 		 * @param toWaypoint
 		 * @param nearDistance
 		 */
-		public Route(String from, String to, Waypoint fromWaypoint,
+		public Route(String name, String from, String to, Waypoint fromWaypoint,
 				Waypoint toWaypoint, double nearDistance) {
 			super();
+			this.name = name;
 			this.from = from;
 			this.to = to;
 			this.fromWaypoint = fromWaypoint;
@@ -164,6 +167,12 @@ public class Context {
 		 */
 		public String getFrom() {
 			return from;
+		}
+		/**
+		 * @return the name
+		 */
+		public String getName() {
+			return name;
 		}
 		/**
 		 * @return the to
@@ -239,6 +248,7 @@ public class Context {
 					log.logError("Ignoring route "+ri+" without from/to: "+jroute.get(FROM)+"->"+jroute.get(TO));
 					continue;
 				}
+				String name = jroute.has(NAME) ? jroute.getString(NAME): null;
 				String from = jroute.has(FROM) ? jroute.getString(FROM) : null;
 				String to = jroute.has(TO) ? jroute.getString(TO) : null;
 				double nearDistance = jroute.has(NEAR_DISTANCE) ? jroute.getDouble(NEAR_DISTANCE) : DEFAULT_ROUTE_NEAR_DISTANCE;
@@ -248,7 +258,7 @@ public class Context {
 					log.logError("route "+ri+" with unknown from "+from);
 				if (toWaypoint==null) 
 					log.logError("route "+ri+" with unknown to "+to);
-				Route route = new Route(from, to, fromWaypoint, toWaypoint, nearDistance);
+				Route route = new Route(name, from, to, fromWaypoint, toWaypoint, nearDistance);
 				// TODO avoid duplicate routes?
 				context.mRoutes.add(route);
 			}
@@ -302,6 +312,18 @@ public class Context {
 			}			
 		}
 		return waypoint;
+	}
+	public Vector<Route> getRoutes() {
+		return mRoutes;
+	}
+	public Route getRoute(String name) {
+		if (name==null)
+			return null;
+		for (Route r : mRoutes) {
+			if (name.equals(r.name))
+				return r;
+		}
+		return null;
 	}
 	public double getRequiredAccuracy() {
 		return mRequiredAccuracy;

@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "Jubilee Campus Test 1 start",
+    "description" : "Jubilee Campus Test 1 start"
+  },
+  "defaultScene": "Start",
+  "scenes": [
+    {
+      "name": "Start",
+      "waypoints":{},
+      "routes":{},
+      "partial": false,
+      "onload": "window.lastGpsWarning=totalTime; daoplayer.speak('Waiting for G P S.',true);",
+      "onupdate": "if (activity!=null && activity!='NOGPS') { daoplayer.speak('OK.',true); daoplayer.setScene('Start/any'); } else if (totalTime-window.lastGpsWarning>10) { window.lastGpsWarning=totalTime; daoplayer.speak('Waiting for G P S.', true);",
+      "updatePeriod":1.0,
+      "description": "wait for gps",
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": 0
+        }
+      ]
+    },
+    {
+      "name": "Start/any",
+      "partial": false,
+      "waypoints":{},
+      "onload": "window.lastWarning=(-10);",
+      "onupdate": "if (routes['CS_NW-CS_NE'].nearest) { daoplayer.setScene('Track1/start'); } else if (routes['CS_NE-AT_E'].nearest || routes['AT_E-ED_SE'].nearest) { daoplayer.setScene('Track2/start'); } else if (routes['ED_SE-ED_SW'].nearest) { daoplayer.setScene('Track3/start'); } else if (routes['ED_SW-CS_NW'].nearest) { daoplayer.setScene('Track4/start'); } else if (activity=='NOGPS') { daoplayer.setScene('Start'); } else if (totalTime-window.lastWarning>20) { window.lastWarning=totalTime; daoplayer.speak('Music will continue when GPS reports you are near the route', false); }",
+      "updatePeriod":1.0,
+      "description": "where are we??",
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": 1
+        }
+      ]
+    }
+  ]
+}
+

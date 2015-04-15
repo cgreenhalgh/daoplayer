@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "Jubilee Campus Test 1 scenes",
+    "description" : "Jubilee Campus Test 1 scenes"
+  },
+  "scenes": [
+    {
+      "name": "Track1/start",
+      "partial": false,
+      "waypoints":{"W1":"CS_NW","W2":"CS_NE"},
+      "routes":{"R1":"CS_NW-CS_NE", "Rnext":"CS_NE-AT_E"},
+      "onload": "daoplayer.speak('Starting Track 1', true);",
+      "onupdate": "if (!routes['R1'].near) { daoplayer.setScene('Start/any'); } else if (routes['Rnext'].nearest) { daoplayer.setScene('Track2/start'); }",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" 
+        }
+      ]
+    },
+    {
+      "name": "Track2/start",
+      "partial": false,
+      "waypoints":{"W1":"CS_NE","W2":"AT_E","W3":"ED_SE"},
+      "routes":{"R1":"CS_NE-AT_E", "R2":"AT_E-ED_SE", "Rnext":"ED_SE-ED_SW"},
+      "onload": "daoplayer.speak('Starting Track 2', true);",
+      "onupdate": "if (!routes['R1'].near && !routes['R2'].near) { daoplayer.setScene('Start/any'); } else if (routes['Rnext'].nearest) { daoplayer.setScene('Track3/start'); }",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" 
+        }
+      ]
+    },
+    {
+      "name": "Track3/start",
+      "partial": false,
+      "waypoints":{"W1":"ED_SE","W2":"ED_SW"},
+      "routes":{"R1":"ED_SE-ED_SW", "Rnext":"ED_SW-CS_NW"},
+      "onload": "daoplayer.speak('Starting Track 3', true);",
+      "onupdate": "if (!routes['R1'].near) { daoplayer.setScene('Start/any'); } else if (routes['Rnext'].nearest) { daoplayer.setScene('Track4/start'); }",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" 
+        }
+      ]
+    },
+    {
+      "name": "Track4/start",
+      "partial": false,
+      "waypoints":{"W1":"ED_SW","W2":"CS_NW"},
+      "routes":{"R1":"ED_SW-CS_NW", "Rnext":"CS_NW-CS_NE"},
+      "onload": "daoplayer.speak('Starting Track 4', true);",
+      "onupdate": "if (!routes['R1'].near) { daoplayer.setScene('Start/any'); } else if (routes['Rnext'].nearest) { daoplayer.setScene('Track1/start'); }",
+      "updatePeriod":1.0,
+      "tracks": [
+        {
+          "name": "holdingPad",
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" 
+        }
+      ]
+    }
+  ]
+}
+
