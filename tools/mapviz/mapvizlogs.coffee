@@ -136,9 +136,9 @@ fix_positions = (positions, origin) ->
   refy = 0
   metre = 1
   if origin?
-    refx = utils.merc_x origin.lng
-    refy = utils.merc_y origin.lat
-    metre = utils.merc_metre origin.lat, origin.lng
+    refx = origin.refx = utils.merc_x origin.lng
+    refy = origin.refy = utils.merc_y origin.lat
+    metre = origin.metre = utils.merc_metre origin.lat, origin.lng
   for position in positions
     position.x = ((utils.merc_x position.lng)-refx)*metre
     position.y = ((utils.merc_y position.lat)-refy)*metre

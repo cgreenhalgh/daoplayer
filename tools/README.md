@@ -2,6 +2,10 @@
 
 Tools, mainly for working with daoplayer logs.
 
+- mapviz/mapvizlogs.coffee - process daoplayer log plus composition context to file for viewing with mapviz/map.html or mapviz/route.html
+- mapviz/map.html - map view of mapviz log of user positions and waypoints
+- mapviz/route.html - timeline view of mapviz log of user distance along and from route
+
 - src/gps/TestFilter.java - re-run user model (inc kalman filter) over daoplayer log and output json-encoded waypoints and locations
 - gpsviz/log2tsv.js - export on.location events from daoplayer log as TSV file
 - gpsviz/index.html - d3-based visualisation of TestFilter output file to check kalman filter operation
