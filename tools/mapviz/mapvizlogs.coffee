@@ -118,13 +118,15 @@ for configline in configlines
 fix_waypoints = (waypoints, origin) ->
   refx = 0
   refy = 0
+  metre = 1
   if origin?
     refx = utils.merc_x origin.lng
     refy = utils.merc_y origin.lat
     metre = utils.merc_metre origin.lat, origin.lng
+    console.log "reference metre = "+metre
   for waypoint in waypoints
-    waypoint.x = ((utils.merc_x waypoint.lng)-refx)/metre
-    waypoint.y = ((utils.merc_y waypoint.lat)-refy)/metre
+    waypoint.x = ((utils.merc_x waypoint.lng)-refx)*metre
+    waypoint.y = ((utils.merc_y waypoint.lat)-refy)*metre
 
 fix_waypoints output.waypoints, output.origin
 
@@ -132,21 +134,22 @@ fix_waypoints output.waypoints, output.origin
 fix_positions = (positions, origin) ->
   refx = 0
   refy = 0
+  metre = 1
   if origin?
     refx = utils.merc_x origin.lng
     refy = utils.merc_y origin.lat
     metre = utils.merc_metre origin.lat, origin.lng
   for position in positions
-    position.x = ((utils.merc_x position.lng)-refx)/metre
-    position.y = ((utils.merc_y position.lat)-refy)/metre
+    position.x = ((utils.merc_x position.lng)-refx)*metre
+    position.y = ((utils.merc_y position.lat)-refy)*metre
     if position.lastlng?
-      position.lastx = ((utils.merc_x position.lastlng)-refx)/metre
+      position.lastx = ((utils.merc_x position.lastlng)-refx)*metre
     if position.lastlat?
-      position.lasty = ((utils.merc_y position.lastlat)-refy)/metre
+      position.lasty = ((utils.merc_y position.lastlat)-refy)*metre
     if position.gpslng?
-      position.gpsx = ((utils.merc_x position.gpslng)-refx)/metre
+      position.gpsx = ((utils.merc_x position.gpslng)-refx)*metre
     if position.gpslat?
-      position.gpsy = ((utils.merc_y position.gpslat)-refy)/metre
+      position.gpsy = ((utils.merc_y position.gpslat)-refy)*metre
 
 fix_positions output.positions, output.origin
 

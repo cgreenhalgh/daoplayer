@@ -28,6 +28,11 @@
   stroke: red;
   stroke-linecap: butt;
 }
+.chart .sceneFrom {
+  stroke: red;
+  stroke-linecap: round;
+  fill-opacity: 0;
+}
 .chart .scene {
   stroke: red;
   stroke-linecap: round;
@@ -162,6 +167,27 @@ d3.json(filename, function(error, data) {
       .attr("y1", function(d,i) { return d.lastdistanceFrom!==undefined ? yScale2( d.lastdistanceFrom ) - yScale2( d.distanceFrom ) : 0; })
       .attr("x2", 0)
       .attr("y2", 0);
+
+  var scenesFrom = chart.selectAll("g.sceneFrom")
+      .data(data.scenes)
+    .enter().append("g")
+    .filter(function(d) { return d.position!==null && d.position!==undefined; })
+      .classed('sceneFrom',true)
+      .attr("transform", function(d, i) { return "translate(" + xScale(d.usertime) + ", " + yScale2(d.position.distanceFrom) + ")"; });
+
+  scenesFrom
+    .filter(function(d) { return d.name.indexOf('Start')!=0; })
+    .append("circle")
+      .attr("r", scenesize);
+  scenesFrom
+    .filter(function(d) { return d.name.indexOf('Start')==0; })
+    .append("polygon")
+      .attr("points", "-5,0 0,5 5,0 0,-5");
+  scenesFrom.append("text")
+      .attr("x", scenesize/2+2)
+      .attr("y", -10)
+      .text(function(d) { return d.name; });
+
 
   var xAxis = d3.svg.axis()
                   .scale(xScale)
