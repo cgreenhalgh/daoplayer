@@ -1,5 +1,20 @@
-// daoplayer gps log -> tsv
-// node
+// daoplayer log -> tsv
+//
+// Chris Greenhalgh, The University of Nottingham, 2015.
+//
+// exports raw gps location reports from on.location events
+// outputs: 
+//   time (unix ms) 
+//   event ('gps') 
+//   lat (degrees) 
+//   lng (degrees) 
+//   x (metres, relative to first report)
+//   y (metres, relative to first report)
+//   accuracy (metres)
+//
+// Usage:
+//   node log2tsv.js <daoplayerlogfile> <outfile.tsv>
+
 var fs = require("fs");
 
 if (process.argv.length!=4) {
@@ -81,8 +96,8 @@ for(var i=0; i<lines.length; i++) {
       }
       // lng, lat, accuracy
       // mercator projection
-      var x = merc_x(rec.info.lng)-refx;
-      var y = merc_y(rec.info.lat)-refy;
+      var x = (merc_x(rec.info.lng)-refx)/meter;
+      var y = (merc_y(rec.info.lat)-refy)/meter;
       fs.writeSync(outfile,date.getTime()+"\tgps\t"+rec.info.lat+"\t"+rec.info.lng+"\t"+x+"\t"+y+"\t"+rec.info.accuracy+"\n");
     } else if(event=='on.gpsStatus') {
       //if (rec.info.changeUsedInFix)

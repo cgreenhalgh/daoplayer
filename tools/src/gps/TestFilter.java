@@ -23,7 +23,18 @@ import org.opensharingtoolkit.daoplayer.audio.Context.Waypoint;
 import org.opensharingtoolkit.daoplayer.audio.Utils;
 import org.opensharingtoolkit.daoplayer.ILog;
 
-/** gps / usermodel / filter test */
+/** gps / usermodel / filter test.
+ * 
+ * Chris Greenhalgh, The University of Nottingham, 2015
+ * 
+ * Usage:
+ *   java gps.TestFilter <composition.json> <logfile.log> <outfile.json>
+ * 
+ * Outputs a json object with:
+ * - origin: reference waypoint object
+ * - waypoints: array of waypoint objects, from composition context
+ * - locations: array of location objects, based on 'on.location' gps events run through UserModel built from composition context
+ */
 public class TestFilter {
 	static final String TAG = "test-filter";
 	static private SimpleDateFormat rfcdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", new Locale("","",""));
