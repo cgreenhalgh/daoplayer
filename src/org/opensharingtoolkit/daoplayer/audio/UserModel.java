@@ -9,8 +9,11 @@ import java.util.Map;
 import java.util.Vector;
 
 import org.ejml.data.DenseMatrix64F;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.opensharingtoolkit.daoplayer.audio.Context.Route;
 import org.opensharingtoolkit.daoplayer.audio.Context.Waypoint;
+import org.opensharingtoolkit.daoplayer.logging.Recorder;
 
 import android.util.Log;
 
@@ -20,6 +23,10 @@ import android.util.Log;
  *
  */
 public class UserModel {
+	private Recorder mRecorder;
+	public UserModel(Recorder recorder) {
+		this.mRecorder= recorder;
+	}
 	static class Location {
 		private double lat;
 		private double lng;
@@ -161,6 +168,26 @@ public class UserModel {
 			mEstimatedActivity = Activity.UNCERTAIN;
 		else
 			mEstimatedActivity = Activity.WALKING;
+
+		try {
+			JSONObject info = new JSONObject();
+			info.put("lat", mEstimatedLat);
+			info.put("lng", mEstimatedLng);
+			info.put("x", mEstimatedX);
+			info.put("y", mEstimatedY);
+			info.put("accuracy", mEstimatedAccuracy);
+			info.put("xspeed", mEstimatedXSpeed);
+			info.put("yspeed", mEstimatedYSpeed);
+			info.put("currentspeed", mEstimatedCurrentSpeed);
+			info.put("speedaccuracy", mEstimatedCurrentSpeed);
+			info.put("activity", mEstimatedActivity);
+			info.put("time", time);
+			info.put("elapsedTime", elapsedtime);
+			mRecorder.i("update.position", info);
+		}
+		catch (JSONException e) {
+			Log.w(TAG,"Error logging position", e);
+		}
 
 		updateWaypointInfos();
 		updateRouteInfos();

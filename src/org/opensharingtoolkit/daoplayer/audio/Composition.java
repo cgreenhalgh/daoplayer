@@ -212,6 +212,16 @@ public class Composition {
 				boolean pauseIfSilent = jtrack.has(PAUSE_IF_SILENT) && jtrack.getBoolean(PAUSE_IF_SILENT);
 				ATrack atrack = (ATrack)mEngine.addTrack(pauseIfSilent);
 				atrack.setName(name);
+				try {
+					JSONObject jlog = new JSONObject();
+					jlog.put("id",atrack.getId());
+					if(name!=null)
+						jlog.put("name", name);
+					jlog.put("file", file.getName());
+					log.getRecorder().i("track.add", jlog);
+				} catch (Exception e) {
+					Log.w(TAG,"Error logging addTrack: "+e);
+				}
 				if (name!=null) {
 					if (!merging || !mTracks.containsKey(name))
 						mTracks.put(name, atrack);

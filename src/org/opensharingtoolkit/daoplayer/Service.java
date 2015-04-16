@@ -106,8 +106,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private boolean mSpeechFailed = false;
 	private Vector<String> mSpeechDelayed = new Vector<String>();
 	HashMap<String, String> mSpeechParameters = new HashMap<String,String>();
-	private UserModel mUserModel = new UserModel();
 	protected Recorder mRecorder = new Recorder(this, "daoplayer.service");
+	private UserModel mUserModel = new UserModel(mRecorder);
 	private boolean mWebViewLoaded = false;
 	private String mSetSceneOnLoad = null;
 	private String mSetSceneOnStart = null;
@@ -838,6 +838,12 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 					Long now = System.currentTimeMillis();
 					mUserModel.updateNoLocation(now, (now-mLastTime)+mLastElapsedtime);
 				}
+				try {
+					mRecorder.i("scene.set", scene);
+				}
+				catch (Exception e) {
+					Log.e(TAG,"error logging scene.set: "+e);
+				}
 				mComposition.setScene(scene, mScriptEngine);
 				setSceneUpdateTimer(mComposition.getSceneUpdateDelay(scene));
 			}
@@ -855,6 +861,12 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			if (mLastTime>0 && mUserModel!=null) {
 				Long now = System.currentTimeMillis();
 				mUserModel.updateNoLocation(now, (now-mLastTime)+mLastElapsedtime);
+			}
+			try {
+				mRecorder.i("scene.update", mScene);
+			}
+			catch (Exception e) {
+				Log.e(TAG,"error logging scene.set: "+e);
 			}
 			mComposition.updateScene(mScene, mScriptEngine);
 			setSceneUpdateTimer(mComposition.getSceneUpdateDelay(mScene));
