@@ -330,11 +330,12 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			Log.d(TAG,"Test service webview daoplayer...");
 			mWebView.loadDataWithBaseURL("file:///android_asset/service.js",
 					"<html><head><title>Service</title><script type='text/javascript'>\n"+
-					"daoplayer.selectSections = function(trackName,currentSection,sceneTime,targetDuration) {\n"+
+					"daoplayer.selectSections = function(trackName,currentSection,sceneTime,targetDuration,totalTime) {\n"+
+						"if (totalTime===undefined) totalTime= -1;\n"+
 						"if (currentSection!=null)\n"+
-							"return JSON.parse(daoplayer.selectSectionsInternal(trackName,currentSection.name,sceneTime-currentSection.startTime,sceneTime,targetDuration));\n"+
+							"return JSON.parse(daoplayer.selectSectionsInternal(trackName,currentSection.name,sceneTime-currentSection.startTime,sceneTime,targetDuration,totalTime));\n"+
 						"else\n"+
-							"return JSON.parse(daoplayer.selectSectionsInternal(trackName,null,0.0,sceneTime,targetDuration));\n"+
+							"return JSON.parse(daoplayer.selectSectionsInternal(trackName,null,0.0,sceneTime,targetDuration,totalTime));\n"+
 					"}\n"+
 					"daoplayer.log('daoplayer.hello');\n"+
 					//"setInterval(function(){ daoplayer.log('daoplayer.tick'); }, 1000);"+
@@ -719,7 +720,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			}
 		}
 		@JavascriptInterface
-		public String selectSectionsInternal(String trackName, String currentSectionName, double currentSectionTimeSeconds, double sceneTimeSeconds, double targetDurationSeconds) {
+		public String selectSectionsInternal(String trackName, String currentSectionName, double currentSectionTimeSeconds, double sceneTimeSeconds, double targetDurationSeconds, double totalTimeSeconds) {
 			Log.d(TAG,"selectSectionsInterval("+trackName+","+currentSectionName+","+currentSectionTimeSeconds+","+sceneTimeSeconds+","+targetDurationSeconds+")");
 			int currentSectionTime = mAudioEngine.secondsToSamples(currentSectionTimeSeconds);
 			int targetDuration = mAudioEngine.secondsToSamples(targetDurationSeconds);
@@ -734,6 +735,25 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 					}
 				} catch (Exception e) {
 					Log.w(TAG,"Error doing selectSections: "+e, e);
+				}
+				try {
+					JSONObject info = new JSONObject();
+					info.put("trackName", trackName);
+					info.put("sceneTime", sceneTimeSeconds);
+					if (totalTimeSeconds>=0)
+						info.put("totalTime", totalTimeSeconds);
+					info.put("currentSectionName", currentSectionName);
+					info.put("currentSectionTime", currentSectionTimeSeconds);
+					info.put("targetDuration", targetDurationSeconds);
+					if (sections!=null) {
+						JSONArray jsections= new JSONArray();
+						info.put("result", jsections);
+						for (Object section : sections)
+							jsections.put(section);
+					}
+					mRecorder.i("sections.select", info);
+				} catch (Exception e) {
+					Log.w(TAG,"Error logging selectSections: "+e);
 				}
 				if (sections==null)
 					return "null";

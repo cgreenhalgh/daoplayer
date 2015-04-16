@@ -23,16 +23,22 @@
     },
     {
       "name": "Track2/start",
+      "description":"includes test of selectSections",
       "partial": false,
       "waypoints":{"W1":"CS_NE","W2":"AT_E","W3":"ED_SE"},
       "routes":{"R1":"CS_NE-AT_E", "R2":"AT_E-ED_SE", "Rnext":"ED_SE-ED_SW"},
-      "onload": "daoplayer.speak('Starting Track 2', true);",
-      "onupdate": "if (!routes['R1'].near && !routes['R2'].near) { daoplayer.setScene('Start/any'); } else if (routes['Rnext'].nearest) { daoplayer.setScene('Track3/start'); }",
+      "onload": "daoplayer.speak('Starting Track 2', true); if (waypoints['W3'].distance!==undefined) window.estimatedEnd=totalTime+(waypoints['W3'].distance)/1.5; else window.estimatedEnd=300;",
+      "onupdate": "if (!routes['R1'].near && !routes['R2'].near) { daoplayer.setScene('Start/any'); } else if (routes['Rnext'].nearest) { daoplayer.setScene('Track3/start'); } else if (waypoints['W3'].distance!==undefined) window.estimatedEnd=totalTime+(waypoints['W3'].distance)/1.5; ",
       "updatePeriod":1.0,
       "tracks": [
         {
           "name": "holdingPad",
           "volume": "sceneTime<2 ? [sceneTime,trackVolume,sceneTime+1,0] : 0" 
+        },
+        {
+          "name": "InTheMeantime",
+          "volume": 1,
+          "pos": "daoplayer.selectSections('InTheMeantime',currentSection,sceneTime,window.estimatedEnd-totalTime,totalTime)"
         }
       ]
     },
