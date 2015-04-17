@@ -43,25 +43,25 @@
         "name": "CS_NW-CS_NE",
         "from": "CS_NW",
         "to": "CS_NE",
-        "nearDistance": "15"
+        "nearDistance": "20"
       },
       {
         "name": "CS_NE-AT_E",
         "from": "CS_NE",
         "to": "AT_E",
-        "nearDistance": "10"
+        "nearDistance": "20"
       },
       {
         "name": "AT_E-ED_SE",
         "from": "AT_E",
         "to": "ED_SE",
-        "nearDistance": "10"
+        "nearDistance": "20"
       },
       {
         "name": "ED_SE-ED_SW",
         "from": "ED_SE",
         "to": "ED_SW",
-        "nearDistance": "10"
+        "nearDistance": "20"
       },
       {
         "name": "ED_SW-CS_NW",
