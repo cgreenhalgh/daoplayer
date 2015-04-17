@@ -34,3 +34,15 @@ Use custom d3 visualisation to show online section selection
 coffee log2sections.coffee <composition.json> <trackname> <logfile> <outfile.json>
 ```
 
+
+run `node ../../httpserver.js`
+
+Changing plan against time:
+
+View `http://localhost:8800/tools/sectionviz/sections.html?f=<outfile>`
+
+
+Actual playout - trackTime vs experience time:
+
+View `http://localhost:8800/tools/sectionviz/trackpos.html?f=<outfile>`
+

@@ -15,4 +15,8 @@ LOGFILES
 
 Usage: `node mapvizlogs.js <configfile> <outfile>`
 
+run `node ../../httpserver.js`
+
+View `http://localhost:8800/tools/sectionviz/mapviz.html?f=<outfile>`
+
 
