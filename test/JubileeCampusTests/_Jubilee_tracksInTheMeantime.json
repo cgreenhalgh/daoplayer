@@ -68,8 +68,7 @@
         { "name": "itm_chorus1", "trackPos": 69.305, "length":  18.0735,
         "next": [ {"name":"itm_verse2A","cost":0
         },
-          {"name":"itm_chorus1","cost":10},{"name":"itm_intro1D","cost":50},{"name":"itm_intro1B","cost":100},{"name":"itm_verse1C","cost":1000
-          },
+          {"name":"itm_chorus1","cost":10},{"name":"itm_intro1D","cost":50},{"name":"itm_intro1B","cost":100},
           {"name":"itm_verse2B","cost":10},{"name":"itm_chorus2","cost":50},{"name":"itm_chorus3","cost":500}]
         },
         
@@ -77,32 +76,28 @@
         { "name": "itm_verse2A", "trackPos": 87.3740, "length":  18.3738,
         "next": [ {"name":"itm_verse2B","cost":0
         },
-          {"name":"itm_intro1D","cost":10},{"name":"itm_intro1B","cost":100},{"name":"itm_verse1C","cost":1000
-          },
+          {"name":"itm_intro1D","cost":10},{"name":"itm_intro1B","cost":100},
           {"name":"itm_chorus2","cost":10},{"name":"itm_chorus3","cost":50},{"name":"itm_bridgeA","cost":1000}]
         },
         
         { "name": "itm_verse2B", "trackPos": 105.7478, "length":  18.4929,
         "next": [ {"name":"itm_chorus2","cost":0
         },
-          {"name":"itm_intro1D","cost":10},{"name":"itm_intro1B","cost":100},{"name":"itm_verse1C","cost":1000
-          },
+          {"name":"itm_intro1D","cost":10},{"name":"itm_intro1B","cost":100},
           {"name":"itm_chorus3","cost":10},{"name":"itm_bridgeA","cost":50},{"name":"itm_bridgeB","cost":1000}]
         },
         
         { "name": "itm_chorus2", "trackPos": 124.247, "length":  18.0668,
         "next": [ {"name":"itm_chorus3","cost":0
         },
-          {"name":"itm_intro1D","cost":10},{"name":"itm_intro1B","cost":100},{"name":"itm_verse1C","cost":1000
-          },
+          {"name":"itm_intro1D","cost":10},{"name":"itm_intro1B","cost":100},
           {"name":"itm_bridgeA","cost":10},{"name":"itm_bridgeB","cost":50}]
         },
         
         { "name": "itm_chorus3", "trackPos": 142.3075, "length":  18.2300,
         "next": [ {"name":"itm_bridgeA","cost":0
         },
-          {"name":"itm_chorus2","cost":10},{"name":"itm_intro1D","cost":100},{"name":"itm_intro1B","cost":1000},{"name":"itm_verse1C","cost":10000
-          },
+          {"name":"itm_chorus2","cost":10},{"name":"itm_intro1D","cost":100},{"name":"itm_intro1B","cost":1000},
           {"name":"itm_bridgeB","cost":10},{"name":"itm_intro2A","cost":100},{"name":"itm_intro2B","cost":1000}]
         },
         
@@ -152,7 +147,7 @@
         },
           {"name":"itm_chorus4","cost":10},{"name":"itm_chorus5","cost":100},{"name":"itm_intro1D","cost":1000
           },
-          {"name":"itm_playout","cost":10}]
+          {"name":"itm_playOut","cost":10}]
         },
         
         
@@ -161,7 +156,7 @@
         },
           {"name":"itm_chorus4","cost":10},{"name":"itm_chorus5","cost":100},{"name":"itm_intro1D","cost":1000
           },
-          {"name":"itm_playout","cost":10}]
+          {"name":"itm_playOut","cost":10}]
         },
         
         { "name": "itm_playOut", "trackPos": 245.7441, "length":  16.0244, "endCost": 20,
