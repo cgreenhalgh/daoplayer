@@ -30,4 +30,7 @@ neato -n <outfile.dot>.placed -Tpng -O
 
 Use custom d3 visualisation to show online section selection
 
- 
+```
+coffee log2sections.coffee <composition.json> <trackname> <logfile> <outfile.json>
+```
+

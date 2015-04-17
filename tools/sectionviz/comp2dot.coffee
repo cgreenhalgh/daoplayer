@@ -56,6 +56,11 @@ defaultEndCost = track.defaultEndCost ?= 10000
 
 HIGH_START = 100000000
 
+# fix missing lengths
+for section,si in track.sections
+  if not section.length and si+1<track.sections.length
+    section.length = track.sections[si+1].trackPos
+
 for section, si in track.sections
   if section.name?
     outfile.write '  '+section.name+' [ shape=record; label="{'+section.name+'|'+section.trackPos+'|'+section.length+'}" ]\n'
