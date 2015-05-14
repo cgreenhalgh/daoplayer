@@ -21,6 +21,7 @@ Object with metadata:
 - `version` - `1`
 - `title` - descriptive, for human consumption only (string, optional)
 - `description` - descriptive, for human consumption only (string, optional)
+- `artist` - for UI (string, optional)
 
 ### `tracks`
 
@@ -75,6 +76,7 @@ Array of scene objects with:
 - `routes` - map (object) from scene-specific route name to global route name or alias (as used in `context` route list)
 - `title` - descriptive, for human consumption only (string, optional)
 - `description` - descriptive, for human consumption only (string, optional)
+- `artist` - descriptive, for human consumption only (string, optional)
 
 Track ref is object with:
 - `name` - name of track

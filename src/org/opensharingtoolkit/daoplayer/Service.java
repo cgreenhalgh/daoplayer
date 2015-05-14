@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.json.JSONStringer;
 import org.opensharingtoolkit.daoplayer.audio.AudioEngine;
 import org.opensharingtoolkit.daoplayer.audio.Composition;
+import org.opensharingtoolkit.daoplayer.audio.DynScene;
 import org.opensharingtoolkit.daoplayer.audio.FileCache;
 import org.opensharingtoolkit.daoplayer.audio.FileDecoder;
 import org.opensharingtoolkit.daoplayer.audio.IScriptEngine;
@@ -51,6 +52,7 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.speech.tts.TextToSpeech.OnUtteranceCompletedListener;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
@@ -78,6 +80,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	public static final String ACTION_SET_SCENE = "org.opensharingtoolkit.daoplayer.SET_SCENE";
 	public static final String ACTION_CLEAR_LOGS = "org.opensharingtoolkit.daoplayer.CLEAR_LOGS";
 	public static final String ACTION_RUN_TEST = "org.opensharingtoolkit.daoplayer.RUN_TEST";
+	public static final String ACTION_SCENE_CHANGED = "org.opensharingtoolkit.daoplayer.SCENE_CHANGED";
+	public static final String ACTION_GPS_STATUS = "org.opensharingtoolkit.daoplayer.GPS_STATUS";
 	public static final String EXTRA_LAT = "lat";
 	public static final String EXTRA_LNG = "lng";
 	public static final String EXTRA_SCENE = "scene";
@@ -85,6 +89,11 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	public static final String EXTRA_ACCURACY = "accuracy";
 	public static final String EXTRA_ELAPSEDTIME = "elapsedtime";
 	public static final String EXTRA_FILENAME = "filename";
+	public static final String EXTRA_TITLE = "title";
+	public static final String EXTRA_ARTIST = "artist";
+	public static final String EXTRA_STATUS = "status";
+	public static final String EXTRA_SUBSTATUS = "substatus";
+	
 	private static final String PREF_USEGPS = "pref_usegps";
 	private static final String PREF_ENABLESPEECH = "pref_enablespeech";
 	static final String PREF_FILENAME = "pref_filename";
@@ -111,7 +120,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	private boolean mWebViewLoaded = false;
 	private String mSetSceneOnLoad = null;
 	private String mSetSceneOnStart = null;
-	
+	private GpsInfo mGpsStatus = new GpsInfo();
+			
 	static enum LogEntryType { LOG_ERROR, LOG_INFO };
 	class LogEntry {
 		LogEntryType type;
@@ -203,7 +213,43 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			}
 			return "\"Error getting usermodel\"";
 		}
+		public TrackInfo getTrackInfo() {
+			return Service.this.getTrackInfo();
+		}
+		public GpsInfo getGpsInfo() {
+			GpsInfo gpsStatus = new GpsInfo();
+			gpsStatus.status = mGpsStatus!=null ? mGpsStatus.status : null;
+			gpsStatus.substatus = mGpsStatus!=null ? mGpsStatus.substatus : null;
+			return gpsStatus;
+		}
 	}
+	protected TrackInfo getTrackInfo() {
+		TrackInfo tinfo = new TrackInfo();
+		if (mScene!=null && mComposition!=null) {
+			DynScene scene = mComposition.getScene(mScene);
+			if (scene!=null && scene.getMeta().containsKey(Composition.TITLE))
+				tinfo.title = scene.getMeta().get(Composition.TITLE);
+			if (scene!=null && scene.getMeta().containsKey(Composition.ARTIST))
+				tinfo.artist = scene.getMeta().get(Composition.ARTIST);
+			if (tinfo.title==null && mScene!=null)
+				tinfo.title = mScene;
+		}
+		if (tinfo.artist==null && mComposition!=null && mComposition.getMeta().containsKey(Composition.ARTIST))
+			tinfo.artist = mComposition.getMeta().get(Composition.ARTIST);
+		if (tinfo.title==null && mComposition!=null && mComposition.getMeta().containsKey(Composition.TITLE))
+			tinfo.title = mComposition.getMeta().get(Composition.TITLE);
+		return tinfo;
+	}
+	public static class TrackInfo {
+		String title;
+		String artist;
+	}
+	public static class GpsInfo {
+		String status;
+		String substatus;
+		protected long time;
+	}
+	
 	public void log(String message) {
 		log(LogEntryType.LOG_INFO, message);
 	}
@@ -272,7 +318,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				.setContentTitle(getText(R.string.notification_title))
 				.setContentText(getText(R.string.notification_description))
 				.setSmallIcon(R.drawable.notification_icon)
-				.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, Preferences.class), 0))
+				.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, Status.class), 0))
 				.build();
 
 		startForeground(SERVICE_NOTIFICATION_ID, notification);
@@ -866,6 +912,14 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				}
 				mComposition.setScene(scene, mScriptEngine);
 				setSceneUpdateTimer(mComposition.getSceneUpdateDelay(scene));
+				
+				Intent i = new Intent(ACTION_SCENE_CHANGED);
+				TrackInfo ti = getTrackInfo();
+				if (ti.title!=null)
+					i.putExtra(EXTRA_TITLE, ti.title);
+				if (ti.artist!=null)
+					i.putExtra(EXTRA_ARTIST, ti.artist);
+				LocalBroadcastManager.getInstance(this).sendBroadcast(i);
 			}
 			else 
 				mSetSceneOnStart = scene;
@@ -1038,9 +1092,48 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				catch (JSONException e) {
 					Log.w(TAG,"Error logging on.location", e);
 				}
-
+				long now = System.currentTimeMillis();
+				if (now-mGpsStatus.time > 2000) {
+					mGpsStatus.status = "Searching...";
+					// 4 at least 20 => 80%
+					double percent = 0;
+					if (asnrs.length==1)
+						percent = snrToPercent(asnrs[0]);
+					else if (asnrs.length==2)
+						percent = 20+snrToPercent(asnrs[0]);
+					else if (asnrs.length==3)
+						percent = 40+snrToPercent(asnrs[0]);
+					else if (asnrs.length>=4)
+						percent = 60+snrToPercent2(asnrs[asnrs.length-4]);
+					mGpsStatus.substatus = ""+((int)percent)+"%";
+					Intent si = new Intent(ACTION_GPS_STATUS);
+					si.putExtra(EXTRA_STATUS, mGpsStatus.status);
+					si.putExtra(EXTRA_SUBSTATUS, mGpsStatus.substatus);
+					LocalBroadcastManager.getInstance(Service.this).sendBroadcast(si);
+				}
 			}
 		});
+		Intent si = new Intent(ACTION_GPS_STATUS);
+		mGpsStatus.time = System.currentTimeMillis();
+		mGpsStatus.status = "Searching...";
+		mGpsStatus.substatus = "0% (started)";
+		si.putExtra(EXTRA_STATUS, mGpsStatus.status);
+		si.putExtra(EXTRA_SUBSTATUS, mGpsStatus.substatus);
+		LocalBroadcastManager.getInstance(Service.this).sendBroadcast(si);
+	}
+	public double snrToPercent(float asnr) {
+		if (asnr<0)
+			return 0;
+		if (asnr>24)
+			return 19;
+		return asnr*19/24;
+	}
+	public double snrToPercent2(float asnr) {
+		if (asnr<0)
+			return 0;
+		if (asnr>40)
+			return 39;
+		return asnr*39/40;
 	}
 	GpsStatus.Listener mStatusListener;
 	// Define a listener that responds to location updates
@@ -1078,16 +1171,42 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			i.putExtra(EXTRA_ELAPSEDTIME, (location.getElapsedRealtimeNanos()/NANOS_PER_MILLI));
 			i.setClass(getApplicationContext(), Service.class);
 			startService(i);
+			
+			Intent si = new Intent(ACTION_GPS_STATUS);
+			mGpsStatus.time = System.currentTimeMillis();
+			mGpsStatus.status = "Working";
+			if (location.getAccuracy() <= 7)
+				mGpsStatus.substatus = "good ("+location.getAccuracy()+"m)";
+			else if (location.getAccuracy() <= 15)
+				mGpsStatus.substatus = "ok ("+location.getAccuracy()+"m)";
+			else
+				mGpsStatus.substatus = "poor ("+location.getAccuracy()+"m)";
+			si.putExtra(EXTRA_STATUS, mGpsStatus.status);
+			si.putExtra(EXTRA_SUBSTATUS, mGpsStatus.substatus);
+			LocalBroadcastManager.getInstance(Service.this).sendBroadcast(si);
 		}
 
 		public void onStatusChanged(String provider, int status, Bundle extras) {}
 
 		public void onProviderEnabled(String provider) {
 			log("LOCATION PROVIDED ENABLED ("+provider+")");
+			Intent si = new Intent(ACTION_GPS_STATUS);
+			mGpsStatus.time = System.currentTimeMillis();
+			mGpsStatus.status = "Searching...";
+			mGpsStatus.substatus = "0% (enabled)";
+			si.putExtra(EXTRA_STATUS, mGpsStatus.status);
+			si.putExtra(EXTRA_SUBSTATUS, mGpsStatus.substatus);
+			LocalBroadcastManager.getInstance(Service.this).sendBroadcast(si);
 		}
 
 		public void onProviderDisabled(String provider) {
 			log("LOCATION PROVIDED DISABLED ("+provider+")");
+			Intent si = new Intent(ACTION_GPS_STATUS);
+			mGpsStatus.time = System.currentTimeMillis();
+			mGpsStatus.status = "Disabled";
+			si.putExtra(EXTRA_STATUS, mGpsStatus.status);
+			si.putExtra(EXTRA_SUBSTATUS, mGpsStatus.substatus);
+			LocalBroadcastManager.getInstance(Service.this).sendBroadcast(si);
 		}
 	};
 	private void stopGps() {
@@ -1098,6 +1217,13 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		// Register the listener with the Location Manager to receive location updates
 		locationManager.removeUpdates(mLocationListener);	
 		locationManager.removeGpsStatusListener(mStatusListener);
+		Intent si = new Intent(ACTION_GPS_STATUS);
+		mGpsStatus.time = System.currentTimeMillis();
+		mGpsStatus.status = "Stopped";
+		mGpsStatus.substatus = "";
+		si.putExtra(EXTRA_STATUS, mGpsStatus.status);
+		si.putExtra(EXTRA_SUBSTATUS, mGpsStatus.substatus);
+		LocalBroadcastManager.getInstance(Service.this).sendBroadcast(si);
 	}
 	private void runTest() {
 		if (mComposition==null) {

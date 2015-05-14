@@ -92,6 +92,7 @@ public class ZipHandlerActivity extends Activity {
 				} catch (Exception e) {
 					Log.w(TAG,"Could not get result from unzip task: "+e);
 				}
+				finish();
 				i.setAction(Service.ACTION_RELOAD);
 				i.setClass(getApplicationContext(), Service.class);
 				startService(i);

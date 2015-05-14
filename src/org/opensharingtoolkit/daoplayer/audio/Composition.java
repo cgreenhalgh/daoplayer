@@ -41,6 +41,7 @@ import android.util.Log;
 public class Composition {
 	private static final String TAG = "daoplayer-compositionreader";
 
+	public static final String ARTIST = "artist";
 	private static final String CONSTANTS = "constants";
 	private static final String CONTEXT = "context";	
 	private static final String COST = "cost";	
@@ -70,7 +71,7 @@ public class Composition {
 	private static final String SCENES = "scenes";
 	private static final String SECTIONS = "sections";
 	private static final String START_COST = "startCost";	
-	private static final String TITLE = "title";
+	public static final String TITLE = "title";
 	private static final String TRACKS = "tracks";
 	private static final String TRACK_POS = "trackPos";
 	private static final String UNIT_TIME = "unitTime";
@@ -343,6 +344,13 @@ public class Composition {
 				}
 				else 
 					log.logError("Unnamed scene "+si);
+				Map<String,String> smeta = ascene.getMeta();
+				if (jscene.has(TITLE))
+					smeta.put(TITLE, jscene.getString(TITLE));
+				if (jscene.has(DESCRIPTION))
+					smeta.put(DESCRIPTION, jscene.getString(DESCRIPTION));
+				if (jscene.has(ARTIST))
+					smeta.put(ARTIST, jscene.getString(ARTIST));
 				if (jscene.has(CONSTANTS)) {
 					DynConstants cons = new DynConstants();
 					cons.parse(jscene.getJSONObject(CONSTANTS), false);
@@ -938,6 +946,11 @@ public class Composition {
 		if (mScenesInOrder!=null)
 			scenes.addAll(mScenesInOrder);
 		return scenes;
+	}
+	public DynScene getScene(String sceneName) {
+		if (mScenes==null)
+			return null;
+		return mScenes.get(sceneName);
 	}
 	public String getTestTrack(String name) {
 		DynScene scene = mScenes.get(name);

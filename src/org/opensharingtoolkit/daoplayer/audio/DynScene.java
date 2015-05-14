@@ -25,6 +25,8 @@ public class DynScene implements IAudio.IScene {
 	private Double mUpdatePeriod;
 	private Map<String,String> mWaypoints;
 	private Map<String, String> mRoutes;
+	public Map<String,String> mMeta = new HashMap<String,String>();
+
 
 	public DynScene(boolean mPartial) {
 		super();
@@ -208,6 +210,10 @@ public class DynScene implements IAudio.IScene {
 	 */
 	public Map<String, String> getRoutes() {
 		return mRoutes;
+	}
+
+	public Map<String,String> getMeta() {
+		return mMeta;
 	}
 
 }

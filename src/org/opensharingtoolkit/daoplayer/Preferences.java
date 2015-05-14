@@ -147,4 +147,13 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
 			// make sure service is running...
 			startService(new Intent(getApplicationContext(), Service.class));		
 	}
+	/* (non-Javadoc)
+	 * @see android.app.Activity#onBackPressed()
+	 */
+	@Override
+	public void onBackPressed() {
+		startActivity(new Intent(this, Status.class));
+		finish();
+	}
+	
 }

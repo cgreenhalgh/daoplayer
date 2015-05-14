@@ -34,4 +34,14 @@
     <string name="toast_speech_failed">Sorry, text-to-speech is not available</string>
     <string name="toast_speech_language_failed">Sorry, text-to-speech language is not available</string>
     <string name="toast_speech_ready">Text-to-speech is now running</string>
+    <string name="status_currentlyplaying_section">Currently Playing</string>
+    <string name="status_currentlyplaying_title"></string>
+    <string name="status_currentlyplaying_description"></string>
+    <string name="status_play_title">Play</string>
+    <string name="status_pause_title">Pause</string>
+    <string name="status_gps_section">GPS</string>
+    <string name="status_gps_title"></string>
+    <string name="status_gps_description"></string>
+    <string name="status_settings_option">Settings</string>
+    <string name="status_reset_option">Reset</string>
 </resources>
