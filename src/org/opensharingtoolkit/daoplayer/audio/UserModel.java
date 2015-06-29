@@ -450,6 +450,16 @@ public class UserModel {
 		} else {
 			sb.append("var routes={\n");
 			boolean first = true;
+			String nearestName = null;
+			double nearestDistanceFrom = 0;
+			for(Map.Entry<String, RouteInfo> entry: routeInfos.entrySet()) {
+				String rname = entry.getKey();
+				RouteInfo ri = entry.getValue();
+				if (ri.valid && ri.near && (nearestName==null || ri.distanceFrom<nearestDistanceFrom)) {
+					nearestName = rname;
+					nearestDistanceFrom = ri.distanceFrom;
+				}
+			}
 			for(Map.Entry<String, RouteInfo> entry: routeInfos.entrySet()) {
 				if (first)
 					first = false;
@@ -470,7 +480,9 @@ public class UserModel {
 					sb.append(", length: ");
 					sb.append(ri.length);
 					sb.append(", nearest: ");
-					sb.append(ri.nearest);
+					// local nearest
+					//global: sb.append(ri.nearest);
+					sb.append(nearestName!=null && nearestName.equals(entry.getKey()) ? "true" : "false");
 				}
 				else
 					sb.append("false");
