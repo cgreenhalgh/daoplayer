@@ -408,7 +408,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 							block = mFileCache.getBlock(file, fpos, block);
 							if (block==null) {
 								// past the end or not available - skip to next repetition
-								Log.d(TAG,"Null buffer @"+fpos+" into "+boffset+", want "+(epos-spos+1));
+								Log.d(TAG,"Null buffer @"+fpos+" of "+file.getPath()+" into "+boffset+", want "+(epos-spos+1));
 								if (length==IAudio.ITrack.LENGTH_ALL)
 									// can't repeat length all (for now, anyway)
 									break;

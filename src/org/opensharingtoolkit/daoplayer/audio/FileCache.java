@@ -30,7 +30,7 @@ import android.util.Log;
  * @author pszcmg
  */
 public class FileCache {
-	static boolean debug = false;
+	static boolean debug = true;
 	
 	public static class Block {
 		short mSamples[];
@@ -109,6 +109,7 @@ public class FileCache {
 					return b;
 				}
 			}
+			// cache miss  
 		}
 		return null;
 	}
@@ -464,9 +465,19 @@ public class FileCache {
 								overlapGap.mFromInclusive = b.mStartFrame+length;
 								gaps.put(overlapGap.mFromInclusive, overlapGap);
 							}
-						} else if (overlapGap.mToExclusive>b.mStartFrame)
-							// clip end
-							overlapGap.mToExclusive = b.mStartFrame;
+						} else if (overlapGap.mToExclusive>b.mStartFrame) {
+							if (overlapGap.mToExclusive<=b.mStartFrame+length)
+								// clip end
+								overlapGap.mToExclusive = b.mStartFrame;
+							else {
+								if (debug)
+									Log.d(TAG,"split gap "+overlapGap.mFromInclusive+"-"+overlapGap.mToExclusive+" with "+b.mStartFrame+"-"+(b.mStartFrame+length)+" in "+nrec.mFile.getPath());
+								// split gap - post
+								gaps.put(b.mStartFrame+length, new Interval(b.mStartFrame+length, overlapGap.mToExclusive, overlapGap.mPriority));
+								// pre
+								overlapGap.mToExclusive = b.mStartFrame;
+							}
+						}
 					}
 				}
 				// these are the fragment(s) we are missing from that particular interval
