@@ -321,6 +321,15 @@ public class FileCache {
 								// silent
 								continue;
 							}
+							Float cvol = AudioEngine.pwlConstant(fromSceneTime, toSceneTime, pwlVolume);
+							if (cvol!=null) {
+								pwlVolume = null;
+								vol = (int)(cvol * 0x1000);
+								if (vol<=0) {
+									// silent
+									continue;
+								}
+							}
 						} 
 						for (ATrack.FileRef fr : track.mFileRefs) {
 							int spos = tpos, epos = tpos+bufEnd-bufStart;
@@ -377,6 +386,22 @@ public class FileCache {
 			task.cancel(false);
 		}
 		mTasks.clear();
+		// eject old
+		long now = System.currentTimeMillis();
+		long old = now-CACHE_RETAIN_TIME_MS;
+		for (File file : mFiles.values()) {
+			synchronized(file.mBlocks) {
+				Iterator<TreeMap.Entry<Integer,Block>> iter = file.mBlocks.tailMap(CACHE_RATAIN_SAMPLES).entrySet().iterator();
+				while(iter.hasNext()) {
+					TreeMap.Entry<Integer,Block> entry = iter.next();
+					if (entry.getValue().mLastRequestedTime < old && entry.getValue().mStartFrame>=CACHE_RATAIN_SAMPLES) {
+						if (debug)
+							Log.d(TAG,"Eject block "+entry.getValue().mStartFrame+"("+entry.getValue().mSamples.length+") from cache for "+file.mPath);
+						iter.remove();
+					}
+				}
+			}
+		}
 		// decode / blocks...?
 		for (NeedRec nrec : needRecs.values()) {
 			File file = null;
@@ -394,22 +419,6 @@ public class FileCache {
 			FileNeedTask task = new FileNeedTask(nrec, file, 1);
 			mTasks.add(task);
 			mExecutor.execute(task);
-		}
-		// eject old
-		long now = System.currentTimeMillis();
-		long old = now-CACHE_RETAIN_TIME_MS;
-		for (File file : mFiles.values()) {
-			synchronized(file.mBlocks) {
-				Iterator<TreeMap.Entry<Integer,Block>> iter = file.mBlocks.tailMap(CACHE_RATAIN_SAMPLES).entrySet().iterator();
-				while(iter.hasNext()) {
-					TreeMap.Entry<Integer,Block> entry = iter.next();
-					if (entry.getValue().mLastRequestedTime < old && entry.getValue().mStartFrame>=CACHE_RATAIN_SAMPLES) {
-						if (debug)
-							Log.d(TAG,"Eject block "+entry.getValue().mStartFrame+"("+entry.getValue().mSamples.length+") from cache for "+file.mPath);
-						iter.remove();
-					}
-				}
-			}
 		}
 	}
 
