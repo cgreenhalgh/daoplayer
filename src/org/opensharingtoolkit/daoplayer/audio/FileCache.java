@@ -399,13 +399,15 @@ public class FileCache {
 		long now = System.currentTimeMillis();
 		long old = now-CACHE_RETAIN_TIME_MS;
 		for (File file : mFiles.values()) {
-			Iterator<TreeMap.Entry<Integer,Block>> iter = file.mBlocks.tailMap(CACHE_RATAIN_SAMPLES).entrySet().iterator();
-			while(iter.hasNext()) {
-				TreeMap.Entry<Integer,Block> entry = iter.next();
-				if (entry.getValue().mLastRequestedTime < old && entry.getValue().mStartFrame>=CACHE_RATAIN_SAMPLES) {
-					if (debug)
-						Log.d(TAG,"Eject block "+entry.getValue().mStartFrame+"("+entry.getValue().mSamples.length+") from cache for "+file.mPath);
-					iter.remove();
+			synchronized(file.mBlocks) {
+				Iterator<TreeMap.Entry<Integer,Block>> iter = file.mBlocks.tailMap(CACHE_RATAIN_SAMPLES).entrySet().iterator();
+				while(iter.hasNext()) {
+					TreeMap.Entry<Integer,Block> entry = iter.next();
+					if (entry.getValue().mLastRequestedTime < old && entry.getValue().mStartFrame>=CACHE_RATAIN_SAMPLES) {
+						if (debug)
+							Log.d(TAG,"Eject block "+entry.getValue().mStartFrame+"("+entry.getValue().mSamples.length+") from cache for "+file.mPath);
+						iter.remove();
+					}
 				}
 			}
 		}
@@ -423,11 +425,12 @@ public class FileCache {
 		private static void work(NeedRec nrec, File file, int priority) {
 			//Log.d(TAG,"work pri="+priority+" on "+nrec.mFile.getPath());
 			for (Interval needed : nrec.mIntervals.values()) {
-				if (debug)
-					Log.d(TAG,"work pri="+needed.mPriority+"/"+priority+" "+needed.mFromInclusive+"-"+needed.mToExclusive+" of "+nrec.mFile.getPath());
-				if (needed.mPriority!=priority)
+				if (needed.mPriority!=priority) {
 				//if (needed.mPriority<0)
+					if (debug)
+						Log.d(TAG,"ignore work pri="+needed.mPriority+"/"+priority+" "+needed.mFromInclusive+"-"+needed.mToExclusive+" of "+nrec.mFile.getPath());
 					continue;
+				}
 				Collection<Block> blocks = null;
 				synchronized(file.mBlocks) {
 					// block at/immediately before
@@ -438,6 +441,8 @@ public class FileCache {
 					// candidate blocks
 					blocks = file.mBlocks.subMap(startFrame, needed.mToExclusive).values();
 				}
+				if (debug)
+					Log.d(TAG,"work pri="+needed.mPriority+" "+needed.mFromInclusive+"-"+needed.mToExclusive+" of "+nrec.mFile.getPath());
 				// have we already got this?
 				// gaps? from/length
 				TreeMap<Integer,Interval> gaps = new TreeMap<Integer,Interval>();
