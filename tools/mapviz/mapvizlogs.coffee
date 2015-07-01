@@ -59,7 +59,7 @@ for configline in configlines
     if logline
       user = logline[1]
       logfilename = logline[2]
-      userid = users[userid]?.id
+      userid = users[user]?.id
       if not userid?
         userid = ++nextuserid
         users[user] = {id: userid}
