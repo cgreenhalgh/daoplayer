@@ -77,7 +77,7 @@ for configline in configlines
           event = rec.event
           if date? and ( not users[user].mintime? or date.getTime()<users[user].mintime)
             users[user].mintime = date.getTime()
-          if event=='update.position'
+          if event=='update.position' && rec.info?.activity!='NOGPS'
             info = rec.info
             info.logtime = date.getTime()
             info.user = user

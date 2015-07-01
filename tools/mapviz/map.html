@@ -100,14 +100,29 @@ function yToLat(y) {
   return rad_deg(phi);
 }
 
+function mymin(a,b) {
+  if (isNaN(a))
+    return b;
+  if (isNaN(b))
+    return a;
+  return Math.min(a,b);
+}
+function mymax(a,b) {
+  if (isNaN(a))
+    return b;
+  if (isNaN(b))
+    return a;
+  return Math.max(a,b);
+}
+
 d3.json(filename, function(error, data) {
   if (error)  
     alert("Error reading file "+filename+": "+error);
 
-  var xmin = Math.min(d3.min(data.waypoints, function(d) { return d.x; }),d3.min(data.positions, function(d) { return d.x; }));
-  var ymin = Math.min(d3.min(data.waypoints, function(d) { return d.y; }),d3.min(data.positions, function(d) { return d.y; }));
-  var xmax = Math.max(d3.max(data.waypoints, function(d) { return d.x; }),d3.max(data.positions, function(d) { return d.x; }));
-  var ymax = Math.max(d3.max(data.waypoints, function(d) { return d.y; }),d3.max(data.positions, function(d) { return d.y; }));
+  var xmin = mymin(d3.min(data.waypoints, function(d) { return d.x; }),d3.min(data.positions, function(d) { return d.x; }));
+  var ymin = mymin(d3.min(data.waypoints, function(d) { return d.y; }),d3.min(data.positions, function(d) { return d.y; }));
+  var xmax = mymax(d3.max(data.waypoints, function(d) { return d.x; }),d3.max(data.positions, function(d) { return d.x; }));
+  var ymax = mymax(d3.max(data.waypoints, function(d) { return d.y; }),d3.max(data.positions, function(d) { return d.y; }));
   var range = Math.max(xmax-xmin,ymax-ymin);
   var xmid = (xmin+xmax)/2;
   var ymid = (ymin+ymax)/2;
