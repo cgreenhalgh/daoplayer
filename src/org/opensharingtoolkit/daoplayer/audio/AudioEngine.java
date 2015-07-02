@@ -479,6 +479,16 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		}
 		return null;
 	}
+	public StateRec getFutureState() {
+		synchronized(this) {
+			for (int i=0; i<mStateQueue.size(); i++) {
+				StateRec srec = mStateQueue.get(i);
+				if (srec.mType==StateType.STATE_FUTURE) 
+					return srec;
+			}
+		}
+		return getNextState();
+	}
 	public JSONObject getStatus() {
 		JSONObject jstatus = new JSONObject();
 		StateRec srec = getNextState();
@@ -598,8 +608,8 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 				if (srec.mType==StateType.STATE_WRITTEN || srec.mType==StateType.STATE_IN_PROGRESS || srec.mType==StateType.STATE_NEXT)
 					current = srec;
 				else if (srec.mType==StateType.STATE_FUTURE) {
-					// discard?!
-					srec.mType = StateType.STATE_DISCARDED;
+					current = srec;
+					// discard - overwrite...
 					mStateQueue.remove(i);
 					i--;
 				}
@@ -614,19 +624,28 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 				
 			//Log.d(TAG,"CurrentState="+current);
 			double sceneTimeAdjustSeconds = 0;
-			if (newScene)
-				// adjust any mappings from scene time carried over
-				sceneTimeAdjustSeconds = (0-(current.mSceneTime+samplesToSeconds(mSamplesPerBlock)));
+			if (newScene) {
+				if  (current.mType!=StateType.STATE_FUTURE)
+					// adjust any mappings from scene time carried over (unless already replacing a future state)
+					sceneTimeAdjustSeconds = (0-(current.mSceneTime+samplesToSeconds(mSamplesPerBlock)));
+				else
+					sceneTimeAdjustSeconds = (0-(current.mSceneTime));
+			}
 			AState target = current.mState.applyScene(ascene, mSamplesPerBlock, secondsToSamples(sceneTimeAdjustSeconds), (float)sceneTimeAdjustSeconds);
 			
 			StateRec srec = new StateRec();
 			srec.mType = StateType.STATE_FUTURE;
 			srec.mState = target;
-			srec.mTotalTime = current.mTotalTime+samplesToSeconds(mSamplesPerBlock);
+			if (current.mType!=StateType.STATE_FUTURE)
+				srec.mTotalTime = current.mTotalTime+samplesToSeconds(mSamplesPerBlock);
+			else
+				srec.mTotalTime = current.mTotalTime;
 			if (newScene)
 				srec.mSceneTime = 0;
-			else 
+			else if (current.mType!=StateType.STATE_FUTURE)
 				srec.mSceneTime = current.mSceneTime+samplesToSeconds(mSamplesPerBlock);
+			else
+				srec.mSceneTime = current.mSceneTime;
 			
 			mStateQueue.add(srec);
 		}

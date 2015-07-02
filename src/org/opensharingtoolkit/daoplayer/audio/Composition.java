@@ -29,6 +29,7 @@ import org.opensharingtoolkit.daoplayer.IAudio.IScene;
 import org.opensharingtoolkit.daoplayer.IAudio.ITrack;
 import org.opensharingtoolkit.daoplayer.ILog;
 import org.opensharingtoolkit.daoplayer.audio.ATrack.Section;
+import org.opensharingtoolkit.daoplayer.audio.AudioEngine.StateType;
 
 import android.util.JsonWriter;
 import android.util.Log;
@@ -515,7 +516,7 @@ public class Composition {
 	}
 	/** value in map is either null, Float (single volume) or float[] (array of args for pwl) */
 	private Map<Integer,DynInfo> getDynInfo(IScriptEngine scriptEngine, DynScene scene, boolean loadFlag, long time) {
-		AudioEngine.StateRec srec = mEngine.getNextState();
+		AudioEngine.StateRec srec = mEngine.getFutureState();
 		AState astate = (srec!=null ? srec.getState() : null);
 		JSONObject loginfo = new JSONObject();
 		try {
@@ -529,7 +530,7 @@ public class Composition {
 		sb.append(";\n");
 		sb.append("var distance=function(coord1,coord2){return window.distance(coord1,coord2 ? coord2 : position);};\n");
 		sb.append("var sceneTime=");
-		double oldSceneTime = ((srec==null) ? 0 : srec.mSceneTime+mEngine.samplesToSeconds(mEngine.getFutureOffset()));
+		double oldSceneTime = (srec==null) ? 0 : srec.mSceneTime+(srec.mType!=StateType.STATE_FUTURE ? mEngine.samplesToSeconds(mEngine.getFutureOffset()) : 0);
 		double newSceneTime = loadFlag ? 0 : oldSceneTime;
 		sb.append(newSceneTime);
 		try {
@@ -539,7 +540,7 @@ public class Composition {
 		}
 		sb.append(";\n");
 		sb.append("var totalTime=");
-		double totalTime = (srec!=null) ? srec.mTotalTime+mEngine.samplesToSeconds(mEngine.getFutureOffset()) : 0;
+		double totalTime = (srec!=null) ? srec.mTotalTime+(srec.mType!=StateType.STATE_FUTURE ? mEngine.samplesToSeconds(mEngine.getFutureOffset()) : 0) : 0;
 		sb.append(totalTime);
 		try {
 			loginfo.put("totalTime", totalTime);
@@ -781,7 +782,7 @@ public class Composition {
 					float fval = extractFloat(val);
 					//Log.d(TAG,"dynPos single value "+fval+"-> array");
 					di.align = new int[2];
-					di.align[0] = (int)mEngine.secondsToSamples(srec!=null ? srec.mSceneTime : 0);
+					di.align[0] = (int)mEngine.secondsToSamples(newSceneTime); // ? was srec!=null ? srec.mSceneTime : 0);
 					di.align[1] = (int)mEngine.secondsToSamples((double)fval);
 				} else if (val==null || "".equals(val)) {
 					// null

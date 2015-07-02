@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.opensharingtoolkit.daoplayer"
-    android:versionCode="23"
-    android:versionName="1.22" >
+    android:versionCode="24"
+    android:versionName="1.23" >
 
     <uses-sdk
         android:minSdkVersion="17"

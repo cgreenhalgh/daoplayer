@@ -598,6 +598,8 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 				if (mScene!=null) {
 					setScene(mScene);
 					Toast.makeText(this, "Set scene "+mScene, Toast.LENGTH_SHORT).show();
+					// debug test only!!!
+					//updateScene();
 				}				
 				else 
 					Log.w(TAG,"No scene specified for set");
