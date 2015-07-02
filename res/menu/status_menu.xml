@@ -2,6 +2,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
     <item android:id="@+id/status_settings"
           android:title="@string/status_settings_option" />
-    <item android:id="@+id/status_reset"
-          android:title="@string/status_reset_option" /> 
+    <!--  item android:id="@+id/status_reset"
+          android:title="@string/status_reset_option" /> -->
 </menu>

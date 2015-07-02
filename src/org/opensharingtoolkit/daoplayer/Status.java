@@ -146,12 +146,12 @@ public class Status extends PreferenceActivity implements OnSharedPreferenceChan
 	        case R.id.status_settings:
 	        	startActivity(new Intent(this, Preferences.class));
 	            return true;
-	        case R.id.status_reset:
-				Intent i = new Intent();
-				i.setAction(Service.ACTION_RELOAD);
-				i.setClass(getApplicationContext(), Service.class);
-				startService(i);
-	            return true;
+//	        case R.id.status_reset:
+//				Intent i = new Intent();
+//				i.setAction(Service.ACTION_RELOAD);
+//				i.setClass(getApplicationContext(), Service.class);
+//				startService(i);
+//	            return true;
 	        default:
 	            return super.onOptionsItemSelected(item);
 	    }
