@@ -714,6 +714,17 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			return mValue;
 		}
 	}
+	private String mDelayedScene = null;
+	private Runnable mDelayedSetScene = new Runnable() {
+		public void run() {
+			String scene = mDelayedScene;
+			Log.d(TAG,"delayedSetScene "+scene);
+			final Intent i = new Intent(ACTION_SET_SCENE);
+			i.putExtra(EXTRA_SCENE, scene);
+			i.setClass(getApplicationContext(), Service.class);
+			getApplicationContext().startService(i);					
+		}
+	};
 	private class JavascriptHelper {
 		@JavascriptInterface
 		public void log(String msg) {
@@ -733,15 +744,10 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		}
 		@JavascriptInterface
 		public void setScene(String scene) {
-			Log.d(TAG,"javascript:setScene("+scene+")");
-			final Intent i = new Intent(ACTION_SET_SCENE);
-			i.putExtra(EXTRA_SCENE, scene);
-			i.setClass(getApplicationContext(), Service.class);
-			mHandler.postDelayed(new Runnable() {
-				public void run() {
-					getApplicationContext().startService(i);					
-				}
-			}, JAVASCRIPT_SET_SCENE_DELAY_MS);
+			Log.d(TAG,"javascript:setScene("+scene+") - delayed "+JAVASCRIPT_SET_SCENE_DELAY_MS);
+			mDelayedScene = scene;
+			mHandler.removeCallbacks(mDelayedSetScene);
+			mHandler.postDelayed(mDelayedSetScene, JAVASCRIPT_SET_SCENE_DELAY_MS);
 		}
 		@JavascriptInterface
 		public void setLastWaypoint(String name) {

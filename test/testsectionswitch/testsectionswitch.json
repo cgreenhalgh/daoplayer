@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "mimetype": "application/x-daoplayer-composition",
+    "version": 1,
+    "title": "Test race condition bug(s) in scene changes"
+  },
+  "defaultScene": "scene1",
+  "tracks": [
+    {
+      "name": "click",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "click16.wav", 
+          "trackPos": 0,
+          "length": 16
+        }
+      ]
+    },
+    {
+      "name": "tone",
+      "pauseIfSilent": true,
+      "files": [
+        { 
+          "path": "1Accent2.wav", 
+          "trackPos": 0,
+          "length": 11.68
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "name": "scene1",
+      "partial": false,
+      "updatePeriod": 1,
+      "onupdate": "if (sceneTime>1.5) daoplayer.setScene('scene2');",
+      "tracks": [
+        {
+          "name": "click",
+          "pos": 0, 
+          "volume": 1
+        },
+        {
+          "name": "tone",
+          "pos": 0, 
+          "volume": "sceneTime<2 ? [sceneTime,trackVolume,2,1] : 1"
+        }        
+      ]
+    },
+    {
+      "name": "scene2",
+      "partial": false,
+      "updatePeriod": 1,
+      "onupdate": "if (sceneTime>1.5) daoplayer.setScene('scene1');",
+      "tracks": [
+        {
+          "name": "click",
+          "volume": 0
+        },
+        {
+          "name": "tone",
+          "volume": "sceneTime<3 ? [sceneTime,trackVolume,3,0] : 0"
+        }        
+      ]
+    }
+  ]
+}
+
