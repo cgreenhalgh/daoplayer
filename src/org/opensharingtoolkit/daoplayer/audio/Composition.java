@@ -97,6 +97,8 @@ public class Composition {
 	private static final double DEFAULT_END_COST_VALUE = 10000;
 	private static final double DEFAULT_END_COST_EXTRA = 0;
 
+	private static final long UPDATE_DELAY_MIN_GPS_OFFSET_MS = 250;
+
 	private AudioEngine mEngine;
 	private String mDefaultScene;
 	private DynConstants mConstants = new DynConstants();
@@ -106,6 +108,7 @@ public class Composition {
 	private Context mContext = new Context();
 	private long mFirstSceneLoadTime;
 	private long mLastSceneUpdateTime;
+	private boolean mLastSceneUpdateFromGps;
 	private long mLastSceneLoadTime;
 	private UserModel mUserModel;
 	private Map<String,String> mMeta = new HashMap<String,String>();
@@ -434,6 +437,7 @@ public class Composition {
 		}
 	}
 	private Pattern includePattern = Pattern.compile("[\"][#]((json)|(string))\\s+([^\"]+)[\"]");
+
 	private String handleIncludes(File file, String data, ILog log) throws IOException {
 		Matcher m = includePattern.matcher(data);
 		StringBuilder sb = new StringBuilder();
@@ -842,6 +846,7 @@ public class Composition {
 		if (mFirstSceneLoadTime==0)
 			mFirstSceneLoadTime = mLastSceneLoadTime;
 		mLastSceneUpdateTime = mLastSceneLoadTime;
+		mLastSceneUpdateFromGps = false;
 		Map<Integer,DynInfo> dynInfos = getDynInfo(scriptEngine, scene, true, mLastSceneLoadTime);
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			DynInfo di = dynInfos.get(tr.getTrack().getId());
@@ -865,7 +870,7 @@ public class Composition {
 		mEngine.setScene(ascene, true);
 		return true;
 	}
-	public boolean updateScene(String name, IScriptEngine scriptEngine) {
+	public boolean updateScene(String name, IScriptEngine scriptEngine, boolean fromGps) {
 		DynScene scene = mScenes.get(name);
 		if (scene==null) {
 			Log.w(TAG, "updateScene unknown "+name);
@@ -874,6 +879,7 @@ public class Composition {
 		// partial
 		AScene ascene = mEngine.newAScene(true);
 		mLastSceneUpdateTime = System.currentTimeMillis();
+		mLastSceneUpdateFromGps = fromGps;
 		Map<Integer,DynInfo> dynInfos = getDynInfo(scriptEngine, scene, false, mLastSceneUpdateTime);
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			DynInfo di = dynInfos.get(tr.getTrack().getId());
@@ -906,7 +912,13 @@ public class Composition {
 			return null;
 		long now = System.currentTimeMillis();
 		long elapsed = now-mLastSceneUpdateTime;
-		long delay = ((long)(period*1000))-elapsed;
+		long lperiod = ((long)(period*1000));
+		if (mLastSceneUpdateFromGps && elapsed<1000+UPDATE_DELAY_MIN_GPS_OFFSET_MS) {
+			// fiddle to avoid GPS race
+			if (lperiod>1000-UPDATE_DELAY_MIN_GPS_OFFSET_MS && lperiod<1000+UPDATE_DELAY_MIN_GPS_OFFSET_MS)
+				lperiod = 1000+UPDATE_DELAY_MIN_GPS_OFFSET_MS;
+		}
+		long delay = lperiod-elapsed;
 		if (delay<0)
 			return 0L;
 		return delay;

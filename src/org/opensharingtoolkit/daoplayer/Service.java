@@ -99,6 +99,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 	static final String PREF_FILENAME = "pref_filename";
 	private static final double DEFAULT_SPEECH_VOLUME = 1;
 	public static final long NANOS_PER_MILLI = 1000000;
+	private static final long JAVASCRIPT_SET_SCENE_DELAY_MS = 0;
 	private AudioEngine mAudioEngine;
 	private boolean started = false;
 	private boolean logGps = false;
@@ -646,7 +647,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			}*/
 			mUserModel.setLocation(mLastLat, mLastLng, mLastAccuracy, mLastTime, mLastElapsedtime);
 			if (mComposition!=null) {
-				updateScene();
+				updateScene(true);
 			}
 		} else if (ACTION_RUN_TEST.equals(intent.getAction())) {
 			runTest();
@@ -733,10 +734,14 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		@JavascriptInterface
 		public void setScene(String scene) {
 			Log.d(TAG,"javascript:setScene("+scene+")");
-			Intent i = new Intent(ACTION_SET_SCENE);
+			final Intent i = new Intent(ACTION_SET_SCENE);
 			i.putExtra(EXTRA_SCENE, scene);
 			i.setClass(getApplicationContext(), Service.class);
-			getApplicationContext().startService(i);
+			mHandler.postDelayed(new Runnable() {
+				public void run() {
+					getApplicationContext().startService(i);					
+				}
+			}, JAVASCRIPT_SET_SCENE_DELAY_MS);
 		}
 		@JavascriptInterface
 		public void setLastWaypoint(String name) {
@@ -929,7 +934,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 		else
 			mSetSceneOnLoad = scene;
 	}
-	private synchronized void updateScene() {
+	private synchronized void updateScene(boolean fromGps) {
 		if (mScene==null)
 			return;
 		if (mWebViewLoaded && started && mComposition!=null) {
@@ -944,7 +949,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			catch (Exception e) {
 				Log.e(TAG,"error logging scene.set: "+e);
 			}
-			mComposition.updateScene(mScene, mScriptEngine);
+			mComposition.updateScene(mScene, mScriptEngine, fromGps);
 			setSceneUpdateTimer(mComposition.getSceneUpdateDelay(mScene));
 		}
 		else
@@ -977,7 +982,7 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			}
 			else {
 				Log.d(TAG,"delayed scene update...");
-				updateScene();
+				updateScene(false);
 			}
 		}		
 	};
