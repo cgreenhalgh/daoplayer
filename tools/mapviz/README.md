@@ -13,10 +13,12 @@ LOGFILES
 ...
 ```
 
+compile: `coffee -c *.coffee`
+
 Usage: `node mapvizlogs.js <configfile> <outfile>`
 
-run `node ../../httpserver.js`
+run `(cd /vagrant; `npm bin`/http-server /)`
 
-View `http://localhost:8800/tools/sectionviz/mapviz.html?f=<outfile>`
+View `http://localhost:8080/vagrant/tools/sectionviz/mapviz.html?f=<outfile>`
 
 
