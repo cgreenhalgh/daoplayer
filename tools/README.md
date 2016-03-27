@@ -15,6 +15,8 @@ Tools, mainly for working with daoplayer logs.
 - gpsviz/log2tsv.js - export on.location events from daoplayer log as TSV file
 - gpsviz/index.html - d3-based visualisation of TestFilter output file to check kalman filter operation
 
+- kml/context2kml.coffee - convert waypoints and routes from context file to KML file, e.g. to import into Google maps
+
 Better HTTP Server:
 
 ```
