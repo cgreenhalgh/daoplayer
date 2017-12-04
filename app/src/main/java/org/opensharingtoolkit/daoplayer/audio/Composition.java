@@ -567,15 +567,18 @@ public class Composition {
 			scene.getConstants().toJavascript(sb);
 		if (scene.getVars()!=null)
 			scene.getVars().toJavascript(sb);
+		// late text
+		StringBuilder sb2 = new StringBuilder();
 		if (loadFlag && scene.getOnload()!=null) {
-			sb.append(scene.getOnload());
-			sb.append(";\n");
+			sb2.append(scene.getOnload());
+			sb2.append(";\n");
 		} else if (!loadFlag && scene.getOnupdate()!=null) {
-			sb.append(scene.getOnupdate());
-			sb.append(";\n");			
+			sb2.append(scene.getOnupdate());
+			sb2.append(";\n");
 		}
 		sb.append("var vs={};\n");
 		sb.append("var ps={};\n");
+		sb.append("var tps={};\n");
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			String dynVolume = tr.getDynVolume();
 			String dynPos = tr.getDynPos();
@@ -627,16 +630,25 @@ public class Composition {
 				}
 				else
 					Log.d(TAG, "Could not find track "+tr.getTrack().getId()+" for currentVolume (load="+loadFlag+")");
+				double trackTime = mEngine.samplesToSeconds(trackPos);
+				if (tr.getTrack() instanceof ATrack) {
+					ATrack at = (ATrack)tr.getTrack();
+					sb.append("tps['");
+					sb.append(at.getName());
+					sb.append("']=");
+					sb.append(trackTime);
+					sb.append(";");
+				}
 				if (dynVolume!=null) {
-					sb.append("vs['");
-					sb.append(tr.getTrack().getId());
-					sb.append("']=(function(trackTime,trackVolume){return(");
-					sb.append(dynVolume);
-					sb.append(");})(");
-					sb.append(mEngine.samplesToSeconds(trackPos));
-					sb.append(",");
-					sb.append(currentVolume);
-					sb.append(");\n");
+					sb2.append("vs['");
+					sb2.append(tr.getTrack().getId());
+					sb2.append("']=(function(trackTime,trackVolume){return(");
+					sb2.append(dynVolume);
+					sb2.append(");})(");
+					sb2.append(trackTime);
+					sb2.append(",");
+					sb2.append(currentVolume);
+					sb2.append(");\n");
 				}
 				if (dynPos!=null) {
 					// current section just based on trackTime
@@ -652,35 +664,35 @@ public class Composition {
 						//else
 						//	Log.d(TAG,"Pos "+trackPos+" not in section "+s.mName+" ("+s.mTrackPos+" + "+s.mLength+")");
 					}
-					double trackTime = mEngine.samplesToSeconds(trackPos);
-					sb.append("ps['");
-					sb.append(tr.getTrack().getId());
-					sb.append("']=(function(trackId,trackTime,currentSection){return(");
-					sb.append(dynPos);
-					sb.append(");})(");
-					sb.append(tr.getTrack().getId());
-					sb.append(",");
-					sb.append(trackTime);
-					sb.append(",");
+					sb2.append("ps['");
+					sb2.append(tr.getTrack().getId());
+					sb2.append("']=(function(trackId,trackTime,currentSection){return(");
+					sb2.append(dynPos);
+					sb2.append(");})(");
+					sb2.append(tr.getTrack().getId());
+					sb2.append(",");
+					sb2.append(trackTime);
+					sb2.append(",");
 					if (section==null)
-						sb.append("null");
+						sb2.append("null");
 					else {
-						sb.append("{name:");
-						sb.append(escapeJavascriptString(section.mName));
-						sb.append(",startTime:");
+						sb2.append("{name:");
+						sb2.append(escapeJavascriptString(section.mName));
+						sb2.append(",startTime:");
 						// typically negative if new scene
-						sb.append(newSceneTime+mEngine.samplesToSeconds(section.mTrackPos)-trackTime);
+						sb2.append(newSceneTime+mEngine.samplesToSeconds(section.mTrackPos)-trackTime);
 						if (section.mLength!=IAudio.ITrack.LENGTH_ALL) {
-							sb.append(",endTime:");
-							sb.append(newSceneTime+mEngine.samplesToSeconds(section.mTrackPos+section.mLength)-trackTime);
+							sb2.append(",endTime:");
+							sb2.append(newSceneTime+mEngine.samplesToSeconds(section.mTrackPos+section.mLength)-trackTime);
 						}
-						sb.append("}");
+						sb2.append("}");
 					}
-					sb.append(");\n");
+					sb2.append(");\n");
 				}
 			}			
 		}
-		sb.append("return JSON.stringify({vs:vs,ps:ps});");
+		sb2.append("return JSON.stringify({vs:vs,ps:ps});");
+		sb.append(sb2.toString());
 		String res = scriptEngine.runScript(sb.toString());
 		try {
 			loginfo.put("res", res);
