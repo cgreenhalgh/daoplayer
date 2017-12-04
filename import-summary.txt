@@ -1,0 +1,216 @@
+ECLIPSE ANDROID PROJECT IMPORT SUMMARY
+======================================
+
+Ignored Files:
+--------------
+The following files were *not* copied into the new Gradle project; you
+should evaluate whether these are still needed in your project and if
+so manually move them:
+
+* .gitignore
+* .idea\
+* .idea\compiler.xml
+* .idea\copyright\
+* .idea\copyright\profiles_settings.xml
+* .idea\daoplayer.iml
+* .idea\misc.xml
+* .idea\modules.xml
+* .idea\vcs.xml
+* .idea\workspace.xml
+* .vagrant\
+* .vagrant\machines\
+* .vagrant\machines\default\
+* .vagrant\machines\default\virtualbox\
+* .vagrant\machines\default\virtualbox\action_provision
+* .vagrant\machines\default\virtualbox\action_set_name
+* .vagrant\machines\default\virtualbox\creator_uid
+* .vagrant\machines\default\virtualbox\id
+* .vagrant\machines\default\virtualbox\index_uuid
+* .vagrant\machines\default\virtualbox\private_key
+* .vagrant\machines\default\virtualbox\synced_folders
+* .vagrant\machines\default\virtualbox\vagrant_cwd
+* LICENSE
+* README.md
+* Vagrantfile
+* docs\
+* docs\audiodesign.md
+* docs\cspnotes.md
+* docs\fileformat.md
+* docs\implementationnotes.md
+* docs\version2design.md
+* httpserver.js
+* logs\
+* logs\JubileeTest-20150419T1022\
+* logs\JubileeTest-20150419T1022\README.md
+* logs\JubileeTest-20150419T1022\mapviz.config
+* proguard-project.txt
+* test\
+* test\JubileeCampusTests\
+* test\JubileeCampusTests\Jubilee_test1.json
+* test\JubileeCampusTests\_Jubilee_context.json
+* test\JubileeCampusTests\_Jubilee_scenes1.json
+* test\JubileeCampusTests\_Jubilee_start1.json
+* test\JubileeCampusTests\_Jubilee_tracksInTheMeantime.json
+* test\OxfordMusicWalks\
+* test\OxfordMusicWalks\OxfordMusicWalks_final.zip
+* test\OxfordMusicWalks\Oxford_walk1.json
+* test\OxfordMusicWalks\Oxford_walk2.json
+* test\OxfordMusicWalks\_Oxford_contextWalk1.json
+* test\OxfordMusicWalks\_Oxford_contextWalk2.json
+* test\OxfordMusicWalks\_Oxford_scenesWalk1.json
+* test\OxfordMusicWalks\_Oxford_scenesWalk2.json
+* test\OxfordMusicWalks\_Oxford_start1.json
+* test\OxfordMusicWalks\_Oxford_start2.json
+* test\OxfordMusicWalks\_Oxford_starts.json
+* test\OxfordMusicWalks\_Oxford_tracks1.json
+* test\OxfordMusicWalks\_Oxford_tracks2.json
+* test\OxfordMusicWalks\_Oxford_tracksInTheMeantime.json
+* test\OxfordMusicWalks\_Oxford_tracksLeadMeMulti.json
+* test\OxfordMusicWalks\_Oxford_tracksNotAlone.json
+* test\OxfordMusicWalks\_Oxford_tracksR12.json
+* test\OxfordMusicWalks\_Oxford_tracksR8.json
+* test\OxfordMusicWalks\notes.txt
+* test\activitytest\
+* test\activitytest\composition.json
+* test\activitytest\stop.mp3
+* test\activitytest\waiting_for_gps.mp3
+* test\activitytest\walk.mp3
+* test\adrian1\
+* test\adrian1\composition2.json
+* test\adrian1\composition3.json
+* test\contexttest\
+* test\contexttest\composition.json
+* test\contexttest\composition_localwaypoints.json
+* test\dyntest\
+* test\dyntest\composition.json
+* test\filenametest\
+* test\filenametest\_composition.json
+* test\filenametest\another.json
+* test\filenametest\composition.json
+* test\filenametest\composition2.json
+* test\mergetest\
+* test\mergetest\composition.json
+* test\mergetest\d2.js
+* test\mergetest\scene1.json
+* test\mergetest\scene2.json
+* test\oxford\
+* test\oxford\README.md
+* test\oxford\composition_chris1.json
+* test\oxford\context_chris.json
+* test\oxford\episode1.json
+* test\oxford\notalone.json
+* test\oxford\walk_to_waypoint.js
+* test\sectiontest\
+* test\sectiontest\composition.json
+* test\speechtest\
+* test\speechtest\composition.json
+* test\test16\
+* test\test16\README.md
+* test\test16\composition_pauseifstationary.json
+* test\test16\composition_pausenearwaypoints.json
+* test\test16\composition_quietnearwaypoints.json
+* test\test16\composition_testsceneadjust.json
+* test\test16\context_uon.json
+* test\test16\test16allmp3\
+* test\test16\test16allmp3\composition.json
+* test\test16\test16allwav\
+* test\test16\test16allwav\composition.json
+* test\test16\test16mp3\
+* test\test16\test16mp3\composition.json
+* test\test16\test16wav\
+* test\test16\test16wav\composition.json
+* test\test16\testfade\
+* test\test16\testfade\composition.json
+* test\test16\testqueuesections\
+* test\test16\testqueuesections\composition.json
+* test\test16\testsections\
+* test\test16\testsections\composition.json
+* test\test16\testselectsections\
+* test\test16\testselectsections\composition.json
+* test\test16\testselectsections\composition_dynamic.json
+* test\testsectionswitch\
+* test\testsectionswitch\1Accent2.wav
+* test\testsectionswitch\click16.wav
+* test\testsectionswitch\testsectionswitch.json
+* tools\
+* tools\Makefile
+* tools\README.md
+* tools\gpsviz\
+* tools\gpsviz\README.md
+* tools\gpsviz\data.tsv
+* tools\gpsviz\index.html
+* tools\gpsviz\log2tsv.js
+* tools\gpsviz\walk.tsv
+* tools\kml\
+* tools\kml\context2kml.coffee
+* tools\kml\package.json
+* tools\lib\
+* tools\lib\json.jar
+* tools\mapviz\
+* tools\mapviz\README.md
+* tools\mapviz\map.html
+* tools\mapviz\mapvizlogs.coffee
+* tools\mapviz\route.html
+* tools\mapviz\utils.coffee
+* tools\sectionviz\
+* tools\sectionviz\README.md
+* tools\sectionviz\comp2dot.coffee
+* tools\sectionviz\log2sections.coffee
+* tools\sectionviz\sections.html
+* tools\sectionviz\trackpos.html
+* tools\src\
+* tools\src\android\
+* tools\src\android\util\
+* tools\src\android\util\Log.java
+* tools\src\gps\
+* tools\src\gps\TestFilter.java
+* tools\src\org\
+* tools\src\org\opensharingtoolkit\
+* tools\src\org\opensharingtoolkit\daoplayer\
+* tools\src\org\opensharingtoolkit\daoplayer\ILog.java
+* wordpress\
+* wordpress\README.md
+* wordpress\plugins\
+* wordpress\plugins\daoplog\
+* wordpress\plugins\daoplog\daoplog.php
+* wordpress\plugins\daoplog\implementation.md
+* wordpress\plugins\daoplog\readme.txt
+
+Replaced Jars with Dependencies:
+--------------------------------
+The importer recognized the following .jar files as third party
+libraries and replaced them with Gradle dependencies instead. This has
+the advantage that more explicit version information is known, and the
+libraries can be updated automatically. However, it is possible that
+the .jar file in your project was of an older version than the
+dependency we picked, which could render the project not compileable.
+You can disable the jar replacement in the import wizard and try again:
+
+android-support-v4.jar => com.android.support:support-v4:25.3.1
+
+Moved Files:
+------------
+Android Gradle projects use a different directory structure than ADT
+Eclipse projects. Here's how the projects were restructured:
+
+* AndroidManifest.xml => app\src\main\AndroidManifest.xml
+* assets\ => app\src\main\assets\
+* libs\EJML-core-0.26.jar => app\libs\EJML-core-0.26.jar
+* libs\jl1.0.1.jar => app\libs\jl1.0.1.jar
+* res\ => app\src\main\res\
+* src\ => app\src\main\java\
+
+Next Steps:
+-----------
+You can now build the project. The Gradle project needs network
+connectivity to download dependencies.
+
+Bugs:
+-----
+If for some reason your project does not build, and you determine that
+it is due to a bug or limitation of the Eclipse to Gradle importer,
+please file a bug at http://b.android.com with category
+Component-Tools.
+
+(This import summary is for your information only, and can be deleted
+after import once you are satisfied with the results.)

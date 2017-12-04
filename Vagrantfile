@@ -3,6 +3,9 @@ Vagrant.configure(2) do |config|
 
   config.vm.provider "virtualbox" do |v|
     v.memory = 1024
+
+    # Enable the VM's virtual USB controller & enable the virtual USB 2.0 controller
+    v.customize ["modifyvm", :id, "--usb", "on", "--usbehci", "on"]
   end
 
   config.vm.network "forwarded_port", guest: 8080, host: 8080

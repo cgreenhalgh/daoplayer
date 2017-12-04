@@ -132,7 +132,17 @@ public class FileDecoder {
 		
 		mExtractor.selectTrack(0);
 		// see https://android.googlesource.com/platform/cts/+/jb-mr2-release/tests/tests/media/src/android/media/cts/DecoderTest.java
-		mCodec = MediaCodec.createDecoderByType(mime);
+		try {
+			mCodec = MediaCodec.createDecoderByType(mime);
+		} catch (IOException ioe) {
+			Log.d(TAG,"Could not create decoder for "+mime+": "+ioe.getMessage());
+			synchronized (this) {
+				mExtractFailed = true;
+			}
+			mExtractor.release();
+			mExtractor = null;
+			return;			
+		}
 		mCodec.configure(format, null /* surface */, null /* crypto */, 0 /* flags */);
 		mCodec.start();
 		mCodecInputBuffers = mCodec.getInputBuffers();
