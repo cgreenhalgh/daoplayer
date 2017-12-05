@@ -54,6 +54,8 @@ File ref is Object with:
 - `next` - array of Next Sections (see below)
 - `title` - descriptive, for human consumption only (string, optional)
 - `description` - descriptive, for human consumption only (string, optional)
+Not yet supported:
+- `altLengths` - (proposed) array of alternative lengths that can be used, e.g. for truncating section (optional, array of floats, seconds)
 
 Next section is Object with:
 - `name` - name of next section
@@ -155,7 +157,11 @@ Note that volume and pos functions are always called on scene load, but only cal
 
 `trackTime`: time in seconds of current playout point within track (float). This is currently a slightly conservative estimate (i.e. part of a second into the future), and is only available to code within the context of a track ref, i.e. a dynamic volume or dynamic track position expression. 
 
+`tps`: map of track name -> trackTime
+
 `trackVolume`: volume of current track at the current playout point (float). Only available to code within the context of a dynamic volume function. 
+
+`tvs`: map of track name -> trackVolume
 
 `trackId`: internal ID of current track. Only available to code within the context of a dynamic position function.
 
@@ -163,6 +169,8 @@ Note that volume and pos functions are always called on scene load, but only cal
 - `name`: name of current section (string)
 - `startTime`: scene time in seconds when current section started (float)
 - `endTime`: scene time in seconds when current section will end (float), if the section has a length/end time
+
+`tss`: map of track name -> currentSection
 
 `activity`: one of `NOGPS`, `STATIONARY`, `WALKING`, `UNCERTAIN` (future?: `RUNNING`, `FASTD`)
 

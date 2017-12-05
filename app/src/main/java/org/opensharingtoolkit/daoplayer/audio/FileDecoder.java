@@ -89,6 +89,8 @@ public class FileDecoder {
 			try {
 				mExtractor.setDataSource(mPath);
 			} catch (IOException e) {
+				// note that this can fail for various reasons, including an incompatible encoding
+				// (e.g. 32bit wav files have done this for me) as well as file not found.
 				Log.e(TAG,"Error creating MediaExtractor for "+mPath+": "+e);
 				synchronized (this) {
 					mExtractFailed = true;

@@ -278,6 +278,7 @@ public class Composition {
 						int length = jsection.has(LENGTH) ? (jsection.getInt(LENGTH)<0 ? jsection.getInt(LENGTH) : mEngine.secondsToSamples(jsection.getDouble(LENGTH))) : IAudio.ITrack.LENGTH_ALL;
 						if (length>0 && (minSectionLength==0 || length<minSectionLength))
 							minSectionLength = length;
+						// TODO altLengths
 						double startCost = jsection.has(START_COST) ? jsection.getDouble(START_COST) : (fi==0 ? DEFAULT_FIRST_SECTION_START_COST : DEFAULT_START_COST);
 						double endCost = jsection.has(END_COST) ? jsection.getDouble(END_COST) : defaultEndCost;
 						double endCostExtra = jsection.has(END_COST_EXTRA) ? jsection.getDouble(END_COST_EXTRA) : DEFAULT_END_COST_EXTRA;
@@ -578,7 +579,12 @@ public class Composition {
 		}
 		sb.append("var vs={};\n");
 		sb.append("var ps={};\n");
+		// track volumes
+		sb.append("var tvs={};\n");
+		// track positions
 		sb.append("var tps={};\n");
+		// track sections
+		sb.append("var tss={};\n");
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			String dynVolume = tr.getDynVolume();
 			String dynPos = tr.getDynPos();
@@ -638,6 +644,11 @@ public class Composition {
 					sb.append("']=");
 					sb.append(trackTime);
 					sb.append(";");
+					sb.append("tvs['");
+					sb.append(at.getName());
+					sb.append("']=");
+					sb.append(currentVolume);
+					sb.append(";");
 				}
 				if (dynVolume!=null) {
 					sb2.append("vs['");
@@ -676,16 +687,29 @@ public class Composition {
 					if (section==null)
 						sb2.append("null");
 					else {
-						sb2.append("{name:");
-						sb2.append(escapeJavascriptString(section.mName));
-						sb2.append(",startTime:");
+						sb.append("var ts");
+						sb.append(tr.getTrack().getId());
+						sb.append("=");
+						sb.append("{name:");
+						sb.append(escapeJavascriptString(section.mName));
+						sb.append(",startTime:");
 						// typically negative if new scene
-						sb2.append(newSceneTime+mEngine.samplesToSeconds(section.mTrackPos)-trackTime);
+						sb.append(newSceneTime+mEngine.samplesToSeconds(section.mTrackPos)-trackTime);
 						if (section.mLength!=IAudio.ITrack.LENGTH_ALL) {
-							sb2.append(",endTime:");
-							sb2.append(newSceneTime+mEngine.samplesToSeconds(section.mTrackPos+section.mLength)-trackTime);
+							sb.append(",endTime:");
+							sb.append(newSceneTime+mEngine.samplesToSeconds(section.mTrackPos+section.mLength)-trackTime);
 						}
-						sb2.append("}");
+						sb.append("};");
+						sb2.append("ts");
+						sb2.append(tr.getTrack().getId());
+						if (tr.getTrack() instanceof ATrack) {
+							ATrack at = (ATrack) tr.getTrack();
+							sb.append("tss['");
+							sb.append(at.getName());
+							sb.append("']=ts");
+							sb.append(tr.getTrack().getId());
+							sb.append(";");
+						}
 					}
 					sb2.append(");\n");
 				}
@@ -699,117 +723,120 @@ public class Composition {
 		} catch (JSONException e1) {
 			Log.w(TAG,"Error marshalling res", e1);
 		}
-		Log.d(TAG,"run script: "+res+"="+sb.toString());
-		Map<Integer,DynInfo> dynInfos = new HashMap<Integer,DynInfo>();
-		try {
-			JSONObject jres = new JSONObject(res);
-			JSONObject vs = jres.getJSONObject("vs");
-			Iterator<String> keys = vs.keys();
-			while(keys.hasNext()) {
-				String key = keys.next();
-				int id = Integer.valueOf(key);
-				DynInfo di = new DynInfo();
-				dynInfos.put(id,  di);
-				Object val = vs.get(key);
-				if (val instanceof JSONArray) {
-					JSONArray aval = (JSONArray)val;
-					float fvals[] = new float[aval.length()];
-					for (int i=0; i<aval.length(); i+=2) {
-						fvals[i] = extractFloat(aval.get(i));
-						if (i+1<aval.length())
-							fvals[i+1] = clipVolume(extractFloat(aval.get(i+1)));
+		Map<Integer, DynInfo> dynInfos = new HashMap<Integer, DynInfo>();
+		if (res==null) {
+			// Error details already logged at a lower level
+			Log.d(TAG,"update script timed out");
+		} else {
+			Log.d(TAG, "run script: " + sb.toString() + "\n-> " + res);
+			try {
+				JSONObject jres = new JSONObject(res);
+				JSONObject vs = jres.getJSONObject("vs");
+				Iterator<String> keys = vs.keys();
+				while (keys.hasNext()) {
+					String key = keys.next();
+					int id = Integer.valueOf(key);
+					DynInfo di = new DynInfo();
+					dynInfos.put(id, di);
+					Object val = vs.get(key);
+					if (val instanceof JSONArray) {
+						JSONArray aval = (JSONArray) val;
+						float fvals[] = new float[aval.length()];
+						for (int i = 0; i < aval.length(); i += 2) {
+							fvals[i] = extractFloat(aval.get(i));
+							if (i + 1 < aval.length())
+								fvals[i + 1] = clipVolume(extractFloat(aval.get(i + 1)));
+						}
+						di.pwlVolume = fvals;
+					} else if (val instanceof Number || (val instanceof String && !"".equals(val))) {
+						float fval = clipVolume(extractFloat(val));
+						di.volume = fval;
+					} else if (val == null || "".equals(val)) {
+						// null
+					} else {
+						mEngine.getLog().logError("Volume script returned non-number/string " + val);
+						di.volume = 0.0f;
 					}
-					di.pwlVolume = fvals;
-				} else if (val instanceof Number || (val instanceof String && !"".equals(val))){
-					float fval = clipVolume(extractFloat(val));
-					di.volume = fval;
-				} else if (val==null || "".equals(val)) {
-					// null
-				} else {
-					mEngine.getLog().logError("Volume script returned non-number/string "+val);
-					di.volume = 0.0f;		
 				}
-			}
-			JSONObject ps = jres.getJSONObject("ps");
-			keys = ps.keys();
-			while(keys.hasNext()) {
-				String key = keys.next();
-				int id = Integer.valueOf(key);
-				DynInfo di = dynInfos.get(id);
-				if (di==null) {
-					di = new DynInfo();
-					dynInfos.put(id,  di);
-				}
-				Object val = ps.get(key);
-				if (val instanceof JSONArray) {
-					JSONArray aval = (JSONArray)val;
-					// map strings to track section names; scene time(s) default to sceneTime (first) or end of current section
-					int outlen = 0;
-					for (int i=0; i<aval.length(); i++) {
-						if (aval.get(i) instanceof String) {
-							if ((outlen % 2)==0)
-								// infer position
-								outlen += 2;
-							else
+				JSONObject ps = jres.getJSONObject("ps");
+				keys = ps.keys();
+				while (keys.hasNext()) {
+					String key = keys.next();
+					int id = Integer.valueOf(key);
+					DynInfo di = dynInfos.get(id);
+					if (di == null) {
+						di = new DynInfo();
+						dynInfos.put(id, di);
+					}
+					Object val = ps.get(key);
+					if (val instanceof JSONArray) {
+						JSONArray aval = (JSONArray) val;
+						// map strings to track section names; scene time(s) default to sceneTime (first) or end of current section
+						int outlen = 0;
+						for (int i = 0; i < aval.length(); i++) {
+							if (aval.get(i) instanceof String) {
+								if ((outlen % 2) == 0)
+									// infer position
+									outlen += 2;
+								else
+									outlen++;
+							} else
 								outlen++;
 						}
-						else
-							outlen++;
-					}
-					int ivals[] = new int[outlen];
-					int nextSceneTime = mEngine.secondsToSamples(newSceneTime);
-					for (int i=0, j=0; i<aval.length(); i++, j++) {
-						if (aval.get(i) instanceof String) {
-							if ((j % 2)==0) {
-								// infer scene time
-								ivals[j++] = nextSceneTime;
+						int ivals[] = new int[outlen];
+						int nextSceneTime = mEngine.secondsToSamples(newSceneTime);
+						for (int i = 0, j = 0; i < aval.length(); i++, j++) {
+							if (aval.get(i) instanceof String) {
+								if ((j % 2) == 0) {
+									// infer scene time
+									ivals[j++] = nextSceneTime;
+								}
+								// map section to track time
+								String sname = aval.getString(i);
+								ITrack track = scene.getTrack(id);
+								if (track == null || !(track instanceof ATrack)) {
+									mEngine.getLog().logError("Pos script returned section name '" + sname + "' for unknown track " + id);
+									continue;
+								}
+								ATrack atrack = (ATrack) track;
+								Map<String, Section> sections = atrack.getSections();
+								Section section = (sections != null) ? sections.get(sname) : null;
+								if (section == null) {
+									mEngine.getLog().logError("Pos script returned unknown section name '" + sname + "' for track " + id);
+									continue;
+								}
+								// start of section
+								ivals[j] = section.mTrackPos;
+								// adjust next scene time for length
+								nextSceneTime += section.mLength;
+							} else if (aval.isNull(i) && (j % 2) == 0) {
+								// special case null time
+								ivals[j] = nextSceneTime;
+							} else {
+								int ival = (int) mEngine.secondsToSamples((double) extractFloat(aval.get(i)));
+								ivals[j] = ival;
+								if ((j % 2) == 0)
+									nextSceneTime = ival;
+								Log.d(TAG, "dynpos align " + j + " (" + i + ") = " + ival + " samples (" + aval.get(i) + ")");
 							}
-							// map section to track time
-							String sname = aval.getString(i);
-							ITrack track = scene.getTrack(id);
-							if (track==null || !(track instanceof ATrack)) {
-								mEngine.getLog().logError("Pos script returned section name '"+sname+"' for unknown track "+id);
-								continue;
-							}
-							ATrack atrack = (ATrack)track;
-							Map<String,Section> sections = atrack.getSections();
-							Section section = (sections!=null) ? sections.get(sname)  : null;
-							if (section==null) {
-								mEngine.getLog().logError("Pos script returned unknown section name '"+sname+"' for track "+id);
-								continue;
-							}
-							// start of section
-							ivals[j] = section.mTrackPos;
-							// adjust next scene time for length
-							nextSceneTime += section.mLength;
-						} else if (aval.isNull(i) && (j % 2)==0) {
-							// special case null time
-							ivals[j] = nextSceneTime;
-						} else {
-							int ival = (int)mEngine.secondsToSamples((double)extractFloat(aval.get(i)));
-							ivals[j] = ival;
-							if ((j % 2)==0)
-								nextSceneTime = ival;
-							Log.d(TAG,"dynpos align "+j+" ("+i+") = "+ival+" samples ("+aval.get(i)+")");
 						}
+						di.align = ivals;
+					} else if (val instanceof Number || (val instanceof String && !"".equals(val))) {
+						float fval = extractFloat(val);
+						//Log.d(TAG,"dynPos single value "+fval+"-> array");
+						di.align = new int[2];
+						di.align[0] = (int) mEngine.secondsToSamples(newSceneTime); // ? was srec!=null ? srec.mSceneTime : 0);
+						di.align[1] = (int) mEngine.secondsToSamples((double) fval);
+					} else if (val == null || "".equals(val)) {
+						// null
+					} else {
+						mEngine.getLog().logError("Pos script returned non-number/string " + val);
 					}
-					di.align = ivals;
-				} else if (val instanceof Number || (val instanceof String && !"".equals(val))){
-					float fval = extractFloat(val);
-					//Log.d(TAG,"dynPos single value "+fval+"-> array");
-					di.align = new int[2];
-					di.align[0] = (int)mEngine.secondsToSamples(newSceneTime); // ? was srec!=null ? srec.mSceneTime : 0);
-					di.align[1] = (int)mEngine.secondsToSamples((double)fval);
-				} else if (val==null || "".equals(val)) {
-					// null
-				} else {
-					mEngine.getLog().logError("Pos script returned non-number/string "+val);
 				}
+			} catch (Exception e) {
+				Log.w(TAG, "error parsing load script result " + res + ": " + e, e);
+				mEngine.getLog().logError("Script returned error: " + res + ", from " + sb.toString());
 			}
-		}
-		catch (Exception e) {
-			Log.w(TAG,"error parsing load script result "+res+": "+e, e);
-			mEngine.getLog().logError("Script returned error: "+res+", from "+sb.toString());
 		}
 		mEngine.getLog().getRecorder().i("update", loginfo);
 		return dynInfos;

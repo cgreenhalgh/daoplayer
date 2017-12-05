@@ -875,11 +875,12 @@ public class Service extends android.app.Service implements OnSharedPreferenceCh
 			sb.append(",(function(){");
 			sb.append(script);
 			sb.append("})());");
+			Log.d(TAG,"Run script "+ix);
 			mWebView.loadUrl(sb.toString());
 			Object result = mbox.get(SCRIPT_TIMEOUT);
 			removeMBox(ix);
 			if (result==null) {
-				Log.d(TAG,"Script timeout: "+sb.toString());
+				Log.d(TAG,"Script "+ix+" timeout");
 				logError("Timeout (Error) in script: "+sb.toString());
 				return null;
 			}
