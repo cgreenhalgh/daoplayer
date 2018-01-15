@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Vector;
 
 import org.json.JSONArray;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.opensharingtoolkit.daoplayer.IAudio;
@@ -30,6 +31,8 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	private static final int MIN_BUFFER_SIZE = 2*2*(44100/4);
 	private static int AUDIO_CHANNELS = AudioFormat.CHANNEL_OUT_STEREO;
 	private static int N_CHANNELS = 2; // stereo :-)
+	// 1/2 sample
+	private static double SMALL_TOTAL_TIME_DELTA = 0.5/44100;
 	private Context mContext;
 	private ILog mLog;
 	public static String TAG = "daoplayer-engine";
@@ -41,7 +44,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	private boolean debug = false;
 	private boolean waitForFileCache = false;
 	
-	static enum StateType { STATE_FUTURE, STATE_NEXT, STATE_IN_PROGRESS, STATE_WRITTEN, STATE_DISCARDED };
+	static enum StateType { STATE_FUTURE2, STATE_FUTURE, STATE_NEXT, STATE_IN_PROGRESS, STATE_WRITTEN, STATE_DISCARDED };
 	public static class StateRec {
 		AState mState;
 		long mWrittenFramePosition;
@@ -76,7 +79,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		mContext = context;
 		AudioManager am = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
 		if (mFileCache==null)
-			mFileCache = new FileCache(context);
+			mFileCache = new FileCache(context, mLog);
 		
 		// Request audio focus for playback
 		int result = am.requestAudioFocus(this,
@@ -284,6 +287,8 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 					} else if (srec.mType==StateType.STATE_FUTURE) {
 						srec.mType = StateType.STATE_NEXT;
 						future = srec;
+					} else if (srec.mType==StateType.STATE_FUTURE2) {
+						srec.mType = StateType.STATE_FUTURE;
 					}
 				}
 				if (current==null) {
@@ -477,10 +482,16 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 					return srec;
 			}
 		}
+		mLog.logError("Warning: no next state");
 		return null;
 	}
 	public StateRec getFutureState() {
 		synchronized(this) {
+			for (int i=0; i<mStateQueue.size(); i++) {
+				StateRec srec = mStateQueue.get(i);
+				if (srec.mType==StateType.STATE_FUTURE2) 
+					return srec;
+			}
 			for (int i=0; i<mStateQueue.size(); i++) {
 				StateRec srec = mStateQueue.get(i);
 				if (srec.mType==StateType.STATE_FUTURE) 
@@ -581,7 +592,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		t1.addFileRef(0, f1, 0, 44100*4, ITrack.REPEATS_FOREVER);
 		AScene s1 = this.newAScene(false);
 		s1.set(t1, 1.0f, 0, false);
-		this.setScene(s1, true);
+		this.setScene(s1, true, 0);
 	}
 
 	private HashMap<Integer,ATrack> mTracks = new HashMap<Integer,ATrack>();
@@ -598,56 +609,79 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		return new AScene(partial);
 	}
 
-	public void setScene(AScene ascene, boolean newScene) {
+	public void setScene(AScene ascene, boolean newScene, double totalTime) {
 		// new future state
 		// find basis - current else written else idle
 		synchronized(this) {
-			StateRec current = null;
+			StateRec prev = null;
+			double sceneTimeMinusTotalTime = 0;
 			for (int i=0; i<mStateQueue.size(); i++) {
 				StateRec srec = mStateQueue.get(i);
-				if (srec.mType==StateType.STATE_WRITTEN || srec.mType==StateType.STATE_IN_PROGRESS || srec.mType==StateType.STATE_NEXT)
-					current = srec;
-				else if (srec.mType==StateType.STATE_FUTURE) {
-					current = srec;
+				if (srec.mTotalTime < totalTime-SMALL_TOTAL_TIME_DELTA)
+					prev = srec;
+				else {
+					sceneTimeMinusTotalTime = srec.mSceneTime-srec.mTotalTime;
 					// discard - overwrite...
-					mStateQueue.remove(i);
-					i--;
+					if (srec.mType!=StateType.STATE_FUTURE && srec.mType!=StateType.STATE_FUTURE2) {
+						mLog.logError("WARNING: new state clobbers current state (type "+srec.mType+") at "+totalTime+" (vs "+srec.mTotalTime+")");
+						if (srec.mType==StateType.STATE_NEXT) {
+							// don't remove in progress though, that would just confuse things!
+							mStateQueue.remove(i);
+							i--;
+						}
+					} else {
+						// future overtaken => OK
+						Log.d(TAG, "Scene change replaced future change (type "+srec.mType+") at "+totalTime+" (vs "+srec.mTotalTime+")");
+						// debug?!
+						mLog.log("Scene change replaced future change (type "+srec.mType+") at "+totalTime+" (vs "+srec.mTotalTime+")");
+						mStateQueue.remove(i);
+						i--;						
+					}
 				}
 			}
-			if (current==null) {
+			if (prev==null) {
 				// temporary placeholder!
-				current = new StateRec();
-				current.mState = getIdleState();
-				current.mTotalTime = 0;
-				current.mSceneTime = current.mTotalTime;
+				//mLog.logError("WARNING: could not find existing state in time range to "+totalTime);
+				prev = new StateRec();
+				prev.mType = StateType.STATE_DISCARDED;
+				prev.mState = getIdleState();
+				prev.mTotalTime = totalTime-samplesToSeconds(mSamplesPerBlock);
+				prev.mSceneTime = prev.mTotalTime+sceneTimeMinusTotalTime;
 			}
 				
 			//Log.d(TAG,"CurrentState="+current);
 			double sceneTimeAdjustSeconds = 0;
+			int advanceSamples = secondsToSamples(totalTime-prev.mTotalTime);
+			
 			if (newScene) {
-				if  (current.mType!=StateType.STATE_FUTURE)
-					// adjust any mappings from scene time carried over (unless already replacing a future state)
-					sceneTimeAdjustSeconds = (0-(current.mSceneTime+samplesToSeconds(mSamplesPerBlock)));
-				else
-					sceneTimeAdjustSeconds = (0-(current.mSceneTime));
+				// adjust any mappings from scene time carried over (unless already replacing a future state)
+				sceneTimeAdjustSeconds = (0-(prev.mSceneTime+samplesToSeconds(advanceSamples)));
 			}
-			AState target = current.mState.applyScene(ascene, mSamplesPerBlock, secondsToSamples(sceneTimeAdjustSeconds), (float)sceneTimeAdjustSeconds);
+			AState target = prev.mState.applyScene(ascene, advanceSamples, secondsToSamples(sceneTimeAdjustSeconds), (float)sceneTimeAdjustSeconds);
 			
 			StateRec srec = new StateRec();
-			srec.mType = StateType.STATE_FUTURE;
+			srec.mType = StateType.STATE_FUTURE2;
 			srec.mState = target;
-			if (current.mType!=StateType.STATE_FUTURE)
-				srec.mTotalTime = current.mTotalTime+samplesToSeconds(mSamplesPerBlock);
-			else
-				srec.mTotalTime = current.mTotalTime;
+			srec.mTotalTime = totalTime;
 			if (newScene)
 				srec.mSceneTime = 0;
-			else if (current.mType!=StateType.STATE_FUTURE)
-				srec.mSceneTime = current.mSceneTime+samplesToSeconds(mSamplesPerBlock);
 			else
-				srec.mSceneTime = current.mSceneTime;
+				srec.mSceneTime = prev.mSceneTime+samplesToSeconds(advanceSamples);
+
+			if (prev.mType==StateType.STATE_NEXT)
+				srec.mType = StateType.STATE_FUTURE;
+			else if (prev.mType==StateType.STATE_FUTURE)
+				; // OK
+			else {
+				// bad...
+				srec.mType = StateType.STATE_NEXT;
+			}
 			
 			mStateQueue.add(srec);
+			
+			// update file cache if next changed!
+			if (srec.mType==StateType.STATE_NEXT)
+				mFileCache.update(mStateQueue, mTracks, mSamplesPerBlock, AudioEngine.this);
 		}
 	}
 	
@@ -675,7 +709,7 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 	public void init(Context context) {
 		// all files...
 		if (mFileCache==null)
-			mFileCache = new FileCache(context);
+			mFileCache = new FileCache(context, mLog);
 		mFileCache.init(mTracks);
 		waitForFileCache = true;
 	}

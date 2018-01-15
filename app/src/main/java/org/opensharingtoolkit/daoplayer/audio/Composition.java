@@ -86,7 +86,7 @@ public class Composition {
 
 	private static final String COMPOSITION_MIMETYPE = "application/x-daoplayer-composition";
 	private static final int MAJOR_VERSION = 1;
-	private static final int MINOR_VERSION = 0;
+	private static final int MINOR_VERSION = 1;
 	
 	private Pattern mVersionPattern = Pattern.compile("^(\\d+)(\\.(d+)(\\.(d+)(\\-(\\w+))?)?)?$");
 	
@@ -321,7 +321,7 @@ public class Composition {
 					atrack.setMaxDuration(mEngine.secondsToSamples(jtrack.getDouble(MAX_DURATION)));
 				else
 					atrack.setMaxDuration(maxDuration);
-				if (atrack.getSections()!=null && atrack.getSections().size()>0) {
+				if (atrack.getSections()!=null && atrack.getSections().size()>0 && atrack.getUnitTime()>0) {
 					Log.d(TAG,"Create SectionSelector for "+atrack.getName());
 					SectionSelector selector = new SectionSelector(atrack, atrack.getMaxDuration(), mEngine.getLog());
 					selector.prepare();
@@ -520,7 +520,7 @@ public class Composition {
 		int [] align;
 	}
 	/** value in map is either null, Float (single volume) or float[] (array of args for pwl) */
-	private Map<Integer,DynInfo> getDynInfo(IScriptEngine scriptEngine, DynScene scene, boolean loadFlag, long time) {
+	private Map<Integer,DynInfo> getDynInfo(IScriptEngine scriptEngine, DynScene scene, boolean loadFlag, long time, double totalTimeRef[]) {
 		AudioEngine.StateRec srec = mEngine.getFutureState();
 		AState astate = (srec!=null ? srec.getState() : null);
 		JSONObject loginfo = new JSONObject();
@@ -535,7 +535,14 @@ public class Composition {
 		sb.append(";\n");
 		sb.append("var distance=function(coord1,coord2){return window.distance(coord1,coord2 ? coord2 : position);};\n");
 		sb.append("var sceneTime=");
-		double oldSceneTime = (srec==null) ? 0 : srec.mSceneTime+(srec.mType!=StateType.STATE_FUTURE ? mEngine.samplesToSeconds(mEngine.getFutureOffset()) : 0);
+		int futureOffset = 0;
+		if (srec!=null) {
+			if (srec.mType==StateType.STATE_FUTURE)
+				futureOffset = mEngine.getFutureOffset();
+			else if (srec.mType==StateType.STATE_NEXT)
+				futureOffset = mEngine.getFutureOffset()*2;
+		}
+		double oldSceneTime = (srec==null) ? 0 : srec.mSceneTime+ mEngine.samplesToSeconds(futureOffset);
 		double newSceneTime = loadFlag ? 0 : oldSceneTime;
 		sb.append(newSceneTime);
 		try {
@@ -545,7 +552,9 @@ public class Composition {
 		}
 		sb.append(";\n");
 		sb.append("var totalTime=");
-		double totalTime = (srec!=null) ? srec.mTotalTime+(srec.mType!=StateType.STATE_FUTURE ? mEngine.samplesToSeconds(mEngine.getFutureOffset()) : 0) : 0;
+		double totalTime = (srec!=null) ? srec.mTotalTime+ mEngine.samplesToSeconds(futureOffset) : 0;
+		if (totalTimeRef!=null && totalTimeRef.length>0)
+			totalTimeRef[0] = totalTime;
 		sb.append(totalTime);
 		try {
 			loginfo.put("totalTime", totalTime);
@@ -601,8 +610,9 @@ public class Composition {
 					// extrapolate...
 					if (atr!=null) {
 						trackPos = atr.getPos();
-						if (!atr.isPaused())
-							trackPos += mEngine.getFutureOffset();
+						if (!atr.isPaused()) {
+							trackPos += futureOffset;
+						}
 						int align[] = atr.getAlign();
 						if (align!=null) {
 							int sceneTime = mEngine.secondsToSamples(oldSceneTime);
@@ -886,7 +896,8 @@ public class Composition {
 			mFirstSceneLoadTime = mLastSceneLoadTime;
 		mLastSceneUpdateTime = mLastSceneLoadTime;
 		mLastSceneUpdateFromGps = false;
-		Map<Integer,DynInfo> dynInfos = getDynInfo(scriptEngine, scene, true, mLastSceneLoadTime);
+		double totalTimeRef[] = new double[1];
+		Map<Integer,DynInfo> dynInfos = getDynInfo(scriptEngine, scene, true, mLastSceneLoadTime, totalTimeRef);
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			DynInfo di = dynInfos.get(tr.getTrack().getId());
 			if (di!=null && di.volume!=null) {
@@ -906,7 +917,7 @@ public class Composition {
 			else
 				ascene.set(tr.getTrack(), tr.getVolume(), tr.getPos(), tr.getPrepare());
 		}
-		mEngine.setScene(ascene, true);
+		mEngine.setScene(ascene, true, totalTimeRef[0]);
 		return true;
 	}
 	public boolean updateScene(String name, IScriptEngine scriptEngine, boolean fromGps) {
@@ -919,7 +930,8 @@ public class Composition {
 		AScene ascene = mEngine.newAScene(true);
 		mLastSceneUpdateTime = System.currentTimeMillis();
 		mLastSceneUpdateFromGps = fromGps;
-		Map<Integer,DynInfo> dynInfos = getDynInfo(scriptEngine, scene, false, mLastSceneUpdateTime);
+		double totalTimeRef[] = new double[1];
+		Map<Integer,DynInfo> dynInfos = getDynInfo(scriptEngine, scene, false, mLastSceneUpdateTime, totalTimeRef);
 		for (DynScene.TrackRef tr : scene.getTrackRefs()) {
 			DynInfo di = dynInfos.get(tr.getTrack().getId());
 			if (di!=null && di.volume!=null) {
@@ -937,7 +949,7 @@ public class Composition {
 			else if (di!=null && di.align!=null)
 				ascene.set(tr.getTrack(), (Float)null, di.align, null);
 		}
-		mEngine.setScene(ascene, false);
+		mEngine.setScene(ascene, false, totalTimeRef[0]);
 		return true;
 	}
 	public Long getSceneUpdateDelay(String name) {

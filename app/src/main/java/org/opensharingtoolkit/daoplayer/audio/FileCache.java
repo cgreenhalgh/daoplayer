@@ -17,6 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
 import org.opensharingtoolkit.daoplayer.IAudio;
+import org.opensharingtoolkit.daoplayer.ILog;
 import org.opensharingtoolkit.daoplayer.audio.AudioEngine.StateType;
 
 import android.content.Context;
@@ -82,12 +83,14 @@ public class FileCache {
 	
 	/** may use context to access assets */
 	private Context mContext;
+	private static ILog mLog;
 
 	/**
 	 * @param mContext
 	 */
-	public FileCache(Context mContext) {
+	public FileCache(Context mContext, ILog log) {
 		this.mContext = mContext;
+		mLog = log;
 		mExecutor = Executors.newSingleThreadExecutor();
 	}
 
@@ -240,6 +243,8 @@ public class FileCache {
 		case STATE_NEXT:
 			return 1;
 		case STATE_FUTURE:
+			return 0;
+		case STATE_FUTURE2:
 			return 0;
 		}
 	}
@@ -505,6 +510,7 @@ public class FileCache {
 							file.mDecoder.start();
 							if (file.mDecoder.isFailed()) {
 								Log.e(TAG,"Failed to start decoder for "+file.mPath);
+								mLog.logError("Unable to read/decode audio file "+file.mPath);
 								break;
 							}
 						}
