@@ -255,6 +255,18 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			}
 			Log.d(TAG,"PlayThread exit");
 		}
+		private void stateQueueAdd(StateRec srec) {
+			synchronized(AudioEngine.this) {
+				for (int i=0; i<mStateQueue.size(); i++) {
+					StateRec sr2 = mStateQueue.get(i);
+					if (sr2.mTotalTime > srec.mTotalTime) {
+						mStateQueue.insertElementAt(srec, i);
+						return;
+					}
+				}
+				mStateQueue.add(srec);
+			}
+		}
 		private void fillBuffer(int[] buf) {
 			for (int i=0; i<buf.length; i++)
 				buf[i] = 0;
@@ -298,11 +310,12 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 						current.mTotalTime = last.mTotalTime+samplesToSeconds(mSamplesPerBlock);
 						current.mSceneTime = last.mSceneTime+samplesToSeconds(mSamplesPerBlock);
 					} else {
+						mLog.log("AudioEngine first frame");
 						current.mState = getIdleState();
 						current.mTotalTime = current.mSceneTime = 0;
 					}
 					current.mType = StateType.STATE_IN_PROGRESS;
-					mStateQueue.add(current);
+					stateQueueAdd(current);
 				}
 				if (future==null) {
 					future = new StateRec();
@@ -310,9 +323,11 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 					future.mType = StateType.STATE_NEXT;
 					future.mTotalTime = current.mTotalTime+samplesToSeconds(mSamplesPerBlock);
 					future.mSceneTime = current.mSceneTime+samplesToSeconds(mSamplesPerBlock);
-					mStateQueue.add(future);
+					stateQueueAdd(future);
 				}
 				mFileCache.update(mStateQueue, mTracks, mSamplesPerBlock, AudioEngine.this);
+				if (Math.abs(current.mTotalTime-samplesToSeconds(mSamplesPerBlock)-last.mTotalTime)>SMALL_TOTAL_TIME_DELTA)
+					mLog.logError("Jump in play-out total time "+(last.mTotalTime+samplesToSeconds(mSamplesPerBlock))+" -> "+current.mTotalTime);
 			}
 			for (ATrack track : mTracks.values()) {
 				AState.TrackRef tr = current.mState.get(track);
@@ -668,15 +683,26 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 			else
 				srec.mSceneTime = prev.mSceneTime+samplesToSeconds(advanceSamples);
 
-			if (prev.mType==StateType.STATE_NEXT)
-				srec.mType = StateType.STATE_FUTURE;
-			else if (prev.mType==StateType.STATE_FUTURE)
-				; // OK
-			else {
-				// bad...
-				srec.mType = StateType.STATE_NEXT;
+			int advanceBuffers = (advanceSamples+1)/this.getFutureOffset();
+			// should always be 1 or 2
+			if (advanceBuffers<=1) {
+				if (prev.mType==StateType.STATE_FUTURE || prev.mType==StateType.STATE_FUTURE2)
+					srec.mType = StateType.STATE_FUTURE2;
+				else if (prev.mType==StateType.STATE_NEXT)
+					srec.mType = StateType.STATE_FUTURE;
+				else {
+					srec.mType = StateType.STATE_NEXT;
+				}
+			} else {
+				if (prev.mType==StateType.STATE_FUTURE || prev.mType==StateType.STATE_FUTURE2 || prev.mType==StateType.STATE_NEXT)
+					// double advance
+					srec.mType = StateType.STATE_FUTURE2;
+				else {
+					srec.mType = StateType.STATE_NEXT;
+				}
+
 			}
-			
+
 			mStateQueue.add(srec);
 			
 			// update file cache if next changed!
