@@ -88,7 +88,7 @@ public class Composition {
 	private static final int MAJOR_VERSION = 1;
 	private static final int MINOR_VERSION = 1;
 	
-	private Pattern mVersionPattern = Pattern.compile("^(\\d+)(\\.(d+)(\\.(d+)(\\-(\\w+))?)?)?$");
+	private Pattern mVersionPattern = Pattern.compile("^(\\d+)(\\.(\\d+)(\\.(\\d+)(\\-(\\w+))?)?)?$");
 	
 	private static final double DEFAULT_START_COST = 100000000;
 	private static final double DEFAULT_FIRST_SECTION_START_COST = 0;
@@ -181,9 +181,9 @@ public class Composition {
 			}			
 		}
 		if (minorVersion<MINOR_VERSION)
-			log.log("Note: composition version is "+version+"; player is "+getVersion());
+			log.log("Note: composition file "+file+" version is "+version+"; player is "+getVersion());
 		else if (minorVersion>MINOR_VERSION)
-			log.logError("composition version is "+version+"; player is "+getVersion()+"; some features may not be supported");
+			log.logError("composition file "+file+" version is "+version+"; player is "+getVersion()+"; some features may not be supported");
 		if (!merging) {
 			Iterator<String> keys = jmeta.keys();
 			while(keys.hasNext()) {
