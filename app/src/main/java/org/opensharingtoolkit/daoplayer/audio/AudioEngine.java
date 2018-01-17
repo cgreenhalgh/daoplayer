@@ -141,19 +141,20 @@ public class AudioEngine implements IAudio, OnAudioFocusChangeListener {
 		}
 		Log.d(TAG,"frame/buffer="+frames+", rate="+rate);
 		int nrate = AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC);
-		Log.d(TAG,"native(music) rate="+nrate);
-		int bsize = AudioTrack.getMinBufferSize(nrate, AUDIO_CHANNELS, AudioFormat.ENCODING_PCM_16BIT);
+		Log.d(TAG,"native(music) rate="+nrate+"; working with "+DEFAULT_SAMPLE_RATE);
+		rateHz = DEFAULT_SAMPLE_RATE;
+		int bsize = AudioTrack.getMinBufferSize(rateHz, AUDIO_CHANNELS, AudioFormat.ENCODING_PCM_16BIT);
 		if (bsize<MIN_BUFFER_SIZE) {
 			Log.d(TAG,"Using larger buffer size ("+MIN_BUFFER_SIZE+" vs "+bsize+")");
 			bsize = MIN_BUFFER_SIZE;
 		}
 		else
 			Log.d(TAG,"Using min buffer size "+bsize);
-		Log.d(TAG,"native(music) rate="+nrate+", minBufferSize="+bsize+" ("+(AUDIO_CHANNELS==AudioFormat.CHANNEL_OUT_STEREO ? "stereo" : "mono")+", 16bit pcm)");
-		mLog.log("native(music) rate="+nrate+", minBufferSize="+bsize+" ("+(AUDIO_CHANNELS==AudioFormat.CHANNEL_OUT_STEREO ? "stereo" : "mono")+", 16bit pcm)");
+		//Log.d(TAG,"native(music) rate="+nrate+", minBufferSize="+bsize+" ("+(AUDIO_CHANNELS==AudioFormat.CHANNEL_OUT_STEREO ? "stereo" : "mono")+", 16bit pcm)");
+		mLog.log("sample rate="+rateHz+" (native "+nrate+") minBufferSize="+bsize+" ("+(AUDIO_CHANNELS==AudioFormat.CHANNEL_OUT_STEREO ? "stereo" : "mono")+", 16bit pcm)");
 		// samsung google nexus, android 4.3.1: 144 frames/buffer; native rate 44100; min buffer 6912 bytes (1728 frames, 39ms)
 		//bsize *= 16;
-		track = new AudioTrack(AudioManager.STREAM_MUSIC, nrate, AUDIO_CHANNELS, AudioFormat.ENCODING_PCM_16BIT, bsize, AudioTrack.MODE_STREAM);
+		track = new AudioTrack(AudioManager.STREAM_MUSIC, rateHz, AUDIO_CHANNELS, AudioFormat.ENCODING_PCM_16BIT, bsize, AudioTrack.MODE_STREAM);
 		mSamplesPerBlock = bsize/ /*bytes/value*/2 /N_CHANNELS/ /*half buffer*/2;
 		mWrittenFramePosition = 0;
 		mWrittenTime = 0;
